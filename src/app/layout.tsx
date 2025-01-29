@@ -1,25 +1,43 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { ThirdwebProvider } from "thirdweb/react";
+// src/app/layout.tsx
 
-const inter = Inter({ subsets: ["latin"] });
+// sequenceDiagram
+    //User->>dApp: Clicks "Buy for X METIS"
+    //dApp->>WMETIS Contract: deposit() with value=X METIS
+    //WMETIS Contract->>User: Mints X WMETIS
+    //dApp->>Marketplace: buyFromListing() with WMETIS
 
-export const metadata: Metadata = {
-  title: "thirdweb SDK + Next starter",
-  description:
-    "Starter template for using thirdweb SDK with Next.js App router",
-};
+"use client";
+
+import "./globals.css"; // Global styles
+import { ThirdwebProvider } from "thirdweb/react"; // Thirdweb provider
+import { Toaster } from "@/app/ui/toaster"; // Optional: Notification system
+import { ThemeProvider } from "@/app/context/ThemeContext"; // Optional: Theme context
+import Header from "@/app/components/SharedComponents/Header"; // Header component
+import Footer from "@/app/components/SharedComponents/Footer"; // Footer component
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <ThirdwebProvider>{children}</ThirdwebProvider>
+      <body>
+        <ThemeProvider>
+          <ThirdwebProvider>
+            {/* Header */}
+            <Header />
+
+            {/* Main Content */}
+            <main className="container mx-auto p-4">{children}</main>
+
+            {/* Footer */}
+            <Footer />
+
+            {/* Notifications */}
+            <Toaster />
+          </ThirdwebProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

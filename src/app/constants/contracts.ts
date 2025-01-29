@@ -1,0 +1,2 @@
+export const CONTRACT_ADDRESS = "0x7e9EE861e3721F9F3664C18A539e63aCb784a208"; // Replace with your actual contract address
+export const THIRDWEB_CLIENT_ID = "fbdbd68ce248deb4dca2130b68ab22d7"; // Replace with your thirdweb client ID
