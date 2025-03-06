@@ -9,7 +9,6 @@
 "use client";
 
 import "./globals.css";
-import type { Metadata } from "next";
 import { Space_Grotesk, Comic_Neue } from "next/font/google";
 import { ThirdwebProvider } from "thirdweb/react";
 import { Toaster } from "@/app/ui/toaster";
@@ -44,10 +43,8 @@ const papyrusFont = {
   variable: "--font-papyrus",
 };
 
-export const metadata: Metadata = {
-  title: "DELPHI: The Degen Oracle NFT Marketplace",
-  description: "A chaotic, meme-filled NFT marketplace for the Metis blockchain. Buy, sell, and trade digital collectibles with style!",
-};
+// We can't export metadata from a client component
+// Instead, we'll set the title and description directly in the head element
 
 export default function RootLayout({
   children,
@@ -62,6 +59,8 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <title>DELPHI: The Degen Oracle NFT Marketplace</title>
+        <meta name="description" content="A chaotic, meme-filled NFT marketplace for the Metis blockchain. Buy, sell, and trade digital collectibles with style!" />
       </head>
       <body className={`${comicNeue.variable} ${spaceGrotesk.variable} ${impactFont.variable} ${papyrusFont.variable}`}>
         <ThemeProvider>
@@ -70,7 +69,7 @@ export default function RootLayout({
               <WalletProvider>
                 <div className="flex flex-col min-h-screen">
                   <Header />
-                  <main className="flex-grow animate-bounce-slow">
+                  <main className="flex-grow">
                     {children}
                   </main>
                   <Footer />
