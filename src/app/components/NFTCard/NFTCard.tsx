@@ -1,7 +1,7 @@
 // app/components/NFTCard/NFTCard.tsx (Client Component)
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { IListingWithNFT } from "@/app/interfaces/interfaces";
 import Link from "next/link";
 
@@ -13,24 +13,29 @@ interface NFTCardProps {
 export default function NFTCard({ listing, className }: NFTCardProps) {
   const { metadata, collectionName, tokenId, pricePerToken, listingId } = listing;
   const [isHovering, setIsHovering] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   
-  // Generate a milder random rotation for the card between -2 and 2 degrees
-  const randomRotation = React.useMemo(() => (Math.random() * 4 - 2).toFixed(2), []);
-  
-  // Random emoji for each card
-  const emojis = ["🚀", "💎", "🔥", "🤑", "💰", "🦍", "🧠", "👽", "🤖", "🦄"];
-  const randomEmoji = React.useMemo(() => emojis[Math.floor(Math.random() * emojis.length)], []);
-  
-  // Price display with random styling
-  const priceStyle = React.useMemo(() => {
-    const styles = [
-      "font-comic text-psycho-rektPink",
-      "font-comic text-psycho-kekGreen",
-      "font-comic text-psycho-orange",
-      "font-comic text-psycho-turquoise"
-    ];
-    return styles[Math.floor(Math.random() * styles.length)];
+  // Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
   }, []);
+  
+  // Simple placeholder during SSR
+  if (!isMounted) {
+    return <div className={`relative ${className} h-80 bg-gray-800 rounded-meme`}></div>;
+  }
+  
+  // Client-side only random values
+  const randomRotation = (Math.random() * 4 - 2).toFixed(2);
+  const emojis = ["🚀", "💎", "🔥", "🤑", "💰", "🦍", "🧠", "👽", "🤖", "🦄"];
+  const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+  const priceStyles = [
+    "font-comic text-psycho-rektPink",
+    "font-comic text-psycho-kekGreen",
+    "font-comic text-psycho-orange",
+    "font-comic text-psycho-turquoise"
+  ];
+  const priceStyle = priceStyles[Math.floor(Math.random() * priceStyles.length)];
 
   return (
     <div 

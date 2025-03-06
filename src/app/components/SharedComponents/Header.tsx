@@ -6,9 +6,17 @@ import { useState, useEffect } from "react";
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Handle scroll effects
   useEffect(() => {
+    if (!isMounted) return;
+    
     const handleScroll = () => {
       const isScrolled = window.scrollY > 10;
       if (isScrolled !== scrolled) {
@@ -20,7 +28,7 @@ export default function Header() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [scrolled]);
+  }, [scrolled, isMounted]);
 
   const navItems = [
     { name: "Home", href: "/" },
@@ -29,6 +37,15 @@ export default function Header() {
     { name: "About", href: "/about" },
     { name: "Test", href: "/test" },
   ];
+
+  // Simple placeholder during SSR
+  if (!isMounted) {
+    return (
+      <header className="sticky top-0 z-50 py-4 bg-transparent">
+        <div className="container mx-auto px-4 h-14"></div>
+      </header>
+    );
+  }
 
   return (
     <header 

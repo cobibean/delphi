@@ -15,10 +15,13 @@ interface MockListing {
   price: string;
 }
 
-// Temporary FeaturedCard component
-function FeaturedCard({ listing }: { listing: MockListing }) {
+// Temporary FeaturedCard component - client-side only
+function FeaturedCard({ listing, isMounted }: { listing: MockListing; isMounted: boolean }) {
+  // Only generate random rotation on client
+  const rotation = isMounted ? `rotate(${Math.random() * 4 - 2}deg)` : 'none';
+  
   return (
-    <div className="degen-card m-2 p-4 max-w-xs transform" style={{ transform: `rotate(${Math.random() * 4 - 2}deg)` }}>
+    <div className="degen-card m-2 p-4 max-w-xs transform" style={{ transform: rotation }}>
       <div className="relative h-48 mb-2 overflow-hidden rounded-meme border-2 border-dashed border-psycho-rektPink">
         <img src={listing.image || "https://via.placeholder.com/400"} alt={listing.name} className="w-full h-full object-cover" />
       </div>
@@ -43,39 +46,60 @@ const getMockFeaturedListings = () => {
 
 export default function FeaturedSection() {
   const [featuredListings, setFeaturedListings] = useState<MockListing[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
   const [marketStats, setMarketStats] = useState({
-    nfts: Math.floor(Math.random() * 10000) + 500,
-    collections: Math.floor(Math.random() * 100) + 20,
-    users: Math.floor(Math.random() * 5000) + 1000,
-    trades: Math.floor(Math.random() * 20000) + 5000,
+    nfts: 500,
+    collections: 20,
+    users: 1000,
+    trades: 5000,
   });
 
   useEffect(() => {
+    // Set mounted state and initialize random values on client
+    setIsMounted(true);
+    
     // Using mock data instead of actual API call
     const mockListings = getMockFeaturedListings();
     setFeaturedListings(mockListings);
+    
+    // Only set random stats on client
+    setMarketStats({
+      nfts: Math.floor(Math.random() * 10000) + 500,
+      collections: Math.floor(Math.random() * 100) + 20,
+      users: Math.floor(Math.random() * 5000) + 1000,
+      trades: Math.floor(Math.random() * 20000) + 5000,
+    });
   }, []);
 
-  if (featuredListings.length === 0) {
-    return null;
+  // Simple placeholder during SSR
+  if (!isMounted) {
+    return <div className="w-full min-h-[70vh] bg-gray-900"></div>;
   }
+
+  // Generate emoji particles on client only
+  const emojiParticles = [...Array(5)].map((_, i) => ({
+    top: `${Math.random() * 100}%`,
+    left: `${Math.random() * 100}%`,
+    fontSize: `${Math.random() * 2 + 1}rem`,
+    emoji: ['🚀', '💎', '🔥', '🤑', '💰'][Math.floor(Math.random() * 5)]
+  }));
 
   return (
     <div className="w-full">
       {/* Hero Section */}
       <div className="relative w-full min-h-[70vh] overflow-hidden flex flex-col items-center justify-center p-8 border-8 border-dashed border-psycho-orange/50">
         {/* Limited emoji particles (reduced from 20 to 5) */}
-        {[...Array(5)].map((_, i) => (
+        {emojiParticles.map((particle, i) => (
           <div 
             key={i} 
             className="absolute text-2xl pointer-events-none select-none"
             style={{ 
-              top: `${Math.random() * 100}%`, 
-              left: `${Math.random() * 100}%`,
-              fontSize: `${Math.random() * 2 + 1}rem`
+              top: particle.top, 
+              left: particle.left,
+              fontSize: particle.fontSize
             }}
           >
-            {['🚀', '💎', '🔥', '🤑', '💰'][Math.floor(Math.random() * 5)]}
+            {particle.emoji}
           </div>
         ))}
         
@@ -138,7 +162,7 @@ export default function FeaturedSection() {
         
         <div className="flex overflow-x-auto py-4 px-4 gap-4">
           {featuredListings.map((listing, index) => (
-            <FeaturedCard key={index} listing={listing} />
+            <FeaturedCard key={index} listing={listing} isMounted={isMounted} />
           ))}
         </div>
       </div>

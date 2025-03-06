@@ -19,18 +19,9 @@ export default function WalletConnection() {
   } = useWallet();
   
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [bounceEffect, setBounceEffect] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   
-  // Random catchphrases for connect button
-  const catchphrases = [
-    "LFG! WAGMI!",
-    "APE IN NOW!!",
-    "CONNECT SER!",
-    "FOMO TIME!",
-    "GM DEGENS!",
-  ];
-  
-  const randomCatchphrase = catchphrases[Math.floor(Math.random() * catchphrases.length)];
-
   // Available wallet options
   const wallets = [
     inAppWallet({
@@ -43,8 +34,15 @@ export default function WalletConnection() {
     createWallet("com.trustwallet.app"),
   ];
 
+  // Set mounted state on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
   // Close dropdown when clicking outside
   useEffect(() => {
+    if (!isMounted) return;
+    
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (!target.closest('.wallet-dropdown')) {
@@ -56,7 +54,22 @@ export default function WalletConnection() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [isMounted]);
+  
+  // Random bounce effect for the button - but not when dropdown is open
+  useEffect(() => {
+    if (!isMounted || isDropdownOpen) {
+      setBounceEffect(false);
+      return;
+    }
+    
+    const interval = setInterval(() => {
+      setBounceEffect(true);
+      setTimeout(() => setBounceEffect(false), 1000);
+    }, 5000 + Math.random() * 5000); // Random interval between 5-10 seconds
+    
+    return () => clearInterval(interval);
+  }, [isDropdownOpen, isMounted]);
 
   // Handle wallet disconnection
   const handleDisconnect = async () => {
@@ -69,29 +82,47 @@ export default function WalletConnection() {
     }
   };
 
+  // Only render after client-side hydration is complete
+  if (!isMounted) {
+    return <div className="wallet-dropdown h-10 w-32"></div>; // Simple placeholder during SSR
+  }
+
+  // Random elements for client-side only
+  const randomEmoji = ['💰', '🚀', '💎', '🔥'][Math.floor(Math.random() * 4)];
+  const secondaryEmoji = ['💰', '🚀', '💎', '🔥'][Math.floor(Math.random() * 4)];
+  const randomCatchphrase = [
+    "LFG! WAGMI!",
+    "APE IN NOW!!",
+    "CONNECT SER!",
+    "FOMO TIME!",
+    "GM DEGENS!",
+  ][Math.floor(Math.random() * 5)];
+  const buttonRotation = !isDropdownOpen ? `rotate(${Math.random() * 4 - 2}deg)` : 'none';
+
   return (
     <div className="relative wallet-dropdown">
       {isConnected ? (
         <div className="flex items-center">
           {/* Connection Status Indicator */}
           <div className="mr-2 hidden md:flex items-center">
-            <div className="h-3 w-3 rounded-full bg-psycho-kekGreen mr-1"></div>
-            <span className="text-xs font-comic text-psycho-kekGreen">CONNECTED</span>
+            <div className={`h-3 w-3 rounded-full bg-psycho-kekGreen ${!isDropdownOpen ? 'animate-pulse-neon' : ''} mr-1`}></div>
+            <span className={`text-xs font-comic text-psycho-kekGreen ${!isDropdownOpen ? 'wiggly-text' : ''}`}>CONNECTED!</span>
           </div>
           
           {/* User Wallet Button - Meme Style */}
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="relative overflow-hidden flex items-center space-x-2 bg-gradient-to-r from-psycho-night to-psycho-rektPink/20 text-psycho-parchment px-3 py-2 rounded-meme border-2 border-dashed border-psycho-orange/70 transition-all duration-300 hover:scale-105"
+            className={`relative overflow-hidden flex items-center space-x-2 bg-gradient-to-r from-psycho-night to-psycho-rektPink/20 text-psycho-parchment px-3 py-2 rounded-meme border-2 border-dashed border-psycho-orange/70 transition-all duration-300 ${bounceEffect && !isDropdownOpen ? 'animate-bounce-slow' : 'hover:scale-105'}`}
             disabled={isConnecting}
+            style={{ transform: buttonRotation }}
           >
             {/* Wallet address display */}
             <div className="relative flex items-center justify-center">
               <span className="relative z-10 font-comic">{displayAddress}</span>
               
-              {/* Single emoji */}
-              <div className="absolute -top-2 -right-2 text-lg">
-                💰
+              {/* Animated emoji when dropdown is closed */}
+              <div className={`absolute -top-2 -right-2 text-lg ${!isDropdownOpen ? 'animate-pulse-neon' : ''}`}>
+                {!isDropdownOpen ? randomEmoji : '💰'}
               </div>
             </div>
             
@@ -106,7 +137,7 @@ export default function WalletConnection() {
               strokeWidth="3" 
               strokeLinecap="round" 
               strokeLinejoin="round"
-              className={`transition-transform duration-300 text-psycho-kekGreen ${isDropdownOpen ? 'rotate-180' : ''}`}
+              className={`transition-transform duration-300 text-psycho-kekGreen ${isDropdownOpen ? 'rotate-180' : !isDropdownOpen ? 'animate-bounce' : ''}`}
             >
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
@@ -181,7 +212,7 @@ export default function WalletConnection() {
           )}
         </div>
       ) : (
-        <div className="relative group">
+        <div className={`relative group ${bounceEffect ? 'animate-bounce-slow' : ''}`}>
           <ConnectButton
             client={client}
             wallets={wallets}
@@ -198,6 +229,7 @@ export default function WalletConnection() {
                 border: "2px dashed rgba(237, 137, 54, 0.7)",
                 fontWeight: "bold",
                 fontFamily: "'Comic Sans MS', 'Comic Neue', cursive",
+                transform: "rotate(-2deg)",
                 transition: "all 0.3s ease",
                 position: "relative",
                 overflow: "hidden",
@@ -205,8 +237,11 @@ export default function WalletConnection() {
               },
             }}
           />
-          <div className="absolute -top-2 -right-2 text-xl">
-            💰
+          <div className="absolute -top-2 -right-2 text-xl animate-pulse-neon">
+            {randomEmoji}
+          </div>
+          <div className="absolute -bottom-2 -left-2 text-xl animate-pulse-neon rotate-12">
+            {secondaryEmoji}
           </div>
         </div>
       )}
