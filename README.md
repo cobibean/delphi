@@ -27,7 +27,7 @@ Delphi is a decentralized NFT marketplace that allows users to buy, sell, and di
 
 ## MVP Roadmap
 
-### Phase 1: Core Functionality Completion (2-3 weeks)
+### Phase 1: Core Functionality Completion 
 
 1. **Wallet Connection & Authentication**
    - [x] Basic wallet connection
@@ -52,7 +52,7 @@ Delphi is a decentralized NFT marketplace that allows users to buy, sell, and di
    - [ ] Add transaction history for users
    - [ ] Add transaction confirmation modals
 
-### Phase 2: User Experience Improvements (2-3 weeks)
+### Phase 2: User Experience Improvements 
 
 1. **Search & Filter Functionality**
    - [ ] Implement search by NFT name, collection, or creator
@@ -73,7 +73,7 @@ Delphi is a decentralized NFT marketplace that allows users to buy, sell, and di
    - [ ] Add trending collections section
    - [ ] Create collection management for creators
 
-### Phase 3: Advanced Features & Optimization (2-3 weeks)
+### Phase 3: Advanced Features & Optimization 
 
 1. **User Profiles & Social Features**
    - [ ] Enhanced user profiles with owned and created NFTs

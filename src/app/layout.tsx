@@ -8,18 +8,46 @@
 
 "use client";
 
-import "./globals.css"; // Global styles
-import { Inter } from 'next/font/google'; // Import Inter font
-import { ThirdwebProvider } from "thirdweb/react"; // Thirdweb provider
-import { Toaster } from "@/app/ui/toaster"; // Optional: Notification system
-import { ThemeProvider } from "@/app/context/ThemeContext"; // Optional: Theme context
-import { TransactionProvider } from "@/app/providers/TransactionProvider"; // Transaction provider
-import Header from "@/app/components/SharedComponents/Header"; // Header component
-import Footer from "@/app/components/SharedComponents/Footer"; // Footer component
+import "./globals.css";
+import type { Metadata } from "next";
+import { Space_Grotesk, Comic_Neue } from "next/font/google";
+import { ThirdwebProvider } from "thirdweb/react";
+import { Toaster } from "@/app/ui/toaster";
+import { ThemeProvider } from "@/app/context/ThemeContext";
+import { TransactionProvider } from "@/app/providers/TransactionProvider";
 import { WalletProvider } from './providers/WalletProvider';
+import Header from "@/app/components/SharedComponents/Header";
+import Footer from "@/app/components/SharedComponents/Footer";
 
-// Initialize Inter font
-const inter = Inter({ subsets: ['latin'] });
+// Load Comic Sans-like font (Comic Neue is a free alternative)
+const comicNeue = Comic_Neue({
+  weight: ["300", "400", "700"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-comic",
+});
+
+// For body text
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-space-grotesk",
+});
+
+// Create a local font for Impact-like text
+const impactFont = {
+  variable: "--font-impact",
+};
+
+// Create a local font for Papyrus-like text
+const papyrusFont = {
+  variable: "--font-papyrus",
+};
+
+export const metadata: Metadata = {
+  title: "DELPHI: The Degen Oracle NFT Marketplace",
+  description: "A chaotic, meme-filled NFT marketplace for the Metis blockchain. Buy, sell, and trade digital collectibles with style!",
+};
 
 export default function RootLayout({
   children,
@@ -28,19 +56,25 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
+      <body className={`${comicNeue.variable} ${spaceGrotesk.variable} ${impactFont.variable} ${papyrusFont.variable}`}>
         <ThemeProvider>
           <ThirdwebProvider>
             <TransactionProvider>
               <WalletProvider>
-                {/* Header */}
-                <Header />
-
-                {/* Main Content */}
-                <main className="container mx-auto p-4">{children}</main>
-
-                {/* Footer */}
-                <Footer />
+                <div className="flex flex-col min-h-screen">
+                  <Header />
+                  <main className="flex-grow animate-bounce-slow">
+                    {children}
+                  </main>
+                  <Footer />
+                </div>
 
                 {/* Notifications */}
                 <Toaster />
