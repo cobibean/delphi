@@ -21,6 +21,8 @@ const config: Config = {
         },
       },
       fontFamily: {
+        body: ['Inter', 'sans-serif'],
+        heading: ['var(--font-space-grotesk)'],
         comic: ['var(--font-comic)'],
         display: ['var(--font-space-grotesk)'],
         impact: ['var(--font-impact)'],
