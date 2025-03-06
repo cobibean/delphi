@@ -1,0 +1,10 @@
+---
+description: Thirdweb Wallet Connect
+globs: 
+alwaysApply: false
+---
+
+# Thirdweb Connect
+
+- Always use Thirdweb's wallet connect log-in flow. 
+- We can create custom components around their "building blocks" 

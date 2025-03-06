@@ -1,23 +1,9 @@
 "use client";
 
-import { ConnectButton } from "thirdweb/react";
-import { createWallet, inAppWallet } from "thirdweb/wallets";
 import Link from "next/link";
-import { client } from "@/app/client";
-import { chain } from "@/app/constants/chain";
+import WalletConnection from "./WalletConnection";
 
 export default function Header() {
-  const wallets = [
-    inAppWallet({
-      auth: {
-        options: ["google", "discord", "telegram", "email", "x", "phone"], // Add or remove options as needed
-      },
-    }),
-    createWallet("io.metamask"),
-    createWallet("io.rabby"),
-    createWallet("com.trustwallet.app"),
-  ];
-
   return (
     <header className="p-4 bg-background dark:bg-background border-b border-border shadow relative">
       <nav className="container mx-auto flex justify-between items-center">
@@ -54,19 +40,16 @@ export default function Header() {
               About
             </Link>
           </li>
+          <li>
+            <Link href="/test" className="text-foreground hover:text-primary">
+              Test
+            </Link>
+          </li>
         </ul>
 
         {/* Wallet Connection */}
         <div className="flex items-center gap-4">
-          <ConnectButton
-            client={client}
-            wallets={wallets}
-            chain={chain}
-            connectButton={{
-              label: "Connect Wallet",
-              style: { fontSize: "0.75rem", height: "2.5rem" },
-            }}
-          />
+          <WalletConnection />
         </div>
       </nav>
     </header>
