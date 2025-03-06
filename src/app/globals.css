@@ -41,7 +41,7 @@
 
 @layer base {
 	body {
-		@apply bg-psycho-night text-psycho-parchment font-body;
+		@apply bg-psycho-black text-psycho-parchment font-body;
 	}
 
 	h1, h2, h3, h4, h5, h6 {
@@ -79,7 +79,7 @@
 
 	.degen-card {
 		@apply relative transition-all duration-300 hover:scale-105
-		bg-gradient-to-br from-psycho-night to-gray-800 p-4 rounded-meme 
+		bg-gradient-to-br from-psycho-black to-gray-800 p-4 rounded-meme 
 		border-2 border-psycho-orange/30 shadow-meme hover:shadow-neon;
 		transform: rotate(-1deg);
 	}

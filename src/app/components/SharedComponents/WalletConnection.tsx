@@ -112,7 +112,7 @@ export default function WalletConnection() {
           {/* User Wallet Button - Meme Style */}
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className={`relative overflow-hidden flex items-center space-x-2 bg-gradient-to-r from-psycho-night to-psycho-rektPink/20 text-psycho-parchment px-3 py-2 rounded-meme border-2 border-dashed border-psycho-orange/70 transition-all duration-300 ${bounceEffect && !isDropdownOpen ? 'animate-bounce-slow' : 'hover:scale-105'}`}
+            className={`relative overflow-hidden flex items-center space-x-2 bg-gradient-to-r from-psycho-black to-psycho-rektPink/20 text-psycho-parchment px-3 py-2 rounded-meme border-2 border-dashed border-psycho-orange/70 transition-all duration-300 ${bounceEffect && !isDropdownOpen ? 'animate-bounce-slow' : 'hover:scale-105'}`}
             disabled={isConnecting}
             style={{ transform: buttonRotation }}
           >
@@ -145,7 +145,7 @@ export default function WalletConnection() {
           
           {/* Dropdown Menu - Meme Style */}
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 top-full z-10 w-60 bg-gradient-to-b from-gray-800 to-psycho-night rounded-meme shadow-meme py-1 border-2 border-dashed border-psycho-rektPink overflow-hidden">
+            <div className="absolute right-0 mt-2 top-full z-10 w-60 bg-gradient-to-b from-gray-800 to-psycho-black rounded-meme shadow-meme py-1 border-2 border-dashed border-psycho-rektPink overflow-hidden">
               {/* Header with meme pattern border */}
               <div className="px-4 py-3 border-b-2 border-dashed border-psycho-kekGreen/50 relative">
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-psycho-rektPink/50 to-transparent"></div>
