@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { ConnectButton } from "thirdweb/react";
 import { createWallet, inAppWallet } from "thirdweb/wallets";
 import { client } from "@/app/client";
 import { chain } from "@/app/constants/chain";
 import Link from "next/link";
 import { useWallet } from "@/app/providers/WalletProvider";
+import { ThemeContext } from "@/app/context/ThemeContext";
 
 export default function WalletConnection() {
   const { 
@@ -18,6 +19,7 @@ export default function WalletConnection() {
     copied
   } = useWallet();
   
+  const { isDegenMode } = useContext(ThemeContext);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [bounceEffect, setBounceEffect] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -82,48 +84,84 @@ export default function WalletConnection() {
     }
   };
 
-  // Only render after client-side hydration is complete
+  // Generate random values only on client
+  const randomEmoji = isMounted ? ["💰", "🚀", "💎", "🔥", "🌙"][Math.floor(Math.random() * 5)] : "💰";
+  const buttonRotation = isMounted && isDegenMode ? `rotate(${Math.random() > 0.5 ? 1 : -1}deg)` : "none";
+
+  // Simple placeholder during SSR
   if (!isMounted) {
-    return <div className="wallet-dropdown h-10 w-32"></div>; // Simple placeholder during SSR
+    return <div className="h-10 w-40"></div>;
   }
 
-  // Random elements for client-side only
-  const randomEmoji = ['💰', '🚀', '💎', '🔥'][Math.floor(Math.random() * 4)];
-  const secondaryEmoji = ['💰', '🚀', '💎', '🔥'][Math.floor(Math.random() * 4)];
-  const randomCatchphrase = [
-    "LFG! WAGMI!",
-    "APE IN NOW!!",
-    "CONNECT SER!",
-    "FOMO TIME!",
-    "GM DEGENS!",
-  ][Math.floor(Math.random() * 5)];
-  const buttonRotation = !isDropdownOpen ? `rotate(${Math.random() * 4 - 2}deg)` : 'none';
+  // Periodic bounce effect for wallet button when connected
+  useEffect(() => {
+    if (isConnected && isDegenMode) {
+      const interval = setInterval(() => {
+        setBounceEffect(true);
+        setTimeout(() => setBounceEffect(false), 1000);
+      }, 30000); // Every 30 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [isConnected, isDegenMode]);
 
   return (
-    <div className="relative wallet-dropdown">
-      {isConnected ? (
-        <div className="flex items-center">
-          {/* Connection Status Indicator */}
-          <div className="mr-2 hidden md:flex items-center">
-            <div className={`h-3 w-3 rounded-full bg-psycho-kekGreen ${!isDropdownOpen ? 'animate-pulse-neon' : ''} mr-1`}></div>
-            <span className={`text-xs font-comic text-psycho-kekGreen ${!isDropdownOpen ? 'wiggly-text' : ''}`}>CONNECTED!</span>
-          </div>
+    <div className="wallet-dropdown relative">
+      {!isConnected ? (
+        <div className="relative">
+          <ConnectButton
+            client={client}
+            chain={chain}
+            wallets={wallets}
+            connectButton={{
+              label: isDegenMode ? "CONNECT WALLET 🚀" : "Connect Wallet",
+              style: { 
+                background: isDegenMode 
+                  ? "linear-gradient(to right, #ff0080, #00ff00)"
+                  : "linear-gradient(to right, #ed8936, #38b2ac)",
+                color: "#ffffff",
+                borderRadius: isDegenMode ? "0.75rem 1.25rem 0.5rem 0.25rem" : "0.5rem 1.5rem 0.5rem 0.5rem",
+                padding: "0.5rem 1.5rem",
+                border: isDegenMode ? "2px dashed rgba(237, 137, 54, 0.7)" : "1px solid rgba(237, 137, 54, 0.7)",
+                fontWeight: "bold",
+                fontFamily: isDegenMode ? "'Comic Sans MS', 'Comic Neue', cursive" : "'Space Grotesk', sans-serif",
+                transition: "all 0.3s ease",
+                position: "relative",
+                overflow: "hidden",
+              },
+            }}
+          />
           
-          {/* User Wallet Button - Meme Style */}
+          {/* Emoji indicator only in degen mode */}
+          {isDegenMode && (
+            <div className="absolute -top-2 -right-2 text-lg animate-bounce">
+              {randomEmoji}
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* User Wallet Button - Style based on mode */}
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className={`relative overflow-hidden flex items-center space-x-2 bg-gradient-to-r from-psycho-black to-psycho-rektPink/20 text-psycho-parchment px-3 py-2 rounded-meme border-2 border-dashed border-psycho-orange/70 transition-all duration-300 ${bounceEffect && !isDropdownOpen ? 'animate-bounce-slow' : 'hover:scale-105'}`}
+            className={`relative overflow-hidden flex items-center space-x-2 ${
+              isDegenMode
+                ? 'bg-gradient-to-r from-psycho-black to-psycho-rektPink/20 text-psycho-parchment px-3 py-2 rounded-meme border-2 border-dashed border-psycho-orange/70'
+                : 'bg-gradient-to-r from-psycho-black to-psycho-orange/20 text-psycho-parchment px-3 py-2 rounded-oracle border border-psycho-orange/70'
+            } transition-all duration-300 ${bounceEffect && !isDropdownOpen ? 'animate-bounce-slow' : 'hover:scale-105'}`}
             disabled={isConnecting}
             style={{ transform: buttonRotation }}
           >
             {/* Wallet address display */}
             <div className="relative flex items-center justify-center">
-              <span className="relative z-10 font-comic">{displayAddress}</span>
+              <span className={`relative z-10 ${isDegenMode ? 'font-comic' : 'font-body'}`}>{displayAddress}</span>
               
-              {/* Animated emoji when dropdown is closed */}
-              <div className={`absolute -top-2 -right-2 text-lg ${!isDropdownOpen ? 'animate-pulse-neon' : ''}`}>
-                {!isDropdownOpen ? randomEmoji : '💰'}
-              </div>
+              {/* Animated emoji when dropdown is closed - only in degen mode */}
+              {isDegenMode && (
+                <div className={`absolute -top-2 -right-2 text-lg ${!isDropdownOpen ? 'animate-pulse-neon' : ''}`}>
+                  {!isDropdownOpen ? randomEmoji : '💰'}
+                </div>
+              )}
             </div>
             
             {/* Dropdown icon */}
@@ -137,113 +175,84 @@ export default function WalletConnection() {
               strokeWidth="3" 
               strokeLinecap="round" 
               strokeLinejoin="round"
-              className={`transition-transform duration-300 text-psycho-kekGreen ${isDropdownOpen ? 'rotate-180' : !isDropdownOpen ? 'animate-bounce' : ''}`}
+              className={`transition-transform duration-300 ${isDegenMode ? 'text-psycho-kekGreen' : 'text-psycho-orange'} ${isDropdownOpen ? 'rotate-180' : !isDropdownOpen && isDegenMode ? 'animate-bounce' : ''}`}
             >
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </button>
           
-          {/* Dropdown Menu - Meme Style */}
+          {/* Dropdown Menu - Style based on mode */}
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 top-full z-10 w-60 bg-gradient-to-b from-gray-800 to-psycho-black rounded-meme shadow-meme py-1 border-2 border-dashed border-psycho-rektPink overflow-hidden">
-              {/* Header with meme pattern border */}
-              <div className="px-4 py-3 border-b-2 border-dashed border-psycho-kekGreen/50 relative">
-                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-psycho-rektPink/50 to-transparent"></div>
-                <p className="text-base font-comic text-psycho-rektPink">🔥 DEGEN WALLET 🔥</p>
-                <div className="flex items-center mt-1 group">
-                  <p className="text-xs text-psycho-parchment/70 font-mono truncate mr-1">
-                    {displayAddress}
-                  </p>
-                  <button 
-                    onClick={copyAddressToClipboard}
-                    className="text-psycho-kekGreen hover:text-psycho-rektPink transition-colors duration-300"
-                  >
-                    {copied ? (
-                      <span className="text-lg">✅</span>
-                    ) : (
-                      <span className="text-lg">📋</span>
-                    )}
-                  </button>
-                </div>
+            <div className={`absolute right-0 mt-2 top-full z-10 w-60 ${
+              isDegenMode
+                ? 'bg-gradient-to-b from-gray-800 to-psycho-black rounded-meme shadow-meme py-1 border-2 border-dashed border-psycho-rektPink'
+                : 'bg-gradient-to-b from-gray-800 to-psycho-black rounded-oracle shadow-oracle py-1 border border-psycho-orange'
+            } overflow-hidden`}>
+              {/* Header with pattern border */}
+              <div className={`px-4 py-3 ${
+                isDegenMode 
+                  ? 'border-b-2 border-dashed border-psycho-kekGreen/50' 
+                  : 'border-b border-psycho-orange/50'
+              } relative`}>
+                <p className="text-sm text-psycho-parchment">Connected as</p>
+                <p className={`text-lg font-bold ${isDegenMode ? 'text-psycho-rektPink' : 'text-psycho-orange'}`}>{displayAddress}</p>
+                
+                {/* Copy button */}
+                <button 
+                  onClick={copyAddressToClipboard}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 ${
+                    isDegenMode
+                      ? 'text-psycho-kekGreen hover:text-psycho-rektPink'
+                      : 'text-psycho-orange hover:text-psycho-turquoise'
+                  } transition-colors`}
+                >
+                  {copied ? (
+                    <span className="text-xs">Copied! ✓</span>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  )}
+                </button>
               </div>
               
-              {/* Menu items with hover effects */}
-              <Link 
-                href="/profile" 
-                className="block px-4 py-2 text-sm font-comic text-psycho-parchment hover:bg-psycho-rektPink/20 transition-colors duration-300 flex items-center space-x-2"
-                onClick={() => setIsDropdownOpen(false)}
-              >
-                <span className="text-lg">👤</span>
-                <span>MY PROFILE</span>
-              </Link>
-              
-              <Link 
-                href="/my-nfts" 
-                className="block px-4 py-2 text-sm font-comic text-psycho-parchment hover:bg-psycho-rektPink/20 transition-colors duration-300 flex items-center space-x-2"
-                onClick={() => setIsDropdownOpen(false)}
-              >
-                <span className="text-lg">🖼️</span>
-                <span>MY JPEGS</span>
-              </Link>
-              
-              <Link 
-                href="/my-listings" 
-                className="block px-4 py-2 text-sm font-comic text-psycho-parchment hover:bg-psycho-rektPink/20 transition-colors duration-300 flex items-center space-x-2"
-                onClick={() => setIsDropdownOpen(false)}
-              >
-                <span className="text-lg">💸</span>
-                <span>MY BAGS</span>
-              </Link>
-              
-              {/* Divider with pattern */}
-              <div className="px-2 py-1">
-                <div className="h-2 w-full bg-gradient-to-r from-psycho-kekGreen via-psycho-rektPink to-psycho-orange"></div>
+              {/* Menu items */}
+              <div className="py-1">
+                <Link 
+                  href="/profile" 
+                  className={`block px-4 py-2 text-sm ${
+                    isDegenMode
+                      ? 'text-psycho-parchment hover:bg-psycho-rektPink/20 hover:text-psycho-kekGreen'
+                      : 'text-psycho-parchment hover:bg-psycho-orange/20 hover:text-psycho-turquoise'
+                  } transition-colors`}
+                >
+                  My Profile
+                </Link>
+                <Link 
+                  href="/my-nfts" 
+                  className={`block px-4 py-2 text-sm ${
+                    isDegenMode
+                      ? 'text-psycho-parchment hover:bg-psycho-rektPink/20 hover:text-psycho-kekGreen'
+                      : 'text-psycho-parchment hover:bg-psycho-orange/20 hover:text-psycho-turquoise'
+                  } transition-colors`}
+                >
+                  My NFTs
+                </Link>
+                <button 
+                  onClick={handleDisconnect}
+                  className={`w-full text-left block px-4 py-2 text-sm ${
+                    isDegenMode
+                      ? 'text-psycho-rektPink hover:bg-psycho-rektPink/20'
+                      : 'text-psycho-orange hover:bg-psycho-orange/20'
+                  } transition-colors`}
+                >
+                  Disconnect
+                </button>
               </div>
-              
-              {/* Disconnect button with warning color */}
-              <button 
-                className="block w-full text-left px-4 py-2 text-lg font-comic text-white bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 transition-colors duration-300 flex items-center space-x-2"
-                onClick={handleDisconnect}
-              >
-                <span className="text-xl">💣</span>
-                <span>RUG PULL</span>
-              </button>
             </div>
           )}
-        </div>
-      ) : (
-        <div className={`relative group ${bounceEffect ? 'animate-bounce-slow' : ''}`}>
-          <ConnectButton
-            client={client}
-            wallets={wallets}
-            chain={chain}
-            connectButton={{
-              label: randomCatchphrase,
-              style: { 
-                fontSize: "1rem", 
-                height: "2.8rem",
-                background: "linear-gradient(to right, #ff0080, #00ff00)",
-                color: "#ffffff",
-                borderRadius: "0.75rem",
-                padding: "0.5rem 1.5rem",
-                border: "2px dashed rgba(237, 137, 54, 0.7)",
-                fontWeight: "bold",
-                fontFamily: "'Comic Sans MS', 'Comic Neue', cursive",
-                transform: "rotate(-2deg)",
-                transition: "all 0.3s ease",
-                position: "relative",
-                overflow: "hidden",
-                textShadow: "0 0 5px rgba(255,255,255,0.5)"
-              },
-            }}
-          />
-          <div className="absolute -top-2 -right-2 text-xl animate-pulse-neon">
-            {randomEmoji}
-          </div>
-          <div className="absolute -bottom-2 -left-2 text-xl animate-pulse-neon rotate-12">
-            {secondaryEmoji}
-          </div>
-        </div>
+        </>
       )}
     </div>
   );

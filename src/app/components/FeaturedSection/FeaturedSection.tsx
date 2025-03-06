@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { JsonRpcProvider } from 'ethers';
 import Link from "next/link";
+import { ThemeContext } from "@/app/context/ThemeContext";
 
 const provider = new JsonRpcProvider(process.env.NEXT_PUBLIC_METIS_RPC_URL);
 const MARKETPLACE_ADDRESS = process.env.NEXT_PUBLIC_MARKETPLACE_ADDRESS;
@@ -15,8 +16,8 @@ export default function FeaturedSection() {
     users: 1000,
     trades: 5000,
   });
-  // Track user interaction to increase playfulness over time
-  const [interactionLevel, setInteractionLevel] = useState(0);
+  // Get mode from context instead of tracking interaction level
+  const { isDegenMode } = useContext(ThemeContext);
   // Track mouse position for dynamic hover effects
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
@@ -37,16 +38,10 @@ export default function FeaturedSection() {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
 
-    // Increase interaction level gradually to introduce more playful elements
-    const interactionTimer = setInterval(() => {
-      setInteractionLevel(prev => Math.min(prev + 1, 10));
-    }, 10000); // Every 10 seconds user is on page, increase playfulness
-
     window.addEventListener('mousemove', handleMouseMove);
     
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      clearInterval(interactionTimer);
     };
   }, []);
 
@@ -56,7 +51,7 @@ export default function FeaturedSection() {
   }
 
   // Generate emoji particles on client only - fewer at first, more as interaction increases
-  const particleCount = Math.min(3 + Math.floor(interactionLevel / 2), 7);
+  const particleCount = Math.min(3 + Math.floor(isDegenMode ? 10 : 0), 7);
   const emojiParticles = [...Array(particleCount)].map((_, i) => ({
     top: `${Math.random() * 100}%`,
     left: `${Math.random() * 100}%`,
@@ -67,8 +62,8 @@ export default function FeaturedSection() {
   }));
 
   // Dynamic rotation for llama based on interaction level
-  const llamaRotation = interactionLevel > 5 ? 
-    `-rotate-${6 + Math.floor(interactionLevel / 2)}` : 
+  const llamaRotation = isDegenMode ? 
+    `-rotate-${6 + Math.floor(isDegenMode ? 10 : 0)}` : 
     "-rotate-6";
 
   // Speech bubble changes based on interaction level
@@ -79,7 +74,7 @@ export default function FeaturedSection() {
     "Not financial advice! 😉",
     "We're all gonna make it! 🌈"
   ];
-  const currentSpeechText = speechTexts[Math.min(Math.floor(interactionLevel / 2), speechTexts.length - 1)];
+  const currentSpeechText = speechTexts[Math.min(Math.floor(isDegenMode ? 10 : 0), speechTexts.length - 1)];
 
   return (
     <div className="w-full">
@@ -106,7 +101,7 @@ export default function FeaturedSection() {
           className={`absolute bottom-0 right-0 md:right-10 w-40 md:w-64 h-auto z-10 transform ${llamaRotation} hover:rotate-0 transition-all duration-500 ease-in-out`}
           // Increase bounce effect with interaction
           style={{
-            animation: interactionLevel > 7 ? 'bounce 3s infinite' : 'none'
+            animation: isDegenMode ? 'bounce 3s infinite' : 'none'
           }}
         >
           <img 
@@ -116,7 +111,7 @@ export default function FeaturedSection() {
           />
           <div 
             className={`absolute -top-10 right-0 bg-psycho-rektPink px-4 py-2 rounded-full transform rotate-12 font-comic text-white text-sm md:text-base ${
-              interactionLevel > 5 ? 'animate-bounce' : ''
+              isDegenMode ? 'animate-bounce' : ''
             }`}
           >
             <span className="whitespace-nowrap">{currentSpeechText}</span>
@@ -127,7 +122,7 @@ export default function FeaturedSection() {
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           {/* Title with measured animation based on interaction level */}
           <h1 className={`text-6xl md:text-8xl font-impact mb-6 text-glow-pink transform transition-transform duration-500 ${
-            interactionLevel > 3 ? 'hover:-rotate-1' : ''
+            isDegenMode ? 'hover:-rotate-1' : ''
           }`}>
             <span className="font-comic text-psycho-rektPink">D</span>
             <span className="font-comic text-psycho-kekGreen">E</span>
@@ -153,7 +148,7 @@ export default function FeaturedSection() {
             <Link 
               href="/explore" 
               className={`degen-btn-primary transition-all duration-300 ${
-                interactionLevel > 6 ? 'hover:scale-105 hover:rotate-1' : ''
+                isDegenMode ? 'hover:scale-105 hover:rotate-1' : ''
               }`}
             >
               🚀 EXPLORE ALPHA 🚀
@@ -161,7 +156,7 @@ export default function FeaturedSection() {
             <Link 
               href="/create" 
               className={`degen-btn-secondary transition-all duration-300 ${
-                interactionLevel > 6 ? 'hover:scale-105 hover:-rotate-1' : ''
+                isDegenMode ? 'hover:scale-105 hover:-rotate-1' : ''
               }`}
             >
               💰 MINT MOAR 💰
@@ -180,10 +175,10 @@ export default function FeaturedSection() {
             <div 
               key={index} 
               className={`degen-card py-4 px-6 text-center transition-transform duration-500 ${
-                interactionLevel > 8 ? 'transform hover:scale-105 hover:rotate-1' : ''
+                isDegenMode ? 'transform hover:scale-105 hover:rotate-1' : ''
               }`}
               style={{
-                transform: interactionLevel > 4 ? `rotate(${index % 2 === 0 ? 1 : -1}deg)` : 'none'
+                transform: isDegenMode ? `rotate(${index % 2 === 0 ? 1 : -1}deg)` : 'none'
               }}
             >
               <div className={`text-4xl mb-2 text-psycho-${stat.color}`}>{stat.icon}</div>

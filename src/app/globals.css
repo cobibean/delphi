@@ -142,4 +142,13 @@
 	.tilt-right {
 		transform: rotate(1deg);
 	}
+	
+	/* Mode toggle classes */
+	.degen-mode .professional-only {
+		display: none;
+	}
+	
+	:not(.degen-mode) .degen-only {
+		display: none;
+	}
 }
