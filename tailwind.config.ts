@@ -21,7 +21,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
+        body: ['var(--font-space-grotesk)', 'sans-serif'],
         heading: ['var(--font-space-grotesk)'],
         comic: ['var(--font-comic)'],
         display: ['var(--font-space-grotesk)'],
@@ -44,6 +44,7 @@ const config: Config = {
         'oracle': '0 4px 20px rgba(237, 137, 54, 0.2)',
         'neon': '0 0 10px rgba(255, 0, 128, 0.3)',
         'dual': '0 4px 10px rgba(237, 137, 54, 0.2), 0 0 5px rgba(255, 0, 128, 0.2)',
+        'meme': '0 0 5px rgba(255, 0, 128, 0.2)',
       },
       rotate: {
         '1': '1deg',
