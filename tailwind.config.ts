@@ -10,97 +10,142 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        psycho: {
+        sinister: {
           orange: '#ed8936',
-          turquoise: '#38b2ac',
+          teal: '#38b2ac',
           black: '#121212',
-          parchment: '#f8f5f0',
+          scroll: '#f8f5f0',
           gold: '#D4AF37',
-          rektPink: '#ff0080',
-          kekGreen: '#00ff00',
+          red: '#c53030',
+          violet: '#6B46C1',
         },
       },
       fontFamily: {
-        body: ['var(--font-space-grotesk)', 'sans-serif'],
-        heading: ['var(--font-space-grotesk)'],
-        comic: ['var(--font-comic)'],
-        display: ['var(--font-space-grotesk)'],
-        impact: ['var(--font-impact)'],
-        papyrus: ['var(--font-papyrus)'],
+        body: ['Inter', 'sans-serif'],
+        heading: ['Impact', 'Anton', 'Bebas Neue', 'sans-serif'],
+        accent: ['Roboto Slab', 'serif'],
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-conic": "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
-        "fire-discord": "linear-gradient(to right, #ed8936, #e05252)",
-        "mystic-meme": "linear-gradient(to bottom, #121212, #2d3748)",
-        "golden-gains": "linear-gradient(to right, #ed8936, #D4AF37)",
-        "ethereal-degens": "linear-gradient(to right, #38b2ac, #805ad5)",
+        "oracle-embers": "linear-gradient(to right, #ed8936, #b33a3a)",
+        "gutter-glow": "linear-gradient(to bottom, #121212, #2d2d2d)",
+        "tarnished-fortune": "linear-gradient(to right, #ed8936, #D4AF37)",
+        "neon-fever": "linear-gradient(to right, #38b2ac, #6B46C1)",
       },
       borderRadius: {
-        'oracle': '0.5rem 1.5rem 0.5rem 0.5rem',
-        'meme': '0.75rem 1.25rem 0.5rem 0.25rem',
+        'brutal': '0.25rem',
+        'jagged': '0.5rem 0.25rem 0.75rem 0.25rem',
       },
       boxShadow: {
-        'oracle': '0 4px 20px rgba(237, 137, 54, 0.2)',
-        'neon': '0 0 10px rgba(255, 0, 128, 0.3)',
-        'dual': '0 4px 10px rgba(237, 137, 54, 0.2), 0 0 5px rgba(255, 0, 128, 0.2)',
-        'meme': '0 0 5px rgba(255, 0, 128, 0.2)',
-      },
-      rotate: {
-        '1': '1deg',
-        '2': '2deg',
-        '3': '3deg',
-        '5': '5deg',
-        '10': '10deg',
+        'dark': '0 4px 20px rgba(0, 0, 0, 0.5)',
+        'ember': '0 0 15px rgba(237, 137, 54, 0.3)',
+        'neon': '0 0 10px rgba(56, 178, 172, 0.3)',
       },
       animation: {
-        'pulse-subtle': 'pulse 3s ease-in-out infinite',
-        'oracle-reveal': 'oracle-reveal 0.5s forwards',
-        'wiggle': 'wiggle 1s ease-in-out infinite',
-        'bounce-slow': 'bounce 3s infinite',
-        'spin-slow': 'spin 3s linear infinite',
-        'dynamic-hover': 'dynamic-hover 0.3s ease-out forwards',
+        'glitch': 'glitch 1s infinite',
+        'flicker': 'flicker 1.5s infinite',
+        'static': 'static 2s ease-in-out infinite',
+        'burn-in': 'burn-in 0.5s forwards',
       },
       keyframes: {
-        'oracle-reveal': {
-          '0%': { opacity: 0, transform: 'translateY(10px)' as string },
-          '100%': { opacity: 1, transform: 'translateY(0)' as string },
+        'glitch': {
+          '0%': { transform: 'translate(0, 0)' as string },
+          '20%': { transform: 'translate(-2px, 2px)' as string },
+          '40%': { transform: 'translate(2px, -2px)' as string },
+          '60%': { transform: 'translate(-1px, 1px)' as string },
+          '80%': { transform: 'translate(1px, -1px)' as string },
+          '100%': { transform: 'translate(0, 0)' as string },
         },
-        'wiggle': {
-          '0%, 100%': { transform: 'rotate(-2deg)' as string },
-          '50%': { transform: 'rotate(2deg)' as string },
+        'flicker': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.8' },
         },
-        'dynamic-hover': {
-          '0%': { transform: 'translateY(0)' as string },
-          '100%': { transform: 'translateY(-5px)' as string },
+        'static': {
+          '0%, 100%': { backgroundPosition: '0% 0%' },
+          '20%': { backgroundPosition: '20% 20%' },
+          '40%': { backgroundPosition: '60% 40%' },
+          '60%': { backgroundPosition: '40% 60%' },
+          '80%': { backgroundPosition: '80% 80%' },
+        },
+        'burn-in': {
+          '0%': { opacity: '0', filter: 'brightness(1.5)' },
+          '50%': { opacity: '0.5', filter: 'brightness(1.2)' },
+          '100%': { opacity: '1', filter: 'brightness(1)' },
         },
       },
       transitionTimingFunction: {
-        'bounce': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-      },
-      textShadow: {
-        'glow': '0 0 2px rgba(255, 255, 255, 0.7)',
-        'neon': '0 0 5px currentColor',
+        'glitch': 'cubic-bezier(0.77, 0, 0.175, 1)',
       },
     },
   },
   plugins: [
     function({ addUtilities }: { addUtilities: any }) {
       const newUtilities = {
-        '.text-glow-pink': {
-          textShadow: '0 0 5px rgba(255, 0, 128, 0.7)',
+        '.text-glitch': {
+          position: 'relative',
+          '&::before, &::after': {
+            content: 'attr(data-text)',
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '100%',
+          },
+          '&::before': {
+            left: '2px',
+            textShadow: '-1px 0 #ed8936',
+            animation: 'glitch 0.3s infinite',
+            clipPath: 'polygon(0 0, 100% 0, 100% 45%, 0 45%)',
+          },
+          '&::after': {
+            left: '-2px',
+            textShadow: '1px 0 #38b2ac',
+            animation: 'glitch 0.3s infinite reverse',
+            clipPath: 'polygon(0 55%, 100% 55%, 100% 100%, 0 100%)',
+          },
         },
-        '.text-glow-oracle': {
+        '.text-ember': {
           textShadow: '0 0 5px rgba(237, 137, 54, 0.7)',
         },
-        '.text-glow-teal': {
+        '.text-neon': {
           textShadow: '0 0 5px rgba(56, 178, 172, 0.7)',
         },
-        '.filter-dynamic': {
-          filter: 'var(--filter-value, brightness(1))',
+        '.text-blood': {
+          textShadow: '0 0 5px rgba(197, 48, 48, 0.7)',
         },
-        '.backdrop-greek': {
+        '.filter-static': {
+          position: 'relative',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '100%',
+            opacity: '0.05',
+            pointerEvents: 'none',
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%\' height=\'100%\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")',
+            backgroundRepeat: 'repeat',
+            mixBlendMode: 'overlay',
+          },
+        },
+        '.backdrop-occult': {
           backdropFilter: 'blur(8px) saturate(1.2)',
+        },
+        '.scorched-border': {
+          position: 'relative',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            inset: '0',
+            padding: '1px',
+            borderRadius: 'inherit',
+            background: 'linear-gradient(to right, #ed8936, #b33a3a)',
+            WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+            WebkitMaskComposite: 'xor',
+            maskComposite: 'exclude',
+          },
         },
       };
       addUtilities(newUtilities);

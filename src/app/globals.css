@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Roboto+Slab:wght@100..900&display=swap');
 
 :root {
 	line-height: 1.5;
@@ -16,131 +16,132 @@
 	font-style: normal;
 	font-variation-settings: 'slnt' 0;
 
-	/* Meme Colors */
-	--color-psycho-orange: #ed8936;
-	--color-turbo-turquoise: #38b2ac;
-	--color-blackout: #121212;
-	--color-meme-parchment: #f8f5f0;
-	--color-degen-gold: #D4AF37;
-	--color-rekt-pink: #ff0080;
-	--color-kek-green: #00ff00;
+	/* Dark Degen Oracle Colors */
+	--color-sinister-orange: #ed8936;
+	--color-toxic-teal: #38b2ac;
+	--color-void-black: #121212;
+	--color-faded-scroll: #f8f5f0;
+	--color-smuggled-gold: #D4AF37;
+	--color-blood-red: #c53030;
+	--color-midnight-violet: #6B46C1;
 	
 	/* Gradients */
-	--gradient-fire-discord: linear-gradient(to right, #ed8936, #e05252);
-	--gradient-mystic-meme: linear-gradient(to bottom, #121212, #2d3748);
-	--gradient-golden-gains: linear-gradient(to right, #ed8936, #D4AF37);
-	--gradient-ethereal-degens: linear-gradient(to right, #38b2ac, #805ad5);
+	--gradient-oracle-embers: linear-gradient(to right, #ed8936, #b33a3a);
+	--gradient-gutter-glow: linear-gradient(to bottom, #121212, #2d2d2d);
+	--gradient-tarnished-fortune: linear-gradient(to right, #ed8936, #D4AF37);
+	--gradient-neon-fever: linear-gradient(to right, #38b2ac, #6B46C1);
 	
 	/* Shadows */
-	--shadow-meme: 0 0 5px rgba(255, 0, 128, 0.2);
-	--shadow-neon: 0 0 8px rgba(0, 255, 0, 0.4);
+	--shadow-dark: 0 4px 20px rgba(0, 0, 0, 0.5);
+	--shadow-ember: 0 0 15px rgba(237, 137, 54, 0.3);
 	
 	/* Animations */
-	--transition-meme: 0.3s ease;
+	--transition-dark: 0.4s cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 @layer base {
 	body {
-		@apply bg-psycho-black text-psycho-parchment font-body;
+		@apply bg-sinister-black text-sinister-scroll font-body;
 	}
 
 	h1, h2, h3, h4, h5, h6 {
-		@apply font-heading tracking-wide;
-		transform: rotate(-0.5deg);
+		@apply font-heading tracking-wide uppercase;
 	}
 
 	h1 {
-		@apply text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-psycho-orange to-psycho-rektPink;
-		text-shadow: 1px 1px 2px rgba(255,0,128,0.2);
+		@apply text-4xl font-bold text-transparent bg-clip-text bg-oracle-embers;
+		text-shadow: 1px 1px 2px rgba(179, 58, 58, 0.3);
 	}
 
 	h2 {
-		@apply text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-psycho-orange to-psycho-kekGreen;
-		text-shadow: 1px 1px 2px rgba(0,255,0,0.2);
+		@apply text-2xl font-bold text-transparent bg-clip-text bg-tarnished-fortune;
+		text-shadow: 1px 1px 2px rgba(212, 175, 55, 0.3);
 	}
 
 	h3 {
-		@apply text-xl font-comic text-psycho-orange;
+		@apply text-xl text-sinister-orange;
 	}
 }
 
 @layer components {
-	.degen-btn-primary {
-		@apply relative overflow-hidden px-6 py-3 rounded-meme font-comic font-bold uppercase
+	.dark-degen-btn-primary {
+		@apply relative overflow-hidden px-6 py-3 rounded-brutal font-heading font-bold uppercase
 		transition-all duration-300 hover:scale-105
-		bg-gradient-to-r from-psycho-orange to-psycho-rektPink text-white shadow-meme hover:shadow-neon;
+		bg-oracle-embers text-white shadow-dark hover:shadow-ember;
 	}
 
-	.degen-btn-secondary {
-		@apply px-6 py-3 rounded-meme font-comic font-bold uppercase
+	.dark-degen-btn-secondary {
+		@apply px-6 py-3 rounded-brutal font-heading font-bold uppercase
 		transition-all duration-300 hover:scale-105
-		border-2 border-psycho-orange text-psycho-orange hover:bg-psycho-orange/10 hover:border-psycho-kekGreen;
+		border-2 border-sinister-orange text-sinister-orange hover:bg-sinister-orange/10;
 	}
 
-	.degen-card {
+	.dark-degen-card {
 		@apply relative transition-all duration-300 hover:scale-105
-		bg-gradient-to-br from-psycho-black to-gray-800 p-4 rounded-meme 
-		border-2 border-psycho-orange/30 shadow-meme hover:shadow-neon;
-		transform: rotate(-1deg);
+		bg-gradient-to-br from-sinister-black to-gray-900 p-4 rounded-brutal 
+		border-l-2 border-t-2 border-sinister-orange/40 shadow-dark hover:shadow-ember;
 	}
 
-	.degen-input {
-		@apply bg-gray-800/50 border-2 border-psycho-rektPink/20 rounded-md px-4 py-2
-		focus:border-psycho-kekGreen focus:outline-none focus:ring-2 focus:ring-psycho-kekGreen/20
+	.dark-degen-input {
+		@apply bg-gray-900/50 border-2 border-sinister-orange/20 rounded-brutal px-4 py-2
+		focus:border-sinister-teal focus:outline-none focus:ring-2 focus:ring-sinister-teal/20
 		transition-all duration-300;
 	}
 
-	.degen-divider {
-		@apply h-px w-full bg-gradient-to-r from-transparent via-psycho-rektPink/50 to-transparent my-6;
+	.dark-degen-divider {
+		@apply h-px w-full bg-gradient-to-r from-transparent via-sinister-orange/50 to-transparent my-6;
 	}
 
-	.degen-badge {
-		@apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-comic uppercase
-		bg-psycho-orange/20 text-psycho-orange;
+	.dark-degen-badge {
+		@apply inline-flex items-center px-2.5 py-0.5 rounded-brutal text-xs font-heading uppercase
+		bg-sinister-orange/20 text-sinister-orange;
 	}
 	
-	.wiggly-text {
-		animation: wiggle 5s ease-in-out infinite;
-		display: inline-block;
+	.glitch-text {
+		@apply text-glitch;
 	}
 	
-	.speech-bubble {
-		@apply relative bg-white text-black p-4 rounded-lg font-comic;
+	.static-overlay {
+		@apply filter-static;
 	}
 	
-	.speech-bubble:after {
-		content: '';
-		position: absolute;
-		bottom: -15px;
-		left: 50%;
-		width: 0;
-		height: 0;
-		border: 15px solid transparent;
-		border-top-color: white;
-		border-bottom: 0;
-		margin-left: -15px;
+	.scorched-panel {
+		@apply relative bg-gray-900/80 p-4 rounded-brutal scorched-border;
 	}
 }
 
 @layer utilities {
-	.text-glow-pink {
-		text-shadow: 0 0 5px rgba(255, 0, 128, 0.3);
+	.text-ember {
+		text-shadow: 0 0 5px rgba(237, 137, 54, 0.3);
 	}
 	
-	.text-glow-green {
-		text-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+	.text-neon {
+		text-shadow: 0 0 5px rgba(56, 178, 172, 0.3);
+	}
+	
+	.text-blood {
+		text-shadow: 0 0 5px rgba(197, 48, 48, 0.3);
 	}
 
-	.meme-border {
-		@apply border-2 border-dashed border-psycho-rektPink;
+	.burned-border {
+		@apply border-l-2 border-t-2 border-sinister-orange/40;
 	}
 	
-	.tilt-left {
-		transform: rotate(-1deg);
-	}
-	
-	.tilt-right {
-		transform: rotate(1deg);
+	.jagged-edge {
+		clip-path: polygon(
+			0% 0%, 
+			100% 0%, 
+			98% 20%, 
+			100% 40%, 
+			97% 60%, 
+			100% 80%, 
+			98% 100%, 
+			0% 100%, 
+			2% 80%, 
+			0% 60%, 
+			3% 40%, 
+			0% 20%
+		);
 	}
 	
 	/* Mode toggle classes */
@@ -151,4 +152,23 @@
 	:not(.degen-mode) .degen-only {
 		display: none;
 	}
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: #121212;
+}
+
+::-webkit-scrollbar-thumb {
+	background: linear-gradient(to bottom, #ed8936, #b33a3a);
+	border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: linear-gradient(to bottom, #ed8936, #c53030);
 }

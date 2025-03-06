@@ -1,21 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useContext } from "react";
+import { ThemeContext } from "@/app/context/ThemeContext";
 
 export default function Footer() {
+  const { isDegenMode } = useContext(ThemeContext);
+  
   return (
-    <footer className="relative mt-16 py-10 bg-gradient-to-b from-gray-900 to-oracle-night text-oracle-parchment">
-      {/* Top decorative border - Greek key pattern */}
-      <div className="absolute top-0 left-0 w-full h-4 overflow-hidden">
-        <div className="flex">
-          {[...Array(30)].map((_, i) => (
-            <div 
-              key={i} 
-              className="h-4 w-4 border-t-2 border-l-2 border-oracle-orange/30" 
-              style={{ marginRight: "8px" }}
-            />
-          ))}
-        </div>
+    <footer className="relative mt-16 py-10 bg-gutter-glow text-sinister-scroll">
+      {/* Top decorative border - Scorched pattern */}
+      <div className="absolute top-0 left-0 w-full h-1 overflow-hidden">
+        <div className="h-1 w-full bg-oracle-embers opacity-30"></div>
       </div>
       
       {/* Main content */}
@@ -23,32 +19,46 @@ export default function Footer() {
         {/* Logo and tagline */}
         <div className="flex flex-col items-center mb-8">
           <div className="mb-3">
-            <span className="font-display text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-oracle-orange to-oracle-gold">
-              Delphi
+            <span className={`font-heading text-xl font-bold text-transparent bg-clip-text ${
+              isDegenMode ? 'bg-oracle-embers' : 'bg-tarnished-fortune'
+            } uppercase tracking-wider`}>
+              {isDegenMode ? 'Dark Oracle' : 'Delphi'}
             </span>
           </div>
-          <p className="text-sm text-oracle-parchment/70 font-accent italic text-center max-w-md">
-            Where digital prophecies are discovered and traded. The modern oracle for digital collectibles.
+          <p className={`text-sm text-sinister-scroll/70 font-accent italic text-center max-w-md ${
+            isDegenMode ? 'text-blood' : ''
+          }`}>
+            {isDegenMode 
+              ? "Where digital prophecies are forged in darkness. The twisted oracle for the damned and degenerate."
+              : "Where digital prophecies are discovered and traded. The modern oracle for digital collectibles."}
           </p>
         </div>
         
         {/* Links section */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 text-center">
           <div className="space-y-3">
-            <h3 className="font-display text-sm text-oracle-orange mb-3">Marketplace</h3>
+            <h3 className={`font-heading text-sm ${
+              isDegenMode ? 'text-sinister-red' : 'text-sinister-orange'
+            } mb-3 uppercase tracking-wider`}>Marketplace</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/explore" className="text-oracle-parchment/70 hover:text-oracle-orange transition-colors">
+                <Link href="/explore" className={`text-sinister-scroll/70 ${
+                  isDegenMode ? 'hover:text-sinister-red' : 'hover:text-sinister-orange'
+                } transition-colors font-heading uppercase text-xs tracking-wider`}>
                   Explore
                 </Link>
               </li>
               <li>
-                <Link href="/collections" className="text-oracle-parchment/70 hover:text-oracle-orange transition-colors">
+                <Link href="/collections" className={`text-sinister-scroll/70 ${
+                  isDegenMode ? 'hover:text-sinister-red' : 'hover:text-sinister-orange'
+                } transition-colors font-heading uppercase text-xs tracking-wider`}>
                   Collections
                 </Link>
               </li>
               <li>
-                <Link href="/create" className="text-oracle-parchment/70 hover:text-oracle-orange transition-colors">
+                <Link href="/create" className={`text-sinister-scroll/70 ${
+                  isDegenMode ? 'hover:text-sinister-red' : 'hover:text-sinister-orange'
+                } transition-colors font-heading uppercase text-xs tracking-wider`}>
                   Create
                 </Link>
               </li>
@@ -56,20 +66,28 @@ export default function Footer() {
           </div>
           
           <div className="space-y-3">
-            <h3 className="font-display text-sm text-oracle-orange mb-3">Resources</h3>
+            <h3 className={`font-heading text-sm ${
+              isDegenMode ? 'text-sinister-red' : 'text-sinister-orange'
+            } mb-3 uppercase tracking-wider`}>Resources</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/help" className="text-oracle-parchment/70 hover:text-oracle-orange transition-colors">
+                <Link href="/help" className={`text-sinister-scroll/70 ${
+                  isDegenMode ? 'hover:text-sinister-red' : 'hover:text-sinister-orange'
+                } transition-colors font-heading uppercase text-xs tracking-wider`}>
                   Help Center
                 </Link>
               </li>
               <li>
-                <Link href="/docs" className="text-oracle-parchment/70 hover:text-oracle-orange transition-colors">
+                <Link href="/docs" className={`text-sinister-scroll/70 ${
+                  isDegenMode ? 'hover:text-sinister-red' : 'hover:text-sinister-orange'
+                } transition-colors font-heading uppercase text-xs tracking-wider`}>
                   Documentation
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="text-oracle-parchment/70 hover:text-oracle-orange transition-colors">
+                <Link href="/blog" className={`text-sinister-scroll/70 ${
+                  isDegenMode ? 'hover:text-sinister-red' : 'hover:text-sinister-orange'
+                } transition-colors font-heading uppercase text-xs tracking-wider`}>
                   Blog
                 </Link>
               </li>
@@ -77,20 +95,28 @@ export default function Footer() {
           </div>
           
           <div className="space-y-3">
-            <h3 className="font-display text-sm text-oracle-orange mb-3">Community</h3>
+            <h3 className={`font-heading text-sm ${
+              isDegenMode ? 'text-sinister-red' : 'text-sinister-orange'
+            } mb-3 uppercase tracking-wider`}>Community</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-oracle-parchment/70 hover:text-oracle-orange transition-colors">
+                <Link href="https://twitter.com" target="_blank" rel="noopener noreferrer" className={`text-sinister-scroll/70 ${
+                  isDegenMode ? 'hover:text-sinister-red' : 'hover:text-sinister-orange'
+                } transition-colors font-heading uppercase text-xs tracking-wider`}>
                   Twitter
                 </Link>
               </li>
               <li>
-                <Link href="https://discord.com" target="_blank" rel="noopener noreferrer" className="text-oracle-parchment/70 hover:text-oracle-orange transition-colors">
+                <Link href="https://discord.com" target="_blank" rel="noopener noreferrer" className={`text-sinister-scroll/70 ${
+                  isDegenMode ? 'hover:text-sinister-red' : 'hover:text-sinister-orange'
+                } transition-colors font-heading uppercase text-xs tracking-wider`}>
                   Discord
                 </Link>
               </li>
               <li>
-                <Link href="https://telegram.org" target="_blank" rel="noopener noreferrer" className="text-oracle-parchment/70 hover:text-oracle-orange transition-colors">
+                <Link href="https://telegram.org" target="_blank" rel="noopener noreferrer" className={`text-sinister-scroll/70 ${
+                  isDegenMode ? 'hover:text-sinister-red' : 'hover:text-sinister-orange'
+                } transition-colors font-heading uppercase text-xs tracking-wider`}>
                   Telegram
                 </Link>
               </li>
@@ -98,15 +124,21 @@ export default function Footer() {
           </div>
           
           <div className="space-y-3">
-            <h3 className="font-display text-sm text-oracle-orange mb-3">Legal</h3>
+            <h3 className={`font-heading text-sm ${
+              isDegenMode ? 'text-sinister-red' : 'text-sinister-orange'
+            } mb-3 uppercase tracking-wider`}>Legal</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/terms" className="text-oracle-parchment/70 hover:text-oracle-orange transition-colors">
+                <Link href="/terms" className={`text-sinister-scroll/70 ${
+                  isDegenMode ? 'hover:text-sinister-red' : 'hover:text-sinister-orange'
+                } transition-colors font-heading uppercase text-xs tracking-wider`}>
                   Terms
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="text-oracle-parchment/70 hover:text-oracle-orange transition-colors">
+                <Link href="/privacy" className={`text-sinister-scroll/70 ${
+                  isDegenMode ? 'hover:text-sinister-red' : 'hover:text-sinister-orange'
+                } transition-colors font-heading uppercase text-xs tracking-wider`}>
                   Privacy
                 </Link>
               </li>
@@ -114,16 +146,18 @@ export default function Footer() {
           </div>
         </div>
         
-        {/* Divider with Greek key pattern */}
-        <div className="oracle-divider mb-6"></div>
+        {/* Divider with scorched pattern */}
+        <div className="dark-degen-divider mb-6"></div>
         
         {/* Credits */}
-        <div className="text-center text-sm text-oracle-parchment/50">
+        <div className="text-center text-sm text-sinister-scroll/50">
           <p>
-            Powered by <Link href="/" className="text-oracle-orange hover:text-oracle-gold transition-colors font-medium">Yeti-Apes & Vesta</Link>
+            Powered by <Link href="/" className={`${
+              isDegenMode ? 'text-sinister-red hover:text-sinister-gold' : 'text-sinister-orange hover:text-sinister-teal'
+            } transition-colors font-heading uppercase text-xs tracking-wider`}>Yeti-Apes & Vesta</Link>
           </p>
           <p className="mt-2 font-accent italic text-xs">
-            © {new Date().getFullYear()} Delphi. All prophecies reserved.
+            © {new Date().getFullYear()} {isDegenMode ? 'Dark Oracle' : 'Delphi'}. {isDegenMode ? 'No rights reserved.' : 'All prophecies reserved.'}
           </p>
         </div>
       </div>

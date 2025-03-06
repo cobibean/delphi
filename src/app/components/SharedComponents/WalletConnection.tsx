@@ -21,7 +21,7 @@ export default function WalletConnection() {
   
   const { isDegenMode } = useContext(ThemeContext);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [bounceEffect, setBounceEffect] = useState(false);
+  const [glitchEffect, setGlitchEffect] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   
   // Available wallet options
@@ -58,17 +58,19 @@ export default function WalletConnection() {
     };
   }, [isMounted]);
   
-  // Random bounce effect for the button - but not when dropdown is open
+  // Random glitch effect for the button - but not when dropdown is open
   useEffect(() => {
     if (!isMounted || isDropdownOpen) {
-      setBounceEffect(false);
+      setGlitchEffect(false);
       return;
     }
     
     const interval = setInterval(() => {
-      setBounceEffect(true);
-      setTimeout(() => setBounceEffect(false), 1000);
-    }, 5000 + Math.random() * 5000); // Random interval between 5-10 seconds
+      if (Math.random() > 0.7) {
+        setGlitchEffect(true);
+        setTimeout(() => setGlitchEffect(false), 200);
+      }
+    }, 5000); // Every 5 seconds with 30% chance
     
     return () => clearInterval(interval);
   }, [isDropdownOpen, isMounted]);
@@ -84,26 +86,10 @@ export default function WalletConnection() {
     }
   };
 
-  // Generate random values only on client
-  const randomEmoji = isMounted ? ["💰", "🚀", "💎", "🔥", "🌙"][Math.floor(Math.random() * 5)] : "💰";
-  const buttonRotation = isMounted && isDegenMode ? `rotate(${Math.random() > 0.5 ? 1 : -1}deg)` : "none";
-
   // Simple placeholder during SSR
   if (!isMounted) {
     return <div className="h-10 w-40"></div>;
   }
-
-  // Periodic bounce effect for wallet button when connected
-  useEffect(() => {
-    if (isConnected && isDegenMode) {
-      const interval = setInterval(() => {
-        setBounceEffect(true);
-        setTimeout(() => setBounceEffect(false), 1000);
-      }, 30000); // Every 30 seconds
-      
-      return () => clearInterval(interval);
-    }
-  }, [isConnected, isDegenMode]);
 
   return (
     <div className="wallet-dropdown relative">
@@ -114,29 +100,29 @@ export default function WalletConnection() {
             chain={chain}
             wallets={wallets}
             connectButton={{
-              label: isDegenMode ? "CONNECT WALLET 🚀" : "Connect Wallet",
+              label: isDegenMode ? "SIGN IN BLOOD" : "CONNECT WALLET",
               style: { 
                 background: isDegenMode 
-                  ? "linear-gradient(to right, #ff0080, #00ff00)"
+                  ? "linear-gradient(to right, #ed8936, #b33a3a)"
                   : "linear-gradient(to right, #ed8936, #38b2ac)",
                 color: "#ffffff",
-                borderRadius: isDegenMode ? "0.75rem 1.25rem 0.5rem 0.25rem" : "0.5rem 1.5rem 0.5rem 0.5rem",
+                borderRadius: "0.25rem",
                 padding: "0.5rem 1.5rem",
-                border: isDegenMode ? "2px dashed rgba(237, 137, 54, 0.7)" : "1px solid rgba(237, 137, 54, 0.7)",
+                border: isDegenMode ? "1px solid rgba(197, 48, 48, 0.7)" : "1px solid rgba(237, 137, 54, 0.7)",
                 fontWeight: "bold",
-                fontFamily: isDegenMode ? "'Comic Sans MS', 'Comic Neue', cursive" : "'Space Grotesk', sans-serif",
-                transition: "all 0.3s ease",
+                fontFamily: "'Impact', 'Anton', 'Bebas Neue', sans-serif",
+                letterSpacing: "0.05em",
+                textTransform: "uppercase",
+                transition: "all 0.4s cubic-bezier(0.77, 0, 0.175, 1)",
                 position: "relative",
                 overflow: "hidden",
               },
             }}
           />
           
-          {/* Emoji indicator only in degen mode */}
+          {/* Static overlay in degen mode */}
           {isDegenMode && (
-            <div className="absolute -top-2 -right-2 text-lg animate-bounce">
-              {randomEmoji}
-            </div>
+            <div className="absolute inset-0 filter-static pointer-events-none"></div>
           )}
         </div>
       ) : (
@@ -146,22 +132,14 @@ export default function WalletConnection() {
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className={`relative overflow-hidden flex items-center space-x-2 ${
               isDegenMode
-                ? 'bg-gradient-to-r from-psycho-black to-psycho-rektPink/20 text-psycho-parchment px-3 py-2 rounded-meme border-2 border-dashed border-psycho-orange/70'
-                : 'bg-gradient-to-r from-psycho-black to-psycho-orange/20 text-psycho-parchment px-3 py-2 rounded-oracle border border-psycho-orange/70'
-            } transition-all duration-300 ${bounceEffect && !isDropdownOpen ? 'animate-bounce-slow' : 'hover:scale-105'}`}
+                ? 'bg-gradient-to-r from-sinister-black to-gray-900 text-sinister-scroll px-3 py-2 rounded-brutal border-l-2 border-t-2 border-sinister-red/40'
+                : 'bg-gradient-to-r from-sinister-black to-gray-900 text-sinister-scroll px-3 py-2 rounded-brutal border-l-2 border-t-2 border-sinister-orange/40'
+            } transition-all duration-300 shadow-dark ${glitchEffect ? 'animate-glitch' : 'hover:shadow-ember'}`}
             disabled={isConnecting}
-            style={{ transform: buttonRotation }}
           >
             {/* Wallet address display */}
             <div className="relative flex items-center justify-center">
-              <span className={`relative z-10 ${isDegenMode ? 'font-comic' : 'font-body'}`}>{displayAddress}</span>
-              
-              {/* Animated emoji when dropdown is closed - only in degen mode */}
-              {isDegenMode && (
-                <div className={`absolute -top-2 -right-2 text-lg ${!isDropdownOpen ? 'animate-pulse-neon' : ''}`}>
-                  {!isDropdownOpen ? randomEmoji : '💰'}
-                </div>
-              )}
+              <span className={`relative z-10 font-heading uppercase tracking-wider text-sm ${isDegenMode ? 'text-sinister-red' : 'text-sinister-orange'}`}>{displayAddress}</span>
             </div>
             
             {/* Dropdown icon */}
@@ -172,10 +150,10 @@ export default function WalletConnection() {
               viewBox="0 0 24 24" 
               fill="none" 
               stroke="currentColor" 
-              strokeWidth="3" 
+              strokeWidth="2" 
               strokeLinecap="round" 
               strokeLinejoin="round"
-              className={`transition-transform duration-300 ${isDegenMode ? 'text-psycho-kekGreen' : 'text-psycho-orange'} ${isDropdownOpen ? 'rotate-180' : !isDropdownOpen && isDegenMode ? 'animate-bounce' : ''}`}
+              className={`transition-transform duration-300 ${isDegenMode ? 'text-sinister-red' : 'text-sinister-orange'} ${isDropdownOpen ? 'rotate-180' : ''}`}
             >
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
@@ -185,29 +163,29 @@ export default function WalletConnection() {
           {isDropdownOpen && (
             <div className={`absolute right-0 mt-2 top-full z-10 w-60 ${
               isDegenMode
-                ? 'bg-gradient-to-b from-gray-800 to-psycho-black rounded-meme shadow-meme py-1 border-2 border-dashed border-psycho-rektPink'
-                : 'bg-gradient-to-b from-gray-800 to-psycho-black rounded-oracle shadow-oracle py-1 border border-psycho-orange'
+                ? 'bg-gutter-glow rounded-brutal shadow-dark py-1 border-l-2 border-t-2 border-sinister-red/40 scorched-border'
+                : 'bg-gutter-glow rounded-brutal shadow-dark py-1 border-l-2 border-t-2 border-sinister-orange/40'
             } overflow-hidden`}>
               {/* Header with pattern border */}
               <div className={`px-4 py-3 ${
                 isDegenMode 
-                  ? 'border-b-2 border-dashed border-psycho-kekGreen/50' 
-                  : 'border-b border-psycho-orange/50'
+                  ? 'border-b border-sinister-red/30' 
+                  : 'border-b border-sinister-orange/30'
               } relative`}>
-                <p className="text-sm text-psycho-parchment">Connected as</p>
-                <p className={`text-lg font-bold ${isDegenMode ? 'text-psycho-rektPink' : 'text-psycho-orange'}`}>{displayAddress}</p>
+                <p className="text-sm text-sinister-scroll/70 uppercase tracking-wider font-heading">Connected as</p>
+                <p className={`text-sm font-bold ${isDegenMode ? 'text-sinister-red' : 'text-sinister-orange'} font-heading uppercase`}>{displayAddress}</p>
                 
                 {/* Copy button */}
                 <button 
                   onClick={copyAddressToClipboard}
                   className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 ${
                     isDegenMode
-                      ? 'text-psycho-kekGreen hover:text-psycho-rektPink'
-                      : 'text-psycho-orange hover:text-psycho-turquoise'
+                      ? 'text-sinister-red hover:text-sinister-gold'
+                      : 'text-sinister-orange hover:text-sinister-teal'
                   } transition-colors`}
                 >
                   {copied ? (
-                    <span className="text-xs">Copied! ✓</span>
+                    <span className="text-xs font-heading">COPIED</span>
                   ) : (
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -221,30 +199,30 @@ export default function WalletConnection() {
               <div className="py-1">
                 <Link 
                   href="/profile" 
-                  className={`block px-4 py-2 text-sm ${
+                  className={`block px-4 py-2 text-sm font-heading uppercase tracking-wider ${
                     isDegenMode
-                      ? 'text-psycho-parchment hover:bg-psycho-rektPink/20 hover:text-psycho-kekGreen'
-                      : 'text-psycho-parchment hover:bg-psycho-orange/20 hover:text-psycho-turquoise'
+                      ? 'text-sinister-scroll hover:bg-sinister-red/10 hover:text-sinister-red'
+                      : 'text-sinister-scroll hover:bg-sinister-orange/10 hover:text-sinister-orange'
                   } transition-colors`}
                 >
                   My Profile
                 </Link>
                 <Link 
                   href="/my-nfts" 
-                  className={`block px-4 py-2 text-sm ${
+                  className={`block px-4 py-2 text-sm font-heading uppercase tracking-wider ${
                     isDegenMode
-                      ? 'text-psycho-parchment hover:bg-psycho-rektPink/20 hover:text-psycho-kekGreen'
-                      : 'text-psycho-parchment hover:bg-psycho-orange/20 hover:text-psycho-turquoise'
+                      ? 'text-sinister-scroll hover:bg-sinister-red/10 hover:text-sinister-red'
+                      : 'text-sinister-scroll hover:bg-sinister-orange/10 hover:text-sinister-orange'
                   } transition-colors`}
                 >
                   My NFTs
                 </Link>
                 <button 
                   onClick={handleDisconnect}
-                  className={`w-full text-left block px-4 py-2 text-sm ${
+                  className={`w-full text-left block px-4 py-2 text-sm font-heading uppercase tracking-wider ${
                     isDegenMode
-                      ? 'text-psycho-rektPink hover:bg-psycho-rektPink/20'
-                      : 'text-psycho-orange hover:bg-psycho-orange/20'
+                      ? 'text-sinister-red hover:bg-sinister-red/10'
+                      : 'text-sinister-orange hover:bg-sinister-orange/10'
                   } transition-colors`}
                 >
                   Disconnect
