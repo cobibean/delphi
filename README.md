@@ -1,188 +1,227 @@
 # Delphi NFT Marketplace
 
-A modern, user-friendly NFT marketplace built on the Metis blockchain.
+Welcome to Delphi - "The Center of the World" for NFT trading on Metis and beyond. This decentralized marketplace connects artists, collectors, and enthusiasts in a visually stunning and interactive platform.
 
-## Overview
+## 🚀 Latest Updates
 
-Delphi is a decentralized NFT marketplace that allows users to buy, sell, and discover unique digital assets. Built with Next.js and integrated with the Metis blockchain, Delphi provides a seamless experience for NFT enthusiasts and creators.
+- **Real Marketplace Integration**: Connected to real Metis blockchain marketplace contract
+- **NFT Buying Functionality**: Full support for buying NFTs with both METIS and WMETIS
+- **Metis Explorer Integration**: Links to view contracts, tokens, and transactions on Metis Explorer
+- **Enhanced User Experience**: Improved error handling, loading states, and transaction notifications
+- **Cosmic Design System**: Unique interdimensional visual style throughout the application
 
-## Features
+## 🔮 Tech Stack Overview
 
-- **Browse NFTs**: Discover NFTs from various collections
-- **Buy NFTs**: Purchase NFTs using METIS or WMETIS tokens
-- **List NFTs**: Create listings for your NFTs
-- **User Profiles**: View owned and created NFTs
-- **Collections**: Browse NFTs by collections
-- **Search & Filter**: Find NFTs by name, collection, or attributes
-- **Wallet Integration**: Connect/disconnect various wallet types including MetaMask, Trust Wallet, and in-app wallets
-- **Transaction Notifications**: Real-time updates on blockchain transactions
+Delphi is built using a modern tech stack with carefully selected technologies to ensure performance, security, and an exceptional user experience:
 
-## Tech Stack
+### Frontend Framework
+- **Next.js 14.1.0**: Server-side rendering and optimized React framework
+- **React 18.3+**: Component-based UI development
+- **TypeScript**: Type-safe code with improved developer experience
 
-- **Frontend**: Next.js, React, TypeScript, TailwindCSS
-- **Blockchain Integration**: Thirdweb SDK (v5), Metis Blockchain
-- **Styling**: TailwindCSS, CSS Modules
-- **State Management**: React Context API
-- **Testing**: Jest, React Testing Library
+### Styling and UI
+- **TailwindCSS**: Utility-first CSS framework for responsive design
+- **Framer Motion**: Advanced animations and interactive elements
+- **Custom Design System**: Unique "Cosmic Overload" aesthetic with interdimensional effects
 
-## MVP Roadmap
-
-### Phase 1: Core Functionality Completion 
-
-1. **Wallet Connection & Authentication**
-   - [x] Basic wallet connection
-   - [x] Improve wallet connection flow with better UI
-   - [x] Add wallet connection status indicators
-   - [x] Implement wallet disconnect functionality
-   - [ ] Create user profile page linked to wallet address
-   - [ ] Implement session persistence
-
-2. **NFT Listing Enhancement**
-   - [x] Basic NFT card display
-   - [x] Complete NFT detail page with full metadata
-   - [x] Add NFT purchase functionality (METIS/WMETIS)
-   - [ ] Add related NFTs section on detail page
-   - [ ] Implement "Create Listing" UI for users to list their NFTs
-   - [ ] Add support for NFT image/metadata upload
-
-3. **Transaction Management**
-   - [x] Basic buy functionality
-   - [x] Implement loading states for transactions
-   - [x] Create notification system for transaction updates
-   - [ ] Add transaction history for users
-   - [ ] Add transaction confirmation modals
-
-### Phase 2: User Experience Improvements 
-
-1. **Search & Filter Functionality**
-   - [ ] Implement search by NFT name, collection, or creator
-   - [ ] Add filtering options (price range, recently listed, etc.)
-   - [ ] Create category navigation
-   - [ ] Add sorting options for search results
-
-2. **UI/UX Enhancement**
-   - [x] Basic responsive design
-   - [ ] Improve overall design with more engaging visuals
-   - [ ] Add animations and transitions for smoother experience
-   - [ ] Ensure mobile responsiveness across all pages
-   - [ ] Implement dark/light mode toggle
-
-3. **Collections & Categories**
-   - [ ] Create collection pages to group related NFTs
-   - [ ] Implement featured collections on homepage
-   - [ ] Add trending collections section
-   - [ ] Create collection management for creators
-
-### Phase 3: Advanced Features & Optimization 
-
-1. **User Profiles & Social Features**
-   - [ ] Enhanced user profiles with owned and created NFTs
-   - [ ] Add following/follower functionality
-   - [ ] Implement activity feed for users
-   - [ ] Add profile customization options
-
-2. **Bidding & Auctions**
-   - [ ] Add support for auction-style listings
-   - [ ] Implement bidding functionality
-   - [ ] Create time-based auction endings
-   - [ ] Add notifications for outbid events
-
-3. **Performance Optimization**
-   - [ ] Implement caching strategies for NFT metadata
-   - [ ] Optimize image loading and rendering
-   - [ ] Add pagination for large collections
-   - [ ] Implement infinite scroll for better UX
-
-### Phase 4: Testing & Deployment (1-2 weeks)
-
-1. **Testing**
-   - [ ] Implement unit tests for core functionality
-   - [ ] Add integration tests for blockchain interactions
-   - [ ] Perform UI/UX testing across devices
-   - [ ] Conduct user testing sessions
-
-2. **Security Audit**
-   - [ ] Review smart contract interactions
-   - [ ] Ensure proper error handling
-   - [ ] Validate input sanitization
-   - [ ] Implement rate limiting for API calls
-
-3. **Deployment**
-   - [ ] Deploy to production environment
-   - [ ] Set up monitoring and analytics
-   - [ ] Create documentation for users
-   - [ ] Implement CI/CD pipeline
-
-## Recently Completed Features
-
-### Wallet Connection Improvements
-- Added proper wallet disconnect functionality
-- Implemented wallet connection status indicators
-- Added support for multiple wallet types (MetaMask, Trust Wallet, In-app wallets)
-
-### NFT Purchase Implementation
-- Added support for buying NFTs with METIS (native token)
-- Added support for buying NFTs with WMETIS (wrapped METIS)
-- Implemented automatic token wrapping for compatible listings
-- Added transaction notifications and status updates
-- Improved error handling for transaction failures
+### Web3 Integration
+- **ThirdWeb SDK (v4)**: SDK for seamless Web3 integration
+  - `@thirdweb-dev/react`: React components and hooks for Web3 functionality
+  - `@thirdweb-dev/sdk`: Core SDK for blockchain interactions
+- **Ethers.js 5.7.2**: Ethereum library for blockchain interaction
+- **Metis Blockchain**: Layer 2 scaling solution for Ethereum with lower fees and faster transactions
+- **Smart Contract ABIs**: Direct interaction with marketplace contracts using their ABIs
 
 ### Transaction Management
-- Created transaction notification system
-- Implemented real-time transaction status updates
-- Added better error messaging for failed transactions
+- **Custom Transaction System**: Real-time transaction notifications and error handling
+- **Wallet Integration**: Secure connection to MetaMask and other Web3 wallets
+- **Multi-Currency Support**: METIS (native) and WMETIS (wrapped) payment options
 
-## Immediate Next Steps
+### Package Management
+- **npm**: Node package manager for dependency management
 
-1. Add NFT listing creation functionality
-2. Enhance user profiles
-3. Implement search and filter functionality
-4. Add transaction history
-
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
-
-- Node.js (v18 or higher)
-- npm or yarn
-- MetaMask wallet or other Web3 wallet
+- Node.js 16.x or higher
+- npm 8.x or higher
+- MetaMask or another Web3 wallet with Metis network configured
 
 ### Installation
 
-1. Clone the repository
-   ```bash
-   git clone https://github.com/yourusername/delphi.git
-   cd delphi
-   ```
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/delphi.git
+cd delphi
+```
 
-2. Install dependencies
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
+2. Install dependencies:
+```bash
+npm install
+```
 
-3. Set up environment variables
-   Create a `.env.local` file in the root directory with the following variables:
-   ```
-   NEXT_PUBLIC_THIRDWEB_CLIENT_ID=your_thirdweb_client_id
-   MARKETPLACE_ADDRESS=your_marketplace_contract_address
-   WMETIS_CONTRACT_ADDRESS=your_wmetis_contract_address
-   ```
+3. Create a `.env` file based on `.env.example` and add your ThirdWeb Client ID:
+```
+NEXT_PUBLIC_THIRDWEB_CLIENT_ID=your_client_id_here
+NEXT_PUBLIC_RPC_URL=https://andromeda.metis.io/?owner=1088
+```
 
-4. Run the development server
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
+4. Run the development server:
+```bash
+npm run dev
+```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
+5. Open [http://localhost:3000](http://localhost:3000) in your browser to see the app.
 
-## Contributing
+## 📁 Project Structure
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+```
+delphi/
+├── public/                  # Static files (images, etc.)
+├── src/                     # Source code
+│   ├── app/                 # Next.js app directory
+│   │   ├── components/      # React components
+│   │   │   ├── NFTCard/     # NFT card components
+│   │   │   └── SharedComponents/ # Header, Footer, etc.
+│   │   ├── constants/       # Constants and ABIs
+│   │   │   ├── MarketplaceABI.ts  # Marketplace contract ABI
+│   │   │   ├── ERC721ABI.ts       # ERC721 NFT standard ABI
+│   │   │   ├── ERC1155ABI.ts      # ERC1155 NFT standard ABI
+│   │   │   └── contracts.ts       # Contract addresses
+│   │   ├── interfaces/      # TypeScript interfaces
+│   │   ├── providers/       # Context providers
+│   │   ├── services/        # API services
+│   │   ├── utils/           # Utility functions
+│   │   ├── ui/              # UI components
+│   │   ├── globals.css      # Global styles
+│   │   └── layout.tsx       # Root layout
+│   └── ...
+├── DELPHI_DESIGN_SYSTEM.md  # Design system documentation
+├── .env                     # Environment variables
+├── package.json             # Dependencies and scripts
+└── README.md                # Project documentation
+```
 
-## License
+## 🎨 Design System 
+
+Delphi features a unique "Cosmic Overload" design system that combines:
+
+- **Dimensional Color System**: Dynamic colors with quantum variations
+- **Reality-Bending Typography**: Text with distortion and glitch effects
+- **Non-Euclidean Grid System**: Fluid and adaptive layouts
+- **Interactive Elements**: Quantum-state systems and reality distortion effects
+
+For a detailed overview of the design system, refer to the [DELPHI_DESIGN_SYSTEM.md](./DELPHI_DESIGN_SYSTEM.md) file.
+
+## 🔗 Web3 Integration
+
+### Metis Blockchain
+
+Delphi is built on the Metis Andromeda network (chain ID 1088), a Layer 2 scaling solution for Ethereum that offers:
+
+- **Lower Gas Fees**: More cost-effective than Ethereum mainnet
+- **Faster Transactions**: Higher throughput and quicker confirmations
+- **Ethereum Compatibility**: Compatible with EVM tools and standards
+- **Decentralization**: Maintains security through Optimistic Rollup technology
+
+### Smart Contract Integration
+
+The marketplace directly integrates with the following contracts:
+
+- **Marketplace Contract**: `0x7e9EE861e3721F9F3664C18A539e63aCb784a208`
+- **WMETIS Contract**: `0x75cb093E4D61d2A2e65D8e0BBb01DE8d89b53481`
+- **NFT Contracts**: Various ERC721 and ERC1155 contracts
+
+These contracts are accessed using their ABIs stored in the `src/app/constants/` directory.
+
+### ThirdWeb SDK
+
+The project uses ThirdWeb SDK v4 for wallet connectivity:
+
+```typescript
+// Example wallet connection
+import { useAddress, useMetamask, useSigner } from "@thirdweb-dev/react";
+
+const WalletButton = () => {
+  const address = useAddress();
+  const connectWithMetamask = useMetamask();
+  const signer = useSigner();
+  
+  if (!address) {
+    return <button onClick={connectWithMetamask}>Sign In</button>;
+  }
+  
+  return <div>Connected: {address}</div>;
+};
+```
+
+### Direct Contract Interaction
+
+For marketplace interactions, we use direct ethers.js contract calls:
+
+```typescript
+// Example: Buy an NFT with METIS
+const buyWithMetis = async (listingId, signer) => {
+  // Get the marketplace contract with signer
+  const marketplaceContract = getMarketplaceContract(signer);
+  
+  // Execute the purchase transaction
+  const tx = await marketplaceContract.buyFromListing(
+    listingId,
+    buyerAddress,
+    1, // quantity
+    currencyAddress,
+    priceInWei,
+    { value: priceInWei }
+  );
+  
+  // Wait for transaction confirmation
+  const receipt = await tx.wait();
+  return receipt;
+};
+```
+
+## 🧠 Development Guidelines
+
+1. **Component Structure**: Follow atomic design principles
+2. **TypeScript**: Use proper typing for all components and functions
+3. **Styling**: Use Tailwind classes and follow design system
+4. **Web3**: Use ThirdWeb hooks for wallet connection, direct contract calls for transactions
+5. **Testing**: Write tests for critical components and functions
+6. **Animation**: Use Framer Motion for complex animations
+
+## 🔧 Key Dependencies
+
+- `next`: 14.1.0
+- `react`: 18.3+
+- `ethers`: 5.7.2 (exact version for ThirdWeb compatibility)
+- `@thirdweb-dev/react`: 4.9.4
+- `@thirdweb-dev/sdk`: 4.0.99
+- `framer-motion`: 12.4.10
+- `tailwindcss`: 3.3.0
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+1. **Transaction Failures**
+   - Ensure your wallet has sufficient METIS for the purchase and gas fees
+   - Verify the Metis network is correctly configured in your wallet
+   - Check console logs for detailed error messages
+
+2. **NFT Display Issues**
+   - If NFT images aren't loading, the NFT's metadata might use unsupported IPFS gateways
+   - Check the `/debug` route for detailed information about marketplace listings
+
+3. **Wallet Connection Problems**
+   - Make sure your wallet is configured for Metis Andromeda (Chain ID: 1088)
+   - RPC URL: https://andromeda.metis.io/?owner=1088
+   - Currency Symbol: METIS
+
+## 📞 Contact
+
+For questions or support, please reach out to the development team at [team@delphimarketplace.io](mailto:team@delphimarketplace.io).
+
+## 📝 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
