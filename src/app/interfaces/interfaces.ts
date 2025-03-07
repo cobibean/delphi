@@ -29,12 +29,20 @@ export interface IDirectListing {
   pricePerToken: string;   // typically we format using ethers.formatUnits(...)
   startTimestamp: number;  // e.g., Number(raw.startTimestamp)
   endTimestamp: number;    // e.g., Number(raw.endTimestamp)
-  listingCreator: string;
+  listingCreator: string;  // This is the seller's address
   assetContract: string;
   currency: string;
   tokenType: number; // or you can define a TS enum to map these
   status: number;    // likewise
   reserved: boolean;
+}
+
+/**
+ * NFT attribute for trait-based metadata
+ */
+export interface INFTAttribute {
+  trait_type: string;
+  value: string | number;
 }
 
 /**
@@ -44,6 +52,7 @@ export interface INFTMetadata {
   image: string;       // Resolved HTTP or IPFS gateway URL
   name: string;
   description: string;
+  attributes?: INFTAttribute[]; // Optional attributes/traits
 }
 
 /**
@@ -52,4 +61,5 @@ export interface INFTMetadata {
 export interface IListingWithNFT extends IDirectListing {
   metadata?: INFTMetadata;
   collectionName?: string;
+  sellerAddress?: string; // Alias for listingCreator for better readability
 }

@@ -1,70 +1,69 @@
 "use client";
 
-import { useActiveAccount } from "thirdweb/react";
+import { useState } from "react";
 import Link from "next/link";
 
-export default function MyListingsPage() {
-  const account = useActiveAccount();
-  
-  // If no wallet is connected, show a message
-  if (!account) {
-    return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-3xl font-bold mb-6">My Listings</h1>
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-8 max-w-md mx-auto">
-          <p className="text-lg mb-6">Please connect your wallet to view your listings</p>
-          <Link 
-            href="/"
-            className="inline-block bg-gradient-to-r from-turquoise-400 to-orange-400 text-white px-6 py-3 rounded-full font-medium hover:opacity-90 transition-all"
-          >
-            Go Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
+// Define the listing type
+interface Listing {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+}
+
+export default function MyListings() {
+  // Mock data for demonstration
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8 text-center">My Listings</h1>
-      
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-end mb-6">
-          <Link 
-            href="/create"
-            className="bg-gradient-to-r from-turquoise-400 to-orange-400 text-white px-6 py-3 rounded-full font-medium hover:opacity-90 transition-all"
-          >
-            Create New Listing
-          </Link>
-        </div>
+    <div className="container py-12">
+      <div className="bg-night/80 rounded-lg p-8 max-w-md mx-auto">
+        <h1 className="text-3xl font-anton text-gradient mb-6">MY LISTINGS</h1>
         
-        {/* Content Area - Listings */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-pulse flex space-x-4">
+              <div className="flex-1 space-y-6 py-1">
+                <div className="h-2 bg-orange/20 rounded"></div>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="h-2 bg-orange/20 rounded col-span-2"></div>
+                    <div className="h-2 bg-orange/20 rounded col-span-1"></div>
+                  </div>
+                  <div className="h-2 bg-orange/20 rounded"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : listings.length > 0 ? (
+          <div className="space-y-6">
+            {listings.map((listing) => (
+              <div key={listing.id} className="bg-night rounded-xl shadow-md p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-anton text-orange">{listing.name}</h3>
+                  <span className="badge-orange">{listing.price} METIS</span>
+                </div>
+                <p className="mb-4 text-parchment/80">{listing.description}</p>
+                <div className="flex justify-between">
+                  <Link href={`/nft/${listing.id}`} className="btn-secondary text-sm py-2 px-4 rounded-md">
+                    View Details
+                  </Link>
+                  <button className="btn-primary text-sm py-2 px-4 rounded-md">
+                    Cancel Listing
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
           <div className="text-center py-12">
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              width="48" 
-              height="48" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-              className="mx-auto mb-4 text-gray-400"
-            >
-              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-            </svg>
-            <h3 className="text-xl font-medium mb-2">No Listings Found</h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">You haven't created any listings yet.</p>
-            <Link 
-              href="/create"
-              className="inline-block bg-gradient-to-r from-turquoise-400 to-orange-400 text-white px-6 py-3 rounded-full font-medium hover:opacity-90 transition-all"
-            >
-              Create Your First Listing
+            <p className="text-parchment/70 mb-6">You haven't created any listings yet.</p>
+            <Link href="/create" className="btn-primary rounded-md inline-block">
+              Create Listing
             </Link>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

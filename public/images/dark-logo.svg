@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80">
+  <defs>
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E05F2C" />
+      <stop offset="100%" stop-color="#A02C2C" />
+    </linearGradient>
+    <filter id="textGlow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="1" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Logo Symbol -->
+  <g transform="translate(10, 10)">
+    <!-- Oracle Eye Symbol -->
+    <circle cx="30" cy="30" r="28" fill="#0F0F12" stroke="url(#textGradient)" stroke-width="1.5" />
+    <circle cx="30" cy="30" r="18" fill="none" stroke="url(#textGradient)" stroke-width="1.5" />
+    <ellipse cx="30" cy="30" rx="9" ry="12" fill="none" stroke="url(#textGradient)" stroke-width="1.5" />
+    <circle cx="30" cy="30" r="4.5" fill="url(#textGradient)" opacity="0.7" />
+    
+    <!-- Rays -->
+    <line x1="30" y1="9" x2="30" y2="15" stroke="url(#textGradient)" stroke-width="1.5" />
+    <line x1="30" y1="45" x2="30" y2="51" stroke="url(#textGradient)" stroke-width="1.5" />
+    <line x1="9" y1="30" x2="15" y2="30" stroke="url(#textGradient)" stroke-width="1.5" />
+    <line x1="45" y1="30" x2="51" y2="30" stroke="url(#textGradient)" stroke-width="1.5" />
+  </g>
+  
+  <!-- Text "DELPHI" -->
+  <g filter="url(#textGlow)" transform="translate(80, 45)">
+    <text font-family="Impact, sans-serif" font-size="36" font-weight="bold" fill="url(#textGradient)">DELPHI</text>
+  </g>
+  
+  <!-- Tagline -->
+  <g transform="translate(80, 65)">
+    <text font-family="Inter, sans-serif" font-size="12" fill="#F5F5F0" opacity="0.8">THE DIGITAL ORACLE</text>
+  </g>
+</svg> 

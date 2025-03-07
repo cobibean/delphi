@@ -1,16 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import WalletConnection from "./WalletConnection";
-import { useState, useEffect, useContext } from "react";
-import { ThemeContext } from "@/app/context/ThemeContext";
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const [glitchActive, setGlitchActive] = useState(false);
-  // Get mode from context
-  const { isDegenMode, toggleMode } = useContext(ThemeContext);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeModal, setActiveModal] = useState<string | null>(null);
   
   useEffect(() => {
     setIsMounted(true);
@@ -26,165 +24,166 @@ export default function Header() {
     
     window.addEventListener('scroll', handleScroll);
     
-    // Random glitch effect
-    const glitchInterval = setInterval(() => {
-      if (Math.random() > 0.8) {
-        setGlitchActive(true);
-        setTimeout(() => setGlitchActive(false), 150);
-      }
-    }, 5000);
-    
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      clearInterval(glitchInterval);
     };
   }, []);
 
   // Simple placeholder during SSR
   if (!isMounted) {
     return (
-      <header className="sticky top-0 z-50 py-4 bg-transparent">
-        <div className="container mx-auto px-4 h-14"></div>
+      <header className="h-20 bg-transparent">
+        <div className="container mx-auto"></div>
       </header>
     );
   }
 
-  // Determine logo animation based on mode
-  const logoHoverEffect = isDegenMode 
-    ? 'hover:scale-110 animate-flicker' 
-    : 'hover:scale-105';
+  // Header background based on scroll position
+  const headerClasses = scrolled
+    ? 'bg-oracle-black/90 shadow-card-normal backdrop-blur-md py-3 border-b border-oracle-orange/10'
+    : 'bg-transparent py-5';
 
-  // Get nav item hover effect based on mode
-  const getNavHoverEffect = (index: number) => {
-    if (!isDegenMode) return '';
-    return index % 2 === 0 ? 'hover:animate-glitch' : 'hover:text-blood';
-  };
-  
-  // Header gradient based on mode
-  const headerGradient = scrolled
-    ? isDegenMode
-      ? 'bg-gutter-glow shadow-dark backdrop-blur-md py-2 border-b border-sinister-orange/30'
-      : 'bg-gradient-to-r from-sinister-black to-gray-900 shadow-dark backdrop-blur-md py-2 border-b border-sinister-orange/20'
-    : 'bg-transparent py-4';
-
-  // Navigation items with hover effects that change based on mode
+  // Navigation items with "coming soon" status
   const navItems = [
-    { name: "EXPLORE", href: "/explore" },
-    { name: "CREATE", href: "/create" },
-    { name: "PROFILE", href: "/profile" },
-    { name: "ABOUT", href: "/about" },
+    { name: "Profile", href: "/profile", comingSoon: true },
+    { name: "Create Listing", href: "/create", comingSoon: true },
+    { name: "Stats", href: "/stats", comingSoon: true },
+    { name: "Earn", href: "/earn", comingSoon: true },
   ];
 
+  const handleNavClick = (item: { name: string; href: string; comingSoon: boolean }) => {
+    if (item.comingSoon) {
+      setActiveModal(item.name);
+      return;
+    }
+  };
+
   return (
-    <header 
-      className={`sticky top-0 z-50 transition-all duration-500 ${headerGradient} ${glitchActive ? 'animate-glitch' : ''}`}
-    >
-      <nav className="container mx-auto px-4 flex justify-between items-center">
-        {/* Branding - changes based on mode */}
-        <div className="flex items-center space-x-3">
-          <div className="relative h-14 w-14 overflow-hidden">
-            <div className={`absolute inset-0 flex items-center justify-center rounded-brutal ${
-              isDegenMode 
-                ? 'bg-oracle-embers' 
-                : 'bg-gradient-to-br from-sinister-orange to-sinister-teal'
-            } transition-all duration-300 ${
-              isDegenMode ? 'animate-flicker' : ''
-            }`}>
-              <img 
-                src="/images/delphi-logo.svg" 
-                alt="Delphi Logo" 
-                className={`h-10 w-10 transform transition-all duration-300 ${logoHoverEffect}`}
-              />
-            </div>
-            <div className={`absolute inset-0 border ${
-              isDegenMode ? 'border-sinister-red/70' : 'border-sinister-orange/70'
-            } rounded-brutal scorched-border`}></div>
+    <header className={`sticky top-0 z-50 transition-all duration-300 ${headerClasses}`}>
+      <div className="container flex items-center justify-between h-20">
+        {/* Logo */}
+        <Link href="/" className="flex items-center space-x-2 hover-lift">
+          <div className="relative h-10 w-10 overflow-hidden">
+            <img 
+              src="/images/delphi-logo.svg" 
+              alt="Delphi" 
+              className="h-full w-full object-contain animate-oracle-pulse"
+            />
           </div>
-          <span className={`font-heading text-3xl font-bold text-transparent bg-clip-text ${
-            isDegenMode 
-              ? 'bg-oracle-embers' 
-              : 'bg-tarnished-fortune'
-          } transition-all duration-300 uppercase tracking-wide ${
-            isDegenMode ? 'animate-flicker' : ''
-          }`}>
-            {isDegenMode ? 'DARK ORACLE' : 'DELPHI'}
-          </span>
-        </div>
+          <div>
+            <span className="font-heading text-2xl text-oracle-orange tracking-wide">DELPHI</span>
+            <span className="hidden md:block text-xs text-oracle-white/60 accent-text">The Center of the World</span>
+          </div>
+        </Link>
 
-        {/* Navigation Links - effects change based on mode */}
-        <ul className="hidden md:flex items-center gap-8">
-          {navItems.map((item, index) => (
-            <li key={item.name}>
-              <Link 
-                href={item.href} 
-                className={`font-heading font-bold relative py-2 px-3 group text-sinister-scroll ${
-                  isDegenMode ? 'hover:text-sinister-red' : 'hover:text-sinister-orange'
-                } transition-all duration-300 ${getNavHoverEffect(index)}`}
-              >
-                {item.name}
-                <span className={`absolute bottom-0 left-0 w-0 h-0.5 ${
-                  isDegenMode ? 'bg-sinister-red' : 'bg-sinister-orange'
-                } transition-all duration-300 group-hover:w-full`}></span>
-              </Link>
-            </li>
-          ))}
-          
-          {/* Mode Toggle Switch */}
-          <li className="ml-4">
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center space-x-8">
+          {navItems.map((item) => (
             <button 
-              onClick={toggleMode}
-              className={`relative inline-flex items-center h-6 rounded-brutal w-12 transition-colors duration-300 focus:outline-none ${
-                isDegenMode 
-                  ? 'bg-sinister-red' 
-                  : 'bg-sinister-orange'
-              }`}
-              aria-pressed={isDegenMode}
+              key={item.name} 
+              onClick={() => handleNavClick(item)}
+              className="font-heading text-oracle-white hover:text-oracle-orange transition-colors duration-300 tracking-widest relative group"
             >
-              <span className="sr-only">
-                {isDegenMode ? 'Switch to Professional Mode' : 'Switch to Dark Degen Mode'}
-              </span>
-              <span 
-                className={`inline-block w-5 h-5 transform transition-transform duration-300 rounded-brutal ${
-                  isDegenMode 
-                    ? 'translate-x-6 bg-sinister-black text-xs flex items-center justify-center' 
-                    : 'translate-x-1 bg-sinister-scroll text-xs flex items-center justify-center'
-                }`}
-              >
-                {isDegenMode ? '🔥' : '🧠'}
-              </span>
+              {item.name}
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-oracle-orange transition-all duration-300 group-hover:w-full"></span>
+              {item.comingSoon && (
+                <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-oracle-turquoise opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-oracle-turquoise"></span>
+                </span>
+              )}
             </button>
-          </li>
-        </ul>
+          ))}
+        </nav>
 
-        {/* Wallet Connection Button */}
-        <div className="relative z-20 flex items-center">
-          {/* Mobile Mode Toggle */}
-          <button 
-            onClick={toggleMode}
-            className={`relative mr-4 md:hidden inline-flex items-center h-6 rounded-brutal w-12 transition-colors duration-300 focus:outline-none ${
-              isDegenMode 
-                ? 'bg-sinister-red' 
-                : 'bg-sinister-orange'
-            }`}
-            aria-pressed={isDegenMode}
-          >
-            <span className="sr-only">
-              {isDegenMode ? 'Switch to Professional Mode' : 'Switch to Dark Degen Mode'}
-            </span>
-            <span 
-              className={`inline-block w-5 h-5 transform transition-transform duration-300 rounded-brutal ${
-                isDegenMode 
-                  ? 'translate-x-6 bg-sinister-black text-xs flex items-center justify-center' 
-                  : 'translate-x-1 bg-sinister-scroll text-xs flex items-center justify-center'
-              }`}
-            >
-              {isDegenMode ? '🔥' : '🧠'}
-            </span>
-          </button>
-          
+        {/* Wallet Connection */}
+        <div className="hidden md:block">
           <WalletConnection />
         </div>
-      </nav>
+
+        {/* Mobile Menu Button */}
+        <button 
+          className="md:hidden text-oracle-white p-2"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          {mobileMenuOpen ? (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-oracle-black/95 backdrop-blur-md border-t border-oracle-orange/10">
+          <div className="container py-4">
+            <nav className="flex flex-col space-y-4">
+              {navItems.map((item) => (
+                <button 
+                  key={item.name} 
+                  onClick={() => handleNavClick(item)}
+                  className="font-heading text-oracle-white hover:text-oracle-orange transition-colors duration-300 py-2 tracking-widest flex items-center justify-between"
+                >
+                  {item.name}
+                  {item.comingSoon && (
+                    <span className="badge-turquoise">Coming Soon</span>
+                  )}
+                </button>
+              ))}
+              <div className="pt-4 border-t border-oracle-orange/10">
+                <WalletConnection />
+              </div>
+            </nav>
+          </div>
+        </div>
+      )}
+
+      {/* Coming Soon Modal */}
+      {activeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-oracle-black/80">
+          <div className="bg-ancient-wisdom border border-oracle-orange/20 rounded-xl w-full max-w-md shadow-card-hover animate-digital-glitch" style={{animationDuration: '0.2s'}}>
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-heading text-2xl text-oracle-orange">Coming Soon</h3>
+                <button 
+                  onClick={() => setActiveModal(null)}
+                  className="text-oracle-white/70 hover:text-oracle-orange"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="mb-6">
+                <p className="text-oracle-white mb-4">
+                  We're working on bringing you amazing {activeModal.toLowerCase()} features.
+                </p>
+                <div className="flex justify-center my-6">
+                  <div className="w-24 h-24 bg-cosmic-connection rounded-full flex items-center justify-center animate-oracle-pulse overflow-hidden">
+                    <span className="font-heading text-4xl text-oracle-white glitch-text" data-text={activeModal[0]}>
+                      {activeModal[0]}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-oracle-white/70 text-sm">
+                  Stay tuned for updates! Built by Vesta & Yeti-Apes.
+                </p>
+              </div>
+              <button 
+                onClick={() => setActiveModal(null)}
+                className="btn-primary w-full"
+              >
+                <span className="relative z-10">Got it</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

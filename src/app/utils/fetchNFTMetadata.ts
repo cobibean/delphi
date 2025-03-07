@@ -1,7 +1,6 @@
 import { fetchTokenURI } from "./fetchTokenURI";
-import { ethers } from "ethers";
-import { Contract } from "ethers";
-import  ERC721ABI from "../constants/ERC721ABI";
+import { ethers, providers, Contract } from "ethers";
+import ERC721ABI from "../constants/ERC721ABI";
 
 interface NFTMetadata {
   image: string; // URL for the NFT's media
@@ -12,7 +11,7 @@ interface NFTMetadata {
 export async function fetchNFTMetadata(
   tokenId: string,
   assetContract: string,
-  provider: ethers.JsonRpcProvider
+  provider: providers.JsonRpcProvider
 ): Promise<NFTMetadata> {
   try {
     const contract = new Contract(assetContract, ERC721ABI, provider);

@@ -1,10 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
-import { useActiveAccount, useActiveWallet, useDisconnect, useConnect } from "thirdweb/react";
-import { createWallet, type Wallet } from "thirdweb/wallets";
-import { client } from "@/app/client";
-import { chain } from "@/app/constants/chain";
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { useAddress, useDisconnect, useMetamask, useWalletConnect, useCoinbaseWallet } from "@thirdweb-dev/react";
 
 // Types
 type WalletContextType = {
@@ -23,51 +20,53 @@ const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
 // Provider component
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const account = useActiveAccount();
-  const wallet = useActiveWallet();
-  const { disconnect: disconnectWallet } = useDisconnect();
-  const { connect, isConnecting, error } = useConnect();
+  const address = useAddress();
+  const disconnectWallet = useDisconnect();
+  const connectMetamask = useMetamask();
+  const connectWalletConnect = useWalletConnect();
+  const connectCoinbase = useCoinbaseWallet();
   
+  const [isConnecting, setIsConnecting] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Determine connection state
-  const isConnected = !!account;
+  const isConnected = !!address;
   
   // Format address for display
-  const displayAddress = account?.address 
-    ? `${account.address.substring(0, 6)}...${account.address.substring(account.address.length - 4)}`
+  const displayAddress = address 
+    ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}`
     : undefined;
 
   // Handle wallet connection
   const handleConnect = async (walletId: string) => {
     try {
-      await connect(async () => {
-        // Instantiate the wallet
-        const selectedWallet = createWallet(walletId as any);
-        
-        // Connect the wallet
-        await selectedWallet.connect({
-          client,
-          chain,
-        });
-        
-        // Return the connected wallet
-        return selectedWallet;
-      });
+      setIsConnecting(true);
+      
+      switch (walletId) {
+        case "metamask":
+          await connectMetamask();
+          break;
+        case "walletconnect":
+          await connectWalletConnect();
+          break;
+        case "coinbase":
+          await connectCoinbase();
+          break;
+        default:
+          console.error("Unsupported wallet type:", walletId);
+      }
     } catch (connectError) {
       console.error("Failed to connect wallet:", connectError);
+    } finally {
+      setIsConnecting(false);
     }
   };
 
   // Handle wallet disconnection
   const handleDisconnect = async () => {
     try {
-      if (wallet) {
-        await disconnectWallet(wallet);
-        console.log("Wallet disconnected successfully");
-      } else {
-        console.log("No wallet connected to disconnect");
-      }
+      await disconnectWallet();
+      console.log("Wallet disconnected successfully");
     } catch (disconnectError) {
       console.error("Error disconnecting wallet:", disconnectError);
     }
@@ -75,8 +74,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   // Copy address to clipboard
   const copyAddressToClipboard = () => {
-    if (account?.address) {
-      navigator.clipboard.writeText(account.address);
+    if (address) {
+      navigator.clipboard.writeText(address);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -86,7 +85,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const value: WalletContextType = {
     isConnected,
     isConnecting,
-    address: account?.address,
+    address,
     displayAddress,
     connectWallet: handleConnect,
     disconnectWallet: handleDisconnect,

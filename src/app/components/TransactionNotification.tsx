@@ -1,16 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
-export type NotificationType = "success" | "error" | "info" | "loading";
+export type NotificationType = "success" | "error" | "info" | "warning" | "loading";
 
 interface TransactionNotificationProps {
   type: NotificationType;
   message: string;
   txHash?: string;
-  onClose?: () => void;
-  autoClose?: boolean;
-  autoCloseTime?: number;
+  onClose: () => void;
 }
 
 export default function TransactionNotification({
@@ -18,116 +16,151 @@ export default function TransactionNotification({
   message,
   txHash,
   onClose,
-  autoClose = true,
-  autoCloseTime = 5000,
 }: TransactionNotificationProps) {
   const [isVisible, setIsVisible] = useState(true);
-
+  const [isClosing, setIsClosing] = useState(false);
+  const [glitchEffect, setGlitchEffect] = useState(false);
+  
+  // Auto-close notification after 5 seconds, but not for loading type
   useEffect(() => {
-    if (autoClose && type !== "loading") {
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        if (onClose) onClose();
-      }, autoCloseTime);
-
-      return () => clearTimeout(timer);
+    let timer: NodeJS.Timeout | null = null;
+    
+    if (type !== 'loading') {
+      timer = setTimeout(() => {
+        handleClose();
+      }, 5000);
     }
-  }, [autoClose, autoCloseTime, onClose, type]);
-
+    
+    // Random glitch effect
+    const glitchInterval = setInterval(() => {
+      if (Math.random() > 0.7) {
+        setGlitchEffect(true);
+        setTimeout(() => setGlitchEffect(false), 200);
+      }
+    }, 2000);
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+      clearInterval(glitchInterval);
+    };
+  }, [type]);
+  
+  // Handle close with animation
   const handleClose = () => {
-    setIsVisible(false);
-    if (onClose) onClose();
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsVisible(false);
+      onClose();
+    }, 300);
   };
-
+  
+  // If not visible, don't render
   if (!isVisible) return null;
-
-  const getIcon = () => {
+  
+  // Get the appropriate icon and colors based on notification type
+  const getTypeStyles = () => {
     switch (type) {
       case "success":
-        return (
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        );
+        return {
+          bgColor: "bg-sinister-teal/10",
+          borderColor: "border-sinister-teal",
+          iconColor: "text-sinister-teal",
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          ),
+        };
       case "error":
-        return (
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        );
-      case "info":
-        return (
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="16" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-          </svg>
-        );
+        return {
+          bgColor: "bg-sinister-red/10",
+          borderColor: "border-sinister-red",
+          iconColor: "text-sinister-red",
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ),
+        };
+      case "warning":
+        return {
+          bgColor: "bg-sinister-orange/10",
+          borderColor: "border-sinister-orange",
+          iconColor: "text-sinister-orange",
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          ),
+        };
       case "loading":
-        return (
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-turquoise-400">
-            <line x1="12" y1="2" x2="12" y2="6"></line>
-            <line x1="12" y1="18" x2="12" y2="22"></line>
-            <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
-            <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
-            <line x1="2" y1="12" x2="6" y2="12"></line>
-            <line x1="18" y1="12" x2="22" y2="12"></line>
-            <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
-            <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
-          </svg>
-        );
+        return {
+          bgColor: "bg-sinister-violet/10",
+          borderColor: "border-sinister-violet",
+          iconColor: "text-sinister-violet",
+          icon: (
+            <svg className="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          ),
+        };
+      case "info":
+      default:
+        return {
+          bgColor: "bg-sinister-violet/10",
+          borderColor: "border-sinister-violet",
+          iconColor: "text-sinister-violet",
+          icon: (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ),
+        };
     }
   };
-
-  const getBgColor = () => {
-    switch (type) {
-      case "success": return "bg-green-50 dark:bg-green-900/20";
-      case "error": return "bg-red-50 dark:bg-red-900/20";
-      case "info": return "bg-blue-50 dark:bg-blue-900/20";
-      case "loading": return "bg-gray-50 dark:bg-gray-800";
-    }
-  };
-
-  const getBorderColor = () => {
-    switch (type) {
-      case "success": return "border-green-200 dark:border-green-800";
-      case "error": return "border-red-200 dark:border-red-800";
-      case "info": return "border-blue-200 dark:border-blue-800";
-      case "loading": return "border-gray-200 dark:border-gray-700";
-    }
-  };
-
+  
+  const { bgColor, borderColor, iconColor, icon } = getTypeStyles();
+  
   return (
-    <div className={`fixed bottom-4 right-4 z-50 max-w-md w-full md:w-96 p-4 rounded-lg shadow-lg border ${getBgColor()} ${getBorderColor()} transition-all duration-300`}>
-      <div className="flex items-start">
-        <div className="flex-shrink-0 mr-3">
-          {getIcon()}
+    <div 
+      className={`fixed bottom-4 right-4 max-w-md w-full sm:w-96 ${
+        isClosing ? 'opacity-0 translate-x-4' : 'opacity-100'
+      } transition-all duration-300 z-50 ${glitchEffect ? 'animate-glitch' : ''}`}
+    >
+      <div className={`${bgColor} border-l-4 ${borderColor} shadow-dark p-4 flex items-start`}>
+        <div className={`flex-shrink-0 ${iconColor}`}>
+          {icon}
         </div>
-        <div className="flex-1">
-          <h3 className="font-medium text-gray-900 dark:text-gray-100">{message}</h3>
+        
+        <div className="ml-3 w-0 flex-1 pt-0.5">
+          <p className="text-sm font-medium text-sinister-scroll">{message}</p>
+          
           {txHash && (
-            <div className="mt-1">
-              <a 
-                href={`https://explorer.metis.io/tx/${txHash}`} 
-                target="_blank" 
+            <div className="mt-2">
+              <a
+                href={`https://explorer.metis.io/tx/${txHash}`}
+                target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-turquoise-500 hover:text-turquoise-600 underline"
+                className="text-xs text-sinister-teal hover:text-sinister-teal/80 underline"
               >
-                View on Explorer
+                View on Metis Explorer
               </a>
             </div>
           )}
         </div>
-        <button 
-          onClick={handleClose}
-          className="ml-4 text-gray-400 hover:text-gray-500 focus:outline-none"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
+        
+        <div className="ml-4 flex-shrink-0 flex">
+          <button
+            onClick={handleClose}
+            className="bg-transparent rounded-md inline-flex text-sinister-scroll/60 hover:text-sinister-scroll focus:outline-none"
+          >
+            <span className="sr-only">Close</span>
+            <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );

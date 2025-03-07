@@ -314,3 +314,18 @@ function DarkDegenNFTCard({ image, title, price, creator }) {
 ## 12. Final Take
 This version embraces an edgy, adult vibe with minimal cutesy nonsense. It’s still chaotic, but the mania is grounded in darkness and cynicism rather than cartoon memes. If you want a more R-rated approach to your NFT marketplace, this is it—no disclaimers, no moralizing, just unfiltered degen energy.
 
+====
+
+## Ideas to gamify the Dark Oracle section
+
+1. Troll Toll (Community Voting)
+
+Let the community vote on which NFT deserves to be “trolled”—the one with the most votes gets pinned to a special “WTF Hall of Shame” for a day. Its owner receives a modest reward for being roasted, plus a banner that reads, “I Survived the Troll Toll” (and a little leftover pride, hopefully).
+
+2. Ritual Roast
+
+Instead of a heavy sacrificial ceremony, stage a comedy roast for your staked NFTs. The “Oracle” spouts random snarky insults each day they remain locked: “Still holding? Cute.” If they survive the roast without being sold, they earn a sarcastic “Thick Skin” trait. -- We could build a bunch of ai agents to roast peoples nfts 
+
+3. Wheel of Unfortunate Fees
+
+Picture a carnival wheel, but each slice has a random additional marketplace fee or random discount. Spin it each time you list an NFT. You might score a sweet break… or you might just pay that extra 2% for your sins. Because life’s unfair—why shouldn’t the marketplace be, too? -- this could be a weekend event or part of an airdrop campagne. 

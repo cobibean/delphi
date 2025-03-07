@@ -1,5 +1,15 @@
-import { defineChain } from "thirdweb";
+import { Chain } from "@thirdweb-dev/sdk";
 
-const myChain = defineChain(1088);
-
-export const chain = myChain;
+export const chain: Chain = {
+  chainId: 1088,
+  rpc: ["https://andromeda.metis.io/?owner=1088"],
+  nativeCurrency: {
+    name: "Metis",
+    symbol: "METIS",
+    decimals: 18,
+  },
+  shortName: "metis",
+  slug: "metis",
+  testnet: false,
+  name: "Metis Andromeda",
+};

@@ -1,230 +1,164 @@
 "use client";
 
 import { useState } from "react";
-import { useActiveAccount } from "thirdweb/react";
-import Link from "next/link";
 
 export default function CreateListingPage() {
-  const account = useActiveAccount();
-  const [formData, setFormData] = useState({
-    contractAddress: "",
-    tokenId: "",
-    price: "",
-    quantity: "1",
-    duration: "1", // days
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
-
-  // If no wallet is connected, show a message
-  if (!account) {
-    return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-3xl font-bold mb-6">Create Listing</h1>
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-8 max-w-md mx-auto">
-          <p className="text-lg mb-6">Please connect your wallet to create a listing</p>
-          <Link 
-            href="/"
-            className="inline-block bg-gradient-to-r from-turquoise-400 to-orange-400 text-white px-6 py-3 rounded-full font-medium hover:opacity-90 transition-all"
-          >
-            Go Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess(false);
-    
-    // Basic validation
-    if (!formData.contractAddress || !formData.tokenId || !formData.price) {
-      setError("Please fill in all required fields");
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      
-      // Here you would call your contract to create the listing
-      // For now, we'll just simulate a successful listing creation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setSuccess(true);
-      setFormData({
-        contractAddress: "",
-        tokenId: "",
-        price: "",
-        quantity: "1",
-        duration: "1",
-      });
-    } catch (err) {
-      console.error("Error creating listing:", err);
-      setError("Failed to create listing. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+  const [activeModal, setActiveModal] = useState(false);
+  
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8 text-center">Create NFT Listing</h1>
+    <main className="bg-oracle-black min-h-screen pt-6">
+      {/* Coming Soon Banner */}
+      <div className="coming-soon-banner mb-8">
+        <span className="font-heading tracking-wider">CREATE LISTING FEATURE COMING SOON</span>
+      </div>
       
-      <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-        <div className="p-8">
-          {success ? (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold mb-4">Listing Created Successfully!</h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">Your NFT has been listed on the marketplace.</p>
-              <div className="flex justify-center gap-4">
-                <Link 
-                  href="/"
-                  className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-6 py-3 rounded-full font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+      <div className="container mx-auto px-4">
+        {/* Form Preview/Mockup Section */}
+        <section className="mb-16">
+          <div className="max-w-4xl mx-auto bg-ancient-wisdom rounded-xl p-8 border border-oracle-orange/20 shadow-card-normal">
+            <h1 className="font-heading text-3xl text-oracle-orange mb-6">CREATE YOUR LISTING</h1>
+            
+            <div className="space-y-8">
+              {/* Image Upload Area */}
+              <div className="border-2 border-dashed border-oracle-orange/30 rounded-xl p-8 flex flex-col items-center justify-center bg-oracle-black/20">
+                <div className="w-24 h-24 bg-cosmic-connection rounded-full flex items-center justify-center mb-4 animate-oracle-pulse">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-oracle-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                </div>
+                <h3 className="font-heading text-xl text-oracle-turquoise mb-2">Upload Your NFT</h3>
+                <p className="text-oracle-white/70 text-center mb-4">
+                  Drag and drop or click to upload your image (PNG, JPG, GIF, MP4)
+                </p>
+                <button
+                  onClick={() => setActiveModal(true)}
+                  className="btn-secondary py-2 px-4"
                 >
-                  Go Home
-                </Link>
-                <button 
-                  onClick={() => setSuccess(false)}
-                  className="bg-gradient-to-r from-turquoise-400 to-orange-400 text-white px-6 py-3 rounded-full font-medium hover:opacity-90 transition-all"
-                >
-                  Create Another Listing
+                  <span>Upload File</span>
                 </button>
               </div>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
-              {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-                  {error}
-                </div>
-              )}
               
-              <div className="mb-6">
-                <label className="block text-gray-700 dark:text-gray-300 mb-2" htmlFor="contractAddress">
-                  NFT Contract Address *
-                </label>
-                <input
-                  type="text"
-                  id="contractAddress"
-                  name="contractAddress"
-                  value={formData.contractAddress}
-                  onChange={handleChange}
-                  placeholder="0x..."
-                  className="w-full px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-turquoise-400"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">The contract address of your NFT collection</p>
-              </div>
-              
-              <div className="mb-6">
-                <label className="block text-gray-700 dark:text-gray-300 mb-2" htmlFor="tokenId">
-                  Token ID *
-                </label>
-                <input
-                  type="text"
-                  id="tokenId"
-                  name="tokenId"
-                  value={formData.tokenId}
-                  onChange={handleChange}
-                  placeholder="123"
-                  className="w-full px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-turquoise-400"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">The ID of your NFT</p>
-              </div>
-              
-              <div className="mb-6">
-                <label className="block text-gray-700 dark:text-gray-300 mb-2" htmlFor="price">
-                  Price (METIS) *
-                </label>
-                <input
-                  type="number"
-                  id="price"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  placeholder="0.01"
-                  step="0.000001"
-                  min="0"
-                  className="w-full px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-turquoise-400"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">The price per token in METIS</p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              {/* Form Fields */}
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-gray-700 dark:text-gray-300 mb-2" htmlFor="quantity">
-                    Quantity
-                  </label>
-                  <input
-                    type="number"
-                    id="quantity"
-                    name="quantity"
-                    value={formData.quantity}
-                    onChange={handleChange}
-                    min="1"
-                    className="w-full px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-turquoise-400"
+                  <label className="input-label">NFT Name</label>
+                  <input 
+                    type="text" 
+                    className="input w-full" 
+                    placeholder="Enter a name for your NFT"
+                    disabled
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-gray-700 dark:text-gray-300 mb-2" htmlFor="duration">
-                    Duration (days)
-                  </label>
-                  <select
-                    id="duration"
-                    name="duration"
-                    value={formData.duration}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-turquoise-400"
-                  >
-                    <option value="1">1 day</option>
-                    <option value="3">3 days</option>
-                    <option value="7">7 days</option>
-                    <option value="14">14 days</option>
-                    <option value="30">30 days</option>
-                    <option value="90">90 days</option>
+                  <label className="input-label">Description</label>
+                  <textarea 
+                    className="input w-full h-32 resize-none" 
+                    placeholder="Describe your NFT in detail"
+                    disabled
+                  ></textarea>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="input-label">Price (METIS)</label>
+                    <input 
+                      type="number" 
+                      className="input w-full" 
+                      placeholder="0.00"
+                      disabled
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="input-label">Royalty Percentage</label>
+                    <input 
+                      type="number" 
+                      className="input w-full" 
+                      placeholder="0-10%"
+                      disabled
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="input-label">Collection</label>
+                  <select className="input w-full" disabled>
+                    <option>Select a collection</option>
                   </select>
                 </div>
+                
+                <div className="pt-4">
+                  <button
+                    onClick={() => setActiveModal(true)}
+                    className="btn-primary w-full"
+                  >
+                    <span className="relative z-10">CREATE LISTING</span>
+                  </button>
+                </div>
               </div>
-              
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="bg-gradient-to-r from-turquoise-400 to-orange-400 text-white px-8 py-3 rounded-full font-bold text-lg hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? "Creating..." : "Create Listing"}
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
+            </div>
+          </div>
+        </section>
+        
+        <section className="mb-16">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="font-heading text-2xl text-oracle-orange mb-4">GET NOTIFIED WHEN READY</h2>
+            <p className="text-oracle-white/70 mb-8 max-w-2xl mx-auto">
+              Our team is working hard to bring you an amazing NFT listing experience. 
+              Be among the first to know when the feature is ready.
+            </p>
+            <button
+              onClick={() => setActiveModal(true)}
+              className="btn-secondary"
+            >
+              <span>SUBSCRIBE FOR UPDATES</span>
+            </button>
+          </div>
+        </section>
       </div>
       
-      <div className="max-w-2xl mx-auto mt-8 bg-gray-100 dark:bg-gray-800 rounded-xl p-6">
-        <h2 className="text-xl font-bold mb-4">Before you list your NFT</h2>
-        <ul className="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
-          <li>Make sure you own the NFT you're trying to list</li>
-          <li>You'll need to approve the marketplace contract to transfer your NFT when it's sold</li>
-          <li>Gas fees will apply for the approval and listing transactions</li>
-          <li>Your NFT will remain in your wallet until it's sold</li>
-        </ul>
-      </div>
-    </div>
+      {/* Coming Soon Modal */}
+      {activeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-oracle-black/80">
+          <div className="bg-ancient-wisdom border border-oracle-orange/20 rounded-xl w-full max-w-md shadow-card-hover animate-digital-glitch" style={{animationDuration: '0.2s'}}>
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-heading text-2xl text-oracle-orange">Coming Soon</h3>
+                <button 
+                  onClick={() => setActiveModal(false)}
+                  className="text-oracle-white/70 hover:text-oracle-orange"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="mb-6">
+                <p className="text-oracle-white mb-4">
+                  We're working on bringing you amazing listing creation features.
+                </p>
+                <div className="flex justify-center my-6">
+                  <div className="w-24 h-24 bg-cosmic-connection rounded-full flex items-center justify-center animate-oracle-pulse overflow-hidden">
+                    <span className="font-heading text-4xl text-oracle-white glitch-text" data-text="C">
+                      C
+                    </span>
+                  </div>
+                </div>
+                <p className="text-oracle-white/70 text-sm">
+                  Stay tuned for updates! Built by Vesta & Yeti-Apes.
+                </p>
+              </div>
+              <button 
+                onClick={() => setActiveModal(false)}
+                className="btn-primary w-full"
+              >
+                <span className="relative z-10">Got it</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
   );
 } 

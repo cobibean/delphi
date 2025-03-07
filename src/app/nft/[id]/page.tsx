@@ -1,28 +1,89 @@
-import { getAllListingsWithMetadata } from "@/app/services/marketplace";
-import { JsonRpcProvider } from "ethers";
-import { notFound } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { getListing, getAllListings } from "@/app/services/marketplace";
 import NFTDetailView from "@/app/components/NFTDetailView";
-import { CONTRACT_ADDRESS } from "@/app/constants/contracts";
+import LoadingIndicator from "@/app/components/ui/LoadingIndicator";
+import Link from "next/link";
+import { IListingWithNFT } from "@/app/interfaces/interfaces";
 
-const provider = new JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
-
-export default async function NFTDetailPage({ params }: { params: { id: string } }) {
-  const listingId = params.id;
+export default function NFTDetailPage() {
+  const params = useParams();
+  const listingId = params?.id as string;
   
-  // Fetch all listings (in a real app, you'd fetch just the one listing by ID)
-  const listings = await getAllListingsWithMetadata(provider, CONTRACT_ADDRESS);
+  const [listing, setListing] = useState<IListingWithNFT | null>(null);
+  const [relatedListings, setRelatedListings] = useState<IListingWithNFT[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  // Find the specific listing
-  const listing = listings.find(l => l.listingId === listingId);
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true);
+        // Fetch the specific listing by ID
+        console.log(`Fetching listing ID: ${listingId}`);
+        const fetchedListing = await getListing(listingId);
+        
+        if (!fetchedListing) {
+          setError("NFT listing not found");
+          setIsLoading(false);
+          return;
+        }
+        
+        setListing(fetchedListing);
+        
+        // Fetch all listings to find related ones
+        const allListings = await getAllListings();
+        
+        // Filter related listings (same collection but not the current one)
+        const related = allListings.filter(
+          item => item.collectionName === fetchedListing.collectionName && 
+          item.listingId !== fetchedListing.listingId
+        );
+        
+        setRelatedListings(related);
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Error fetching NFT data:", err);
+        setError(`Failed to load NFT: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        setIsLoading(false);
+      }
+    }
+    
+    if (listingId) {
+      fetchData();
+    }
+  }, [listingId]);
   
-  // If listing not found, show 404
-  if (!listing) {
-    notFound();
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-sinister-black">
+        <div className="text-center">
+          <LoadingIndicator size="large" />
+          <p className="mt-4 text-sinister-orange">Loading NFT data...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error || !listing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-sinister-black p-4">
+        <div className="bg-sinister-black/50 border border-sinister-orange/30 p-6 rounded-lg max-w-md w-full text-center">
+          <h2 className="text-2xl font-heading text-sinister-orange mb-4">Error</h2>
+          <p className="text-sinister-scroll mb-6">{error || "NFT not found"}</p>
+          <Link href="/" className="btn-primary inline-block">
+            <span className="relative z-10">Back to Home</span>
+          </Link>
+        </div>
+      </div>
+    );
   }
   
   return (
-    <div className="container mx-auto px-4 py-8">
-      <NFTDetailView listing={listing} />
+    <div className="bg-sinister-black">
+      <NFTDetailView listing={listing} relatedListings={relatedListings} />
     </div>
   );
 } 

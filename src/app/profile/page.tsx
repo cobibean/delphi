@@ -1,141 +1,145 @@
 "use client";
 
-import { useActiveAccount } from "thirdweb/react";
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState } from "react";
 
 export default function ProfilePage() {
-  const account = useActiveAccount();
-  const [copySuccess, setCopySuccess] = useState(false);
+  const [activeModal, setActiveModal] = useState(false);
   
-  // If no wallet is connected, show a message
-  if (!account) {
-    return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-3xl font-bold mb-6">Profile</h1>
-        <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-8 max-w-md mx-auto">
-          <p className="text-lg mb-6">Please connect your wallet to view your profile</p>
-          <Link 
-            href="/"
-            className="inline-block bg-gradient-to-r from-turquoise-400 to-orange-400 text-white px-6 py-3 rounded-full font-medium hover:opacity-90 transition-all"
-          >
-            Go Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // Format address for display
-  const formatAddress = (address: string) => {
-    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-  };
-
-  // Copy address to clipboard
-  const copyAddressToClipboard = () => {
-    if (account?.address) {
-      navigator.clipboard.writeText(account.address);
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
-    }
-  };
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8 text-center">My Profile</h1>
+    <main className="bg-oracle-black min-h-screen pt-6">
+      {/* Coming Soon Banner */}
+      <div className="coming-soon-banner mb-8">
+        <span className="font-heading tracking-wider">PROFILE FEATURES COMING SOON</span>
+      </div>
       
-      {/* Profile Card */}
-      <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden mb-8">
-        <div className="p-8">
-          <div className="flex flex-col md:flex-row items-center">
-            {/* Avatar Placeholder */}
-            <div className="w-24 h-24 bg-gradient-to-r from-turquoise-400 to-orange-400 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-4 md:mb-0 md:mr-6">
-              {account.address.substring(2, 4).toUpperCase()}
+      <div className="container mx-auto px-4">
+        {/* Profile Preview Section */}
+        <section className="mb-16">
+          <div className="max-w-4xl mx-auto bg-ancient-wisdom rounded-xl p-8 border border-oracle-orange/20 shadow-card-normal">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+              <div className="w-32 h-32 rounded-full border-4 border-oracle-orange overflow-hidden flex-shrink-0 shadow-card-hover">
+                <div className="w-full h-full bg-oracle-orange/20 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-oracle-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+              </div>
+              
+              <div className="flex-grow text-center md:text-left">
+                <h1 className="font-heading text-3xl text-oracle-orange mb-2">YOUR PROFILE</h1>
+                <p className="text-oracle-white/70 mb-4">Connect your wallet to view your NFT collection, transaction history, and more.</p>
+                <div className="flex flex-col sm:flex-row gap-4 mt-6">
+                  <button
+                    onClick={() => setActiveModal(true)}
+                    className="btn-primary"
+                  >
+                    <span className="relative z-10">CONNECT WALLET</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        {/* Placeholder Stats/Content Section */}
+        <section className="mb-16">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="font-heading text-2xl text-oracle-orange mb-6 text-center md:text-left">PROFILE DASHBOARD</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="stat-card">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-oracle-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                </svg>
+                <div className="stat-number text-oracle-white/50">--</div>
+                <div className="stat-label">NFTs Owned</div>
+              </div>
+              
+              <div className="stat-card">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-oracle-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                <div className="stat-number text-oracle-white/50">--</div>
+                <div className="stat-label">Transactions</div>
+              </div>
+              
+              <div className="stat-card">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-oracle-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 11V9a2 2 0 00-2-2m2 4v4a2 2 0 104 0v-1m-4-3H9m2 0h4m6 1a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="stat-number text-oracle-white/50">--</div>
+                <div className="stat-label">Total Value</div>
+              </div>
             </div>
             
-            {/* User Info */}
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold mb-2">Wallet Address</h2>
-              <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-3 mb-4">
-                <span className="text-gray-700 dark:text-gray-300 mr-2 font-mono">
-                  {account.address}
-                </span>
+            <div className="bg-ancient-wisdom rounded-xl p-6 border border-oracle-orange/20 flex items-center justify-center h-64 mb-8">
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto bg-cosmic-connection rounded-full flex items-center justify-center mb-4 animate-oracle-pulse">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-oracle-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </div>
+                <h3 className="font-heading text-xl text-oracle-turquoise mb-2">NFT Gallery Preview</h3>
+                <p className="text-oracle-white/70">
+                  Connect your wallet to view your NFT collection
+                </p>
+              </div>
+            </div>
+            
+            <div className="text-center">
+              <button 
+                onClick={() => setActiveModal(true)}
+                className="btn-primary"
+              >
+                <span className="relative z-10">GET NOTIFIED WHEN READY</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+      
+      {/* Coming Soon Modal */}
+      {activeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-oracle-black/80">
+          <div className="bg-ancient-wisdom border border-oracle-orange/20 rounded-xl w-full max-w-md shadow-card-hover animate-digital-glitch" style={{animationDuration: '0.2s'}}>
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-heading text-2xl text-oracle-orange">Coming Soon</h3>
                 <button 
-                  onClick={copyAddressToClipboard}
-                  className="text-turquoise-400 hover:text-turquoise-500"
+                  onClick={() => setActiveModal(false)}
+                  className="text-oracle-white/70 hover:text-oracle-orange"
                 >
-                  {copySuccess ? (
-                    <span className="text-green-500 text-sm">Copied!</span>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                    </svg>
-                  )}
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
-              
-              {/* Wallet Type */}
-              <div className="flex items-center mb-4">
-                <span className="text-gray-600 dark:text-gray-400 mr-2">Wallet Type:</span>
-                <span className="font-medium">Connected Wallet</span>
+              <div className="mb-6">
+                <p className="text-oracle-white mb-4">
+                  We're working on bringing you amazing profile features.
+                </p>
+                <div className="flex justify-center my-6">
+                  <div className="w-24 h-24 bg-cosmic-connection rounded-full flex items-center justify-center animate-oracle-pulse overflow-hidden">
+                    <span className="font-heading text-4xl text-oracle-white glitch-text" data-text="P">
+                      P
+                    </span>
+                  </div>
+                </div>
+                <p className="text-oracle-white/70 text-sm">
+                  Stay tuned for updates! Built by Vesta & Yeti-Apes.
+                </p>
               </div>
-              
-              {/* Edit Profile Button */}
-              <button className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all">
-                Edit Profile
+              <button 
+                onClick={() => setActiveModal(false)}
+                className="btn-primary w-full"
+              >
+                <span className="relative z-10">Got it</span>
               </button>
             </div>
           </div>
         </div>
-      </div>
-      
-      {/* Tabs for NFTs, Listings, etc. */}
-      <div className="max-w-4xl mx-auto">
-        <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
-          <nav className="flex space-x-8">
-            <button className="border-b-2 border-turquoise-400 text-turquoise-400 py-4 px-1 font-medium">
-              My NFTs
-            </button>
-            <button className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 py-4 px-1 font-medium">
-              My Listings
-            </button>
-            <button className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 py-4 px-1 font-medium">
-              Transaction History
-            </button>
-          </nav>
-        </div>
-        
-        {/* Content Area - NFTs Tab (Default) */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-          <div className="text-center py-12">
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              width="48" 
-              height="48" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
-              className="mx-auto mb-4 text-gray-400"
-            >
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <circle cx="8.5" cy="8.5" r="1.5"></circle>
-              <polyline points="21 15 16 10 5 21"></polyline>
-            </svg>
-            <h3 className="text-xl font-medium mb-2">No NFTs Found</h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">You don't own any NFTs yet.</p>
-            <Link 
-              href="/explore"
-              className="inline-block bg-gradient-to-r from-turquoise-400 to-orange-400 text-white px-6 py-3 rounded-full font-medium hover:opacity-90 transition-all"
-            >
-              Explore NFTs
-            </Link>
-          </div>
-        </div>
-      </div>
-    </div>
+      )}
+    </main>
   );
 } 

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background Circle with Gradient -->
+  <defs>
+    <linearGradient id="oracleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F0F12" />
+      <stop offset="100%" stop-color="#1A1A24" />
+    </linearGradient>
+    <linearGradient id="emberGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E05F2C" />
+      <stop offset="100%" stop-color="#A02C2C" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Main Circle -->
+  <circle cx="100" cy="100" r="90" fill="url(#oracleGradient)" />
+  <circle cx="100" cy="100" r="88" fill="none" stroke="url(#emberGradient)" stroke-width="1.5" />
+  
+  <!-- Oracle Eye Symbol -->
+  <g filter="url(#glow)">
+    <!-- Outer Ring -->
+    <circle cx="100" cy="100" r="60" fill="none" stroke="url(#emberGradient)" stroke-width="2" />
+    
+    <!-- Inner Eye -->
+    <ellipse cx="100" cy="100" rx="30" ry="40" fill="none" stroke="url(#emberGradient)" stroke-width="2" />
+    
+    <!-- Pupil -->
+    <circle cx="100" cy="100" r="15" fill="url(#emberGradient)" opacity="0.7" />
+    
+    <!-- Rays -->
+    <line x1="100" y1="30" x2="100" y2="50" stroke="url(#emberGradient)" stroke-width="2" />
+    <line x1="100" y1="150" x2="100" y2="170" stroke="url(#emberGradient)" stroke-width="2" />
+    <line x1="30" y1="100" x2="50" y2="100" stroke="url(#emberGradient)" stroke-width="2" />
+    <line x1="150" y1="100" x2="170" y2="100" stroke="url(#emberGradient)" stroke-width="2" />
+    
+    <!-- Diagonal Rays -->
+    <line x1="58" y1="58" x2="72" y2="72" stroke="url(#emberGradient)" stroke-width="2" />
+    <line x1="142" y1="58" x2="128" y2="72" stroke="url(#emberGradient)" stroke-width="2" />
+    <line x1="58" y1="142" x2="72" y2="128" stroke="url(#emberGradient)" stroke-width="2" />
+    <line x1="142" y1="142" x2="128" y2="128" stroke="url(#emberGradient)" stroke-width="2" />
+  </g>
+  
+  <!-- Subtle Runes -->
+  <g opacity="0.3">
+    <path d="M30,70 L40,80 L30,90" fill="none" stroke="#E05F2C" stroke-width="1" />
+    <path d="M170,70 L160,80 L170,90" fill="none" stroke="#E05F2C" stroke-width="1" />
+    <path d="M70,30 L80,40 L90,30" fill="none" stroke="#E05F2C" stroke-width="1" />
+    <path d="M70,170 L80,160 L90,170" fill="none" stroke="#E05F2C" stroke-width="1" />
+  </g>
+</svg> 
