@@ -1,0 +1,191 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Impact&family=Anton&family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Roboto+Slab:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+	html {
+		scroll-behavior: smooth;
+	}
+	
+	body {
+		font-family: 'Inter', 'Poppins', sans-serif;
+		background-color: #121212;
+		color: #F8F5F0;
+	}
+	
+	h1, h2, h3, h4, h5, h6 {
+		font-family: 'Impact', 'Anton', 'Bebas Neue', sans-serif;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		line-height: 1.2;
+	}
+	
+	h1 {
+		@apply text-4xl md:text-5xl lg:text-6xl;
+		letter-spacing: -0.01em;
+	}
+	
+	h2 {
+		@apply text-3xl md:text-4xl lg:text-5xl;
+	}
+	
+	h3 {
+		@apply text-2xl md:text-3xl lg:text-4xl;
+	}
+	
+	h4 {
+		@apply text-xl md:text-2xl lg:text-3xl;
+	}
+	
+	h5 {
+		@apply text-lg md:text-xl lg:text-2xl;
+	}
+	
+	h6 {
+		@apply text-base md:text-lg lg:text-xl;
+	}
+}
+
+@layer components {
+	/* Energy Containment Fields */
+	.energy-field-orange {
+		@apply border-2 border-oracle-orange animate-energy-field;
+	}
+	
+	.energy-field-turquoise {
+		@apply border-2 border-oracle-turquoise animate-energy-field;
+	}
+	
+	.energy-field-white {
+		@apply border-2 border-oracle-white animate-energy-field;
+	}
+	
+	.energy-field-purple {
+		@apply border-2 border-oracle-purple animate-energy-field;
+	}
+	
+	/* Reality Distortion Effects */
+	.reality-warp {
+		@apply hover:animate-reality-distortion transition-all duration-300;
+	}
+	
+	.quantum-glitch {
+		@apply animate-quantum-fluctuation;
+	}
+	
+	.dimensional-echo {
+		@apply after:content-[''] after:absolute after:inset-0 after:opacity-50 after:translate-x-1 after:translate-y-1 after:bg-current after:z-[-1];
+	}
+	
+	/* Dimension Layers */
+	.dimension-1 {
+		@apply relative z-10;
+	}
+	
+	.dimension-2 {
+		@apply relative z-20 shadow-md;
+	}
+	
+	.dimension-3 {
+		@apply relative z-30 shadow-lg;
+	}
+	
+	.dimension-4 {
+		@apply relative z-40 shadow-xl animate-reality-distortion;
+	}
+	
+	.dimension-5 {
+		@apply relative z-50 shadow-2xl animate-reality-distortion;
+	}
+	
+	/* Buttons */
+	.cosmic-button {
+		@apply bg-gradient-to-r from-oracle-orange-hot via-oracle-orange-solar to-oracle-orange 
+			   text-oracle-white font-bold py-2 px-6 rounded-md
+			   hover:animate-cosmic-pulsation hover:scale-105 transition-all duration-300
+			   focus:outline-none focus:ring-2 focus:ring-oracle-orange focus:ring-opacity-50;
+	}
+	
+	.quantum-button {
+		@apply bg-transparent border-2 border-oracle-orange text-oracle-orange font-bold py-2 px-6 rounded-md
+			   hover:animate-quantum-fluctuation transition-all duration-300
+			   focus:outline-none focus:ring-2 focus:ring-oracle-orange focus:ring-opacity-50;
+	}
+	
+	/* Cards */
+	.hypercard {
+		@apply bg-gradient-to-b from-oracle-black-matter to-oracle-black-void
+			   rounded-lg overflow-hidden shadow-lg p-4
+			   hover:animate-reality-distortion transition-all duration-500
+			   border border-oracle-orange/20;
+	}
+	
+	/* Modal */
+	.reality-modal {
+		@apply fixed inset-0 z-50 flex items-center justify-center
+			   bg-black/70 backdrop-blur-md animate-dimensional-rift;
+	}
+	
+	.reality-modal-content {
+		@apply bg-gradient-to-b from-oracle-black-matter to-oracle-black-void
+			   rounded-lg p-6 max-w-md w-full
+			   border border-oracle-orange animate-energy-field;
+	}
+}
+
+@layer utilities {
+	.text-glitch {
+		text-shadow: 
+			0.05em 0 0 rgba(255, 0, 0, 0.75),
+			-0.025em -0.05em 0 rgba(0, 255, 0, 0.75),
+			0.025em 0.05em 0 rgba(0, 0, 255, 0.75);
+		animation: glitch 500ms infinite;
+	}
+	
+	@keyframes glitch {
+		0% {
+			text-shadow: 
+				0.05em 0 0 rgba(255, 0, 0, 0.75),
+				-0.025em -0.05em 0 rgba(0, 255, 0, 0.75),
+				0.025em 0.05em 0 rgba(0, 0, 255, 0.75);
+		}
+		14% {
+			text-shadow: 
+				0.05em 0 0 rgba(255, 0, 0, 0.75),
+				-0.025em -0.05em 0 rgba(0, 255, 0, 0.75),
+				0.025em 0.05em 0 rgba(0, 0, 255, 0.75);
+		}
+		15% {
+			text-shadow: 
+				-0.05em -0.025em 0 rgba(255, 0, 0, 0.75),
+				0.025em 0.025em 0 rgba(0, 255, 0, 0.75),
+				-0.05em -0.05em 0 rgba(0, 0, 255, 0.75);
+		}
+		49% {
+			text-shadow: 
+				-0.05em -0.025em 0 rgba(255, 0, 0, 0.75),
+				0.025em 0.025em 0 rgba(0, 255, 0, 0.75),
+				-0.05em -0.05em 0 rgba(0, 0, 255, 0.75);
+		}
+		50% {
+			text-shadow: 
+				0.025em 0.05em 0 rgba(255, 0, 0, 0.75),
+				0.05em 0 0 rgba(0, 255, 0, 0.75),
+				0 -0.05em 0 rgba(0, 0, 255, 0.75);
+		}
+		99% {
+			text-shadow: 
+				0.025em 0.05em 0 rgba(255, 0, 0, 0.75),
+				0.05em 0 0 rgba(0, 255, 0, 0.75),
+				0 -0.05em 0 rgba(0, 0, 255, 0.75);
+		}
+		100% {
+			text-shadow: 
+				-0.025em 0 0 rgba(255, 0, 0, 0.75),
+				-0.025em -0.025em 0 rgba(0, 255, 0, 0.75),
+				-0.025em -0.05em 0 rgba(0, 0, 255, 0.75);
+		}
+	}
+}
