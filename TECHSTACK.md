@@ -199,19 +199,4 @@ The "Cosmic Overload" design system is implemented through:
 3. **Manual Testing Checklist**:
    - Wallet connection across different providers
    - Purchase flows with both METIS and WMETIS
-   - Error handling and recovery
-
-## Future Development Roadmap
-
-1. **Multi-Chain Support**:
-   - Expansion to additional EVM chains
-   - Cross-chain NFT bridging
-
-2. **Enhanced NFT Features**:
-   - Dynamic NFTs with changing attributes
-   - Interactive 3D NFT viewing
-
-3. **Marketplace Extensions**:
-   - NFT auctions
-   - Collection-based features
-   - Creator royalties dashboard 
+   - Error handling and recovery 
