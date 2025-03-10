@@ -1,0 +1,39 @@
+# isCreateDelayedRevealBatchSupported
+
+*Source: [https://portal.thirdweb.com/references/typescript/v5/erc721/isCreateDelayedRevealBatchSupported](https://portal.thirdweb.com/references/typescript/v5/erc721/isCreateDelayedRevealBatchSupported)*
+
+* References
+* isCreateDelayedRevealBatchSupported
+
+Checks if thecreateDelayedRevealBatchmethod is supported by the given contract.
+
+`createDelayedRevealBatch`
+## Example
+
+`import{ isCreateDelayedRevealBatchSupported }from"thirdweb/extensions/erc721";constsupported=isCreateDelayedRevealBatchSupported(["0x..."]);`
+#### Signature
+
+`functionisCreateDelayedRevealBatchSupported(availableSelectors:Array<string>,):boolean;`
+## Parameters
+
+#### availableSelectors
+
+An array of 4byte function selectors of the contract. You can get this in various ways, such as using "whatsabi" or if you have the ABI of the contract available you can use it to generate the selectors.
+
+### Type
+
+`letavailableSelectors:Array<string>;`
+## Returns
+
+#### Return Type
+
+`letreturnType:boolean;`A boolean indicating if thecreateDelayedRevealBatchmethod is supported.
+
+`createDelayedRevealBatch`Was this page helpful?
+
+* Need help?Visit our support site
+* Watch ourVideo Tutorials
+* View ourChangelog
+
+Subscribe for the latest dev updates
+

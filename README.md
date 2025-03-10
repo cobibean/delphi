@@ -117,12 +117,7 @@ For a detailed overview of the design system, refer to the [DELPHI_DESIGN_SYSTEM
 
 ### Metis Blockchain
 
-Delphi is built on the Metis Andromeda network (chain ID 1088), a Layer 2 scaling solution for Ethereum that offers:
-
-- **Lower Gas Fees**: More cost-effective than Ethereum mainnet
-- **Faster Transactions**: Higher throughput and quicker confirmations
-- **Ethereum Compatibility**: Compatible with EVM tools and standards
-- **Decentralization**: Maintains security through Optimistic Rollup technology
+Delphi is built on the Metis Andromeda network (chain ID 1088), Ethereum Layer 2.
 
 ### Smart Contract Integration
 

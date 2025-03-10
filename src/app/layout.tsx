@@ -12,24 +12,29 @@ import "./globals.css";
 import { Inter, Anton } from "next/font/google";
 import { Toaster } from "@/app/ui/toaster";
 import { TransactionProvider } from "@/app/providers/TransactionProvider";
-import { ThirdwebProvider } from "@thirdweb-dev/react";
 import Header from "@/app/components/SharedComponents/Header";
 import Footer from "@/app/components/SharedComponents/Footer";
+import { motion, AnimatePresence } from "framer-motion";
+import { usePathname } from "next/navigation";
+import { ThirdwebProvider } from "thirdweb/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState } from "react";
+import { createThirdwebClient } from "thirdweb";
 import { THIRDWEB_CLIENT_ID } from "@/app/constants/contracts";
 
 // Load Inter font for body text
 const inter = Inter({
   subsets: ["latin"],
-  display: "swap",
   variable: "--font-inter",
+  display: "swap",
 });
 
 // Load Anton font for headings
 const anton = Anton({
-  subsets: ["latin"],
   weight: ["400"],
-  display: "swap",
+  subsets: ["latin"],
   variable: "--font-anton",
+  display: "swap",
 });
 
 // Create local font variables for Cinzel and Cormorant Garamond
@@ -41,30 +46,45 @@ const cormorantFont = {
   variable: "--font-cormorant",
 };
 
-// Define Metis Andromeda as a custom chain
+// We can't export metadata from a client component
+// Instead, we'll set the title and description directly in the head element
+
+// Define Metis chain with correct types
 const metisChain = {
-  chainId: 1088,
-  rpc: ["https://andromeda.metis.io/?owner=1088"],
+  id: 1088,
+  name: "Metis Andromeda",
+  rpc: "https://andromeda.metis.io/?owner=1088",
   nativeCurrency: {
     decimals: 18,
     name: "Metis",
     symbol: "METIS",
   },
-  shortName: "metis",
-  slug: "metis",
-  testnet: false,
-  chain: "Metis",
-  name: "Metis Andromeda",
-};
+  testnet: true, // For ThirdWeb v5 compatibility
+} as const;
 
-// We can't export metadata from a client component
-// Instead, we'll set the title and description directly in the head element
+// Create ThirdWeb client
+const thirdwebClient = createThirdwebClient({
+  clientId: THIRDWEB_CLIENT_ID,
+});
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  // Initialize QueryClient once per component lifecycle
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        // Disable automatic refetching
+        refetchOnWindowFocus: false,
+        // Keep data fresh for 5 minutes
+        staleTime: 5 * 60 * 1000,
+      },
+    },
+  }));
+  
   return (
     <html lang="en">
       <head>
@@ -74,29 +94,80 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* Add Impact, Anton, and Roboto Slab fonts for Delphi theme */}
-        <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Roboto+Slab:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Impact&family=Roboto+Slab:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <title>Delphi | The Center of the World - NFT Marketplace</title>
         <meta name="description" content="Discover and trade NFTs at Delphi - the center of the world for artists, weirdos, and degens on Metis and beyond." />
       </head>
-      <body className={`${inter.variable} ${anton.variable} bg-oracle-black text-oracle-white oracle-texture constellation`}>
-        <ThirdwebProvider
-          clientId={THIRDWEB_CLIENT_ID}
-          // Use Metis Chain
-          activeChain={metisChain}
-        >
-          <TransactionProvider>
-            <div className="flex flex-col min-h-screen">
-              <Header />
-              <main className="flex-grow">
-                {children}
-              </main>
-              <Footer />
-            </div>
+      <body className={`${inter.variable} ${anton.variable} bg-oracle-black-void text-oracle-white oracle-texture constellation`}>
+        <TransactionProvider>
+          <ThirdwebProvider>
+            <QueryClientProvider client={queryClient}>
+              <div className="flex flex-col min-h-screen relative overflow-hidden">
+                {/* Cosmic background effects */}
+                <div className="fixed inset-0 bg-oracle-black-void -z-10">
+                  {/* Constellation effect */}
+                  <div className="absolute inset-0 opacity-30">
+                    {Array.from({ length: 50 }).map((_, i) => (
+                      <motion.div
+                        key={i}
+                        className="absolute rounded-full bg-oracle-white-spectral"
+                        style={{
+                          width: `${Math.random() * 2 + 1}px`,
+                          height: `${Math.random() * 2 + 1}px`,
+                          top: `${Math.random() * 100}%`,
+                          left: `${Math.random() * 100}%`,
+                        } as any}
+                        animate={{
+                          opacity: [0.3, 0.8, 0.3],
+                        } as any}
+                        transition={{
+                          duration: Math.random() * 3 + 2,
+                          repeat: Infinity,
+                          delay: Math.random() * 5,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  
+                  {/* Quantum entanglement effect */}
+                  <motion.div 
+                    className="absolute inset-0 bg-quantum-entanglement opacity-5"
+                    animate={{
+                      background: ['0% 0%', '100% 100%'],
+                    } as any}
+                    transition={{
+                      duration: 30,
+                      repeat: Infinity,
+                      repeatType: "reverse",
+                    }}
+                  />
+                </div>
+                
+                <Header />
+                
+                <main className="flex-grow relative">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={pathname}
+                      initial={{ opacity: 0 } as any}
+                      animate={{ opacity: 1 } as any}
+                      exit={{ opacity: 0 } as any}
+                      transition={{ duration: 0.5 }}
+                      className="h-full"
+                    >
+                      {children}
+                    </motion.div>
+                  </AnimatePresence>
+                </main>
+                
+                <Footer />
+              </div>
 
-            {/* Notifications */}
-            <Toaster />
-          </TransactionProvider>
-        </ThirdwebProvider>
+              {/* Notifications with cosmic styling */}
+              <Toaster />
+            </QueryClientProvider>
+          </ThirdwebProvider>
+        </TransactionProvider>
       </body>
     </html>
   );

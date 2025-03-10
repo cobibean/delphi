@@ -48,7 +48,7 @@ export default function FeaturedSection() {
               <span className="relative z-10">EXPLORE THE VOID</span>
             </a>
             <a href="/create" className="btn-secondary px-8 py-4 text-lg">
-              <span>CREATE PROPHECY</span>
+              <span>CREATE NFT</span>
             </a>
           </div>
         </div>

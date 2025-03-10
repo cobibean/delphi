@@ -9,15 +9,32 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Delphi Colors
+        // Delphi Design System 2.0 Colors
         oracle: {
+          // Primary Colors
           orange: '#FF5F1F',
+          'orange-hot': '#FF3000',
+          'orange-solar': '#FF7A00',
           black: '#121212',
+          'black-void': '#000000', 
+          'black-matter': '#1D1D1D',
           turquoise: '#00D1C1',
+          'turquoise-bright': '#00FFF0',
+          'turquoise-deep': '#009E92',
           white: '#F8F5F0',
+          'white-spectral': '#FFFFFF',
+          'white-ethereal': '#F2EBE0',
+          
+          // Secondary Colors
           gold: '#FFD700',
+          'gold-bright': '#FFC400',
+          'gold-pale': '#FFEA80',
           purple: '#6B46C1',
+          'purple-bright': '#9B4DFF',
+          'purple-deep': '#48318A',
           error: '#E53935',
+          'error-bright': '#FF0000',
+          'error-deep': '#C90C00',
         },
         // Keeping the sinister theme for backward compatibility
         sinister: {
@@ -36,32 +53,39 @@ const config: Config = {
         accent: ['Roboto Slab', 'serif'],
       },
       backgroundImage: {
-        // New Delphi Gradients
+        // Delphi Design System 2.0 Gradients
+        'cosmic-combustion': 'linear-gradient(to right, #FF3000, #FF7A00, #FF5F1F)',
+        'quantum-entanglement': 'linear-gradient(to right, #00D1C1, #6B46C1, #00FFF0)',
+        'event-horizon': 'radial-gradient(circle at center, #1D1D1D, #000000)',
+        'hypernova': 'conic-gradient(from 0deg, #FF5F1F, #00D1C1, #6B46C1, #FFD700, #FF5F1F)',
+        
+        // Keeping original gradients for backward compatibility
         'oracle-flames': 'linear-gradient(to right, #FF5F1F, #E04D0F)',
         'cosmic-connection': 'linear-gradient(to right, #00D1C1, #6B46C1)',
         'ancient-wisdom': 'linear-gradient(to bottom, #121212, #2D2D2D)',
         'golden-prophecy': 'linear-gradient(to right, #FF5F1F, #FFD700)',
-        // Keeping original gradients for backward compatibility
         'oracle-embers': 'linear-gradient(to right, #ed8936, #b33a3a)',
         'gutter-glow': 'linear-gradient(to bottom, #121212, #2d2d2d)',
         'tarnished-fortune': 'linear-gradient(to right, #ed8936, #D4AF37)',
         'neon-fever': 'linear-gradient(to right, #38b2ac, #6B46C1)',
       },
       boxShadow: {
-        'dark': '0 4px 20px rgba(0, 0, 0, 0.5)',
+        // Card shadows
         'card-hover': '0 12px 24px rgba(0, 0, 0, 0.15)',
         'card-normal': '0 4px 12px rgba(0, 0, 0, 0.1)',
+        'dark': '0 4px 20px rgba(0, 0, 0, 0.5)',
       },
       animation: {
-        'glitch': 'glitch 1s infinite',
+        // Space animations
+        'cosmic-flow': 'cosmicFlow 3s ease infinite',
         'flicker': 'flicker 1.5s infinite',
         'oracle-pulse': 'oraclePulse 2s infinite',
         'digital-glitch': 'digitalGlitch 0.3s ease',
-        'cosmic-flow': 'cosmicFlow 3s ease infinite',
         'card-hover': 'cardHover 0.3s forwards',
       },
       keyframes: {
-        glitch: {
+        // Space animation keyframes
+        digitalGlitch: {
           '0%': { transform: 'translate(0, 0)' },
           '20%': { transform: 'translate(-2px, 2px)' },
           '40%': { transform: 'translate(2px, -2px)' },
@@ -76,14 +100,6 @@ const config: Config = {
         oraclePulse: {
           '0%, 100%': { boxShadow: '0 0 0 rgba(255, 95, 31, 0)' },
           '50%': { boxShadow: '0 0 20px rgba(255, 95, 31, 0.4)' },
-        },
-        digitalGlitch: {
-          '0%': { transform: 'translate(0, 0)' },
-          '20%': { transform: 'translate(-2px, 2px)' },
-          '40%': { transform: 'translate(2px, -2px)' },
-          '60%': { transform: 'translate(-1px, 1px)' },
-          '80%': { transform: 'translate(1px, -1px)' },
-          '100%': { transform: 'translate(0, 0)' },
         },
         cosmicFlow: {
           '0%': { backgroundPosition: '0% 50%' },
@@ -100,6 +116,7 @@ const config: Config = {
   plugins: [
     function({ addUtilities }: { addUtilities: any }) {
       const newUtilities = {
+        // Text Gradient Utilities
         '.text-gradient-oracle': {
           background: 'linear-gradient(to right, #FF5F1F, #E04D0F)',
           '-webkit-background-clip': 'text',
@@ -128,6 +145,8 @@ const config: Config = {
           'color': 'transparent',
           'display': 'inline-block',
         },
+        
+        // Texture Utilities
         '.oracle-texture': {
           position: 'relative',
           '&::before': {
@@ -184,6 +203,8 @@ const config: Config = {
             zIndex: '-1',
           },
         },
+        
+        // Interactive Utilities
         '.hover-lift': {
           transition: 'transform 0.3s ease, box-shadow 0.3s ease',
           '&:hover': {
@@ -207,6 +228,20 @@ const config: Config = {
             animation: 'oraclePulse 2s infinite',
           },
         },
+        
+        // Background Utilities
+        '.bg-cosmic-combustion': {
+          background: 'linear-gradient(to right, #FF3000, #FF7A00, #FF5F1F)',
+        },
+        '.bg-quantum-entanglement': {
+          background: 'linear-gradient(to right, #00D1C1, #6B46C1, #00FFF0)',
+        },
+        '.bg-event-horizon': {
+          background: 'radial-gradient(circle at center, #1D1D1D, #000000)',
+        },
+        '.bg-hypernova': {
+          background: 'conic-gradient(from 0deg, #FF5F1F, #00D1C1, #6B46C1, #FFD700, #FF5F1F)',
+        },
         '.bg-oracle-flames': {
           background: 'linear-gradient(to right, #FF5F1F, #E04D0F)',
         },
@@ -218,19 +253,6 @@ const config: Config = {
         },
         '.bg-golden-prophecy': {
           background: 'linear-gradient(to right, #FF5F1F, #FFD700)',
-        },
-        // Maintaining backward compatibility
-        '.bg-oracle-embers': {
-          background: 'linear-gradient(to right, #ed8936, #b33a3a)',
-        },
-        '.bg-gutter-glow': {
-          background: 'linear-gradient(to bottom, #121212, #2d2d2d)',
-        },
-        '.bg-tarnished-fortune': {
-          background: 'linear-gradient(to right, #ed8936, #D4AF37)',
-        },
-        '.bg-neon-fever': {
-          background: 'linear-gradient(to right, #38b2ac, #6B46C1)',
         },
       };
       addUtilities(newUtilities);

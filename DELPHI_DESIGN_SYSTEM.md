@@ -1,6 +1,8 @@
 # DELPHI DESIGN SYSTEM 2.0: COSMIC OVERLOAD
 
-*The Multidimensional Nexus - An Interdimensional Portal for Artists, Weirdos, and Degens Across the Omniverse*
+# **delphi. The Center of the World** (sometimes typed as "delphi. the center of the world.")
+
+*The Nexus - An Interdimensional Portal for Artists, Weirdos, and Degens Across the Omniverse*
 
 ## Table of Contents
 
