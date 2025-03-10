@@ -5,7 +5,7 @@ This document outlines the planned development roadmap for the Delphi NFT Market
 ## Phase 1: Enhanced NFT Experience
 
 ### NFT Information Page Enhancements
-- [ ] Comprehensive metadata and traits display
+- [x] Metadata and traits display
 - [ ] Previous activity/transaction history for each NFT
 - [ ] Price change tracking
 - [ ] Placeholder for dynamic price history chart (to be fully implemented in later phase)
@@ -43,6 +43,10 @@ This document outlines the planned development roadmap for the Delphi NFT Market
 - [ ] Transparent fee display during minting process
 - [ ] Fee distribution system
 - [ ] Gas fee estimation and display
+
+## House Keeping
+- [ ] Ensure Social Links Work - BUILD A MODAL WHEN USER CLICKS ON "Buildt by Vesta & Yeti-Apes" pops up and has two bubbles with each projects logo w/ something like "follow on twitter" or a link tree... 
+- [ ] Clean up links on footer. - Make sure all work, remove unnessary 
 
 ## Phase 3: Collection & Creator Features
 

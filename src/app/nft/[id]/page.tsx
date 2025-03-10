@@ -8,7 +8,7 @@ import LoadingIndicator from "@/app/components/ui/LoadingIndicator";
 import Link from "next/link";
 import { IListingWithNFT } from "@/app/interfaces/interfaces";
 
-export default function NFTDetailPage() {
+export default function ListingPage() {
   const params = useParams();
   const listingId = params?.id as string;
   
@@ -31,6 +31,10 @@ export default function NFTDetailPage() {
           return;
         }
         
+        console.log("Fetched listing:", fetchedListing);
+        console.log("Listing metadata:", fetchedListing.metadata);
+        console.log("Listing image URL:", fetchedListing.metadata?.image);
+        
         setListing(fetchedListing);
         
         // Fetch all listings to find related ones
@@ -41,6 +45,8 @@ export default function NFTDetailPage() {
           item => item.collectionName === fetchedListing.collectionName && 
           item.listingId !== fetchedListing.listingId
         );
+        
+        console.log(`Found ${related.length} related listings`);
         
         setRelatedListings(related);
         setIsLoading(false);
@@ -80,6 +86,11 @@ export default function NFTDetailPage() {
       </div>
     );
   }
+  
+  // Debug: Log the listing data before passing it to the NFTDetailView component
+  console.log("Passing listing to NFTDetailView:", listing);
+  console.log("Listing metadata:", listing.metadata);
+  console.log("Listing image URL:", listing.metadata?.image);
   
   return (
     <div className="bg-sinister-black">
