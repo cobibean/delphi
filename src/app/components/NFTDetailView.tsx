@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useActiveAccount, useActiveWallet } from "thirdweb/react";
+import React, { useState, useEffect, useRef } from 'react';
+import { useActiveAccount, useActiveWallet } from 'thirdweb/react';
+import Link from 'next/link';
+import { validateNetworkConnection, logTransaction } from '@/app/utils/debugging';
 import { IListingWithNFT } from "@/app/interfaces/interfaces";
+import { buyWithMetis } from "@/app/services/marketplace-v5";
 import { useTransaction } from "@/app/providers/TransactionProvider";
-import { buyWithMetis, buyWithWMetis, getWMetisBalance } from "@/app/services/marketplace";
-import NFTCard from "./NFTCard/NFTCard";
-import Link from "next/link";
-import { ethers } from "ethers";
+import NFTCard from "@/app/components/NFTCard/NFTCard";
+import { TransactionStatus } from "@/app/components/TransactionStatus";
+import { useErrorStore } from '@/app/stores/errorStore';
+import LoadingState from './SharedComponents/LoadingState';
+import { motion, useAnimation } from 'framer-motion';
 
 interface NFTDetailViewProps {
   listing: IListingWithNFT;
@@ -18,20 +22,29 @@ interface NFTDetailViewProps {
 const formatIPFSUrl = (url: string): string => {
   if (!url) return '';
   
+  // For debugging
+  console.log(`NFTDetailView: Formatting IPFS URL: ${url}`);
+  
   // Handle IPFS URLs
   if (url.startsWith('ipfs://')) {
-    return url.replace('ipfs://', 'https://ipfs.io/ipfs/');
+    // Use a reliable gateway - Cloudflare tends to be more reliable than ipfs.io
+    return url.replace('ipfs://', 'https://cloudflare-ipfs.com/ipfs/');
   }
   
   // Handle URLs that might be stored with gateway already
   if (url.includes('/ipfs/')) {
     const ipfsHash = url.split('/ipfs/')[1];
-    return `https://ipfs.io/ipfs/${ipfsHash}`;
+    return `https://cloudflare-ipfs.com/ipfs/${ipfsHash}`;
   }
   
-  // Handle direct CID format
-  if (/^[a-zA-Z0-9]{46}/.test(url)) {
-    return `https://ipfs.io/ipfs/${url}`;
+  // Handle direct CID format (corrected regex for proper IPFS hash detection)
+  if (/^[a-zA-Z0-9]{46,}$/.test(url)) {
+    return `https://cloudflare-ipfs.com/ipfs/${url}`;
+  }
+  
+  // Handle HTTP URLs that point to IPFS gateways
+  if (url.includes('ipfs.io') || url.includes('cloudflare-ipfs.com')) {
+    return url;
   }
   
   return url;
@@ -44,15 +57,19 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
   const [isLoading, setIsLoading] = useState(false);
   const [glitchText, setGlitchText] = useState(false);
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
-  const [wmetisBalance, setWmetisBalance] = useState("0");
-  const [enoughWmetis, setEnoughWmetis] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [receiptData, setReceiptData] = useState<any>(null);
+  const [networkValidated, setNetworkValidated] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [attemptedGateways, setAttemptedGateways] = useState<string[]>([]);
   
-  const account = useActiveAccount();
   const wallet = useActiveWallet();
+  const account = useActiveAccount();
   
   const { addTransaction } = useTransaction();
+  const { addError } = useErrorStore();
   
   // Trigger glitch text effect randomly
   useEffect(() => {
@@ -79,143 +96,187 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
     return () => clearInterval(glitchInterval);
   }, [listing, metadata]);
   
+  // Debug image URL when metadata changes
+  useEffect(() => {
+    if (metadata?.image) {
+      console.log(`NFTDetailView for ${listingId}: Original image URL:`, metadata.image);
+      const formattedUrl = formatIPFSUrl(metadata.image);
+      console.log(`NFTDetailView for ${listingId}: Formatted image URL:`, formattedUrl);
+      
+      // Test if URL is accessible
+      fetch(formattedUrl, { method: 'HEAD' })
+        .then(response => {
+          console.log(`Image URL test result: ${response.status} ${response.statusText}`);
+        })
+        .catch(error => {
+          console.error(`Failed to test image URL:`, error);
+        });
+    }
+  }, [metadata, listingId]);
+  
   // Handle image load success
   const handleImageLoad = () => {
     console.log("NFTDetailView - Image loaded successfully");
     setImageLoaded(true);
   };
   
-  // Handle image load error
+  // Enhanced image error handler with multiple fallback options
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    console.error("NFTDetailView - Failed to load image:", metadata?.image);
-    setImageError(true);
+    console.error(`NFTDetailView: Failed to load image for listing ${listingId}:`, e.currentTarget.src);
     
-    // Try to load from a different IPFS gateway if the first one failed
-    const currentSrc = (e.target as HTMLImageElement).src;
-    if (currentSrc.includes('ipfs.io')) {
-      console.log("Trying alternative IPFS gateway...");
-      (e.target as HTMLImageElement).src = currentSrc.replace('ipfs.io', 'cloudflare-ipfs.com');
-    } else if (metadata?.image) {
-      // If we have an image URL but it failed to load, try a different approach
-      console.log("Trying direct IPFS URL...");
-      const ipfsUrl = metadata.image.startsWith('ipfs://') 
-        ? metadata.image.replace('ipfs://', 'https://cloudflare-ipfs.com/ipfs/')
-        : metadata.image;
-      (e.target as HTMLImageElement).src = ipfsUrl;
+    if (!metadata?.image) {
+      console.log(`NFTDetailView for ${listingId}: No metadata image to try fallbacks for`);
+      setImageError(true);
+      return;
     }
-  };
-  
-  // Check WMETIS balance when address changes
-  useEffect(() => {
-    async function checkWMetisBalance() {
-      if (account) {
-        try {
-          const balance = await getWMetisBalance(account.address);
-          setWmetisBalance(balance);
-          
-          // Check if user has enough WMETIS
-          const priceValue = parseFloat(pricePerToken);
-          const balanceValue = parseFloat(balance);
-          setEnoughWmetis(balanceValue >= priceValue);
-        } catch (err) {
-          console.error("Error checking WMETIS balance:", err);
-        }
+    
+    // Array of gateway domains to try in order
+    const gatewayOptions = [
+      'cloudflare-ipfs.com', 
+      'ipfs.io', 
+      'gateway.ipfs.io', 
+      'ipfs.infura.io', 
+      'gateway.pinata.cloud'
+    ];
+    
+    // Find the next gateway to try
+    let nextGateway = null;
+    for (const gateway of gatewayOptions) {
+      if (!attemptedGateways.includes(gateway) && !e.currentTarget.src.includes(gateway)) {
+        nextGateway = gateway;
+        break;
       }
     }
     
-    if (account) {
-      checkWMetisBalance();
+    if (nextGateway) {
+      // Extract the IPFS hash/path regardless of current format
+      let ipfsPath = metadata.image;
+      if (ipfsPath.startsWith('ipfs://')) {
+        ipfsPath = ipfsPath.substring(7); // Remove 'ipfs://'
+      } else if (ipfsPath.includes('/ipfs/')) {
+        ipfsPath = ipfsPath.split('/ipfs/')[1];
+      }
+      
+      // Ensure we have a clean path/CID
+      if (ipfsPath) {
+        const newUrl = `https://${nextGateway}/ipfs/${ipfsPath}`;
+        console.log(`NFTDetailView for ${listingId}: Trying next gateway: ${newUrl}`);
+        
+        // Update state
+        setAttemptedGateways([...attemptedGateways, nextGateway]);
+        e.currentTarget.src = newUrl;
+        return;
+      }
     }
-  }, [account, pricePerToken]);
+    
+    console.log(`NFTDetailView for ${listingId}: All gateway options exhausted`);
+    setImageError(true);
+  };
   
   // Format address for display
   const formatAddress = (addr: string) => {
     return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
   };
   
-  // Handle showing payment options
   const handleBuyClick = () => {
     if (!account) {
-      addTransaction("error", "Connect your wallet first to buy this NFT");
+      addError({
+        message: "Please connect your wallet first",
+        type: 'warning',
+        recoveryAction: {
+          label: "Connect Wallet",
+          action: () => document.getElementById('connect-wallet-button')?.click()
+        }
+      });
       return;
     }
     
-    setShowPaymentOptions(true);
+    if (!networkValidated) {
+      validateNetworkConnection()
+        .then(isValid => {
+          if (isValid) {
+            setNetworkValidated(true);
+            handleBuyWithMetis();
+          } else {
+            addError({
+              message: "Please connect to the Metis Andromeda network",
+              type: 'error'
+            });
+          }
+        })
+        .catch(err => {
+          console.error("Error validating network:", err);
+          addError({
+            message: "Error validating network connection. Please make sure you're connected to the Metis Andromeda network.",
+            type: 'error'
+          });
+        });
+      return;
+    }
+    
+    handleBuyWithMetis();
   };
   
-  // Handle buy with METIS
   const handleBuyWithMetis = async () => {
     if (!account || !wallet) {
-      addTransaction("error", "Connect your wallet first to buy this NFT");
+      addError({
+        message: "Please connect your wallet first",
+        type: 'warning',
+        recoveryAction: {
+          label: "Connect Wallet",
+          action: () => document.getElementById('connect-wallet-button')?.click()
+        }
+      });
       return;
     }
     
+    setIsLoading(true);
+    setProcessingPayment(true);
+    setTxHash(null);
+    
     try {
-      setIsLoading(true);
-      const txId = addTransaction("loading", `Buying NFT with METIS...`);
+      console.log("Buying NFT with listing ID:", listingId);
       
-      console.log(`Buying listing ${listingId} with METIS using wallet:`, wallet);
+      addError({
+        message: "Preparing your purchase...",
+        type: 'info'
+      });
       
-      // Pass the wallet to the buyWithMetis function
       const result = await buyWithMetis(listingId, wallet);
       
-      console.log("Transaction result:", result);
+      console.log("Purchase result:", result);
       
       if (result && result.transactionHash) {
-        addTransaction("success", "NFT purchased successfully with METIS!", result.transactionHash);
-      } else {
-        addTransaction("error", "Transaction completed but no transaction hash returned");
+        setTxHash(result.transactionHash);
+        setReceiptData(result.receipt);
+        
+        if (result.success) {
+          addError({
+            message: "NFT purchased successfully! 🎉",
+            type: 'success'
+          });
+        }
       }
-    } catch (error) {
-      console.error("Error buying with METIS:", error);
-      addTransaction("error", error instanceof Error ? error.message : "Failed to buy NFT");
+    } catch (error: any) {
+      console.error("Error buying NFT with METIS:", error);
+      if (error.code !== 4001 && !error.message?.toLowerCase().includes('user rejected')) {
+        addError({
+          message: error.message || "Failed to purchase NFT",
+          type: 'error',
+          recoveryAction: error.recoveryAction
+        });
+      }
     } finally {
       setIsLoading(false);
-      setShowPaymentOptions(false);
+      setProcessingPayment(false);
     }
   };
   
-  // Handle buy with WMETIS
-  const handleBuyWithWMetis = async () => {
-    if (!account || !wallet) {
-      addTransaction("error", "Connect your wallet first to buy this NFT");
-      return;
-    }
-    
-    try {
-      setIsLoading(true);
-      const txId = addTransaction("loading", `Buying NFT with WMETIS...`);
-      
-      console.log(`Buying listing ${listingId} with WMETIS using wallet:`, wallet);
-      
-      // Pass the wallet to the buyWithWMetis function
-      const result = await buyWithWMetis(listingId, wallet);
-      
-      console.log("Transaction result:", result);
-      
-      if (result && result.transactionHash) {
-        addTransaction("success", "NFT purchased successfully with WMETIS!", result.transactionHash);
-      } else {
-        addTransaction("error", "Transaction completed but no transaction hash returned");
-      }
-    } catch (error) {
-      console.error("Error buying with WMETIS:", error);
-      addTransaction("error", error instanceof Error ? error.message : "Failed to buy NFT");
-    } finally {
-      setIsLoading(false);
-      setShowPaymentOptions(false);
-    }
-  };
-  
-  // Handle cancel payment selection
   const handleCancelPayment = () => {
+    setIsLoading(false);
+    setTxHash(null);
     setShowPaymentOptions(false);
   };
-  
-  // Simple placeholder during SSR
-  if (!isMounted) {
-    return <div className="min-h-screen bg-sinister-black"></div>;
-  }
   
   // Format price with proper decimal places for small values
   const formattedPrice = (() => {
@@ -234,36 +295,19 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
         return "0";
       }
       
-      if (isNaN(parseFloat(String(pricePerToken)))) {
-        console.warn(`Invalid price for NFT ${listingId}: ${pricePerToken}`);
-        return "0";
-      }
-      
-      // Parse the price as a float
-      const priceValue = parseFloat(String(pricePerToken));
-      
-      // Format based on the value size
-      let price;
-      if (priceValue === 0) {
-        price = "0";
-      } else if (priceValue < 0.01) {
-        // For very small values, show more decimal places
-        price = priceValue.toString();
-      } else if (priceValue < 1) {
-        // For values less than 1, show 4 decimal places
-        price = priceValue.toFixed(4);
-      } else {
-        // For larger values, show 2 decimal places
-        price = priceValue.toFixed(2);
-      }
-      
-      console.log(`NFTDetailView formatted price:`, price);
-      return price;
+      const price = parseFloat(pricePerToken.toString());
+      console.log(`NFTDetailView formatted price:`, price.toString());
+      return price.toString();
     } catch (error) {
       console.error(`Error formatting price for NFT ${listingId}:`, error);
       return "0";
     }
   })();
+  
+  // Simple placeholder during SSR
+  if (!isMounted) {
+    return <div className="min-h-screen bg-sinister-black"></div>;
+  }
   
   return (
     <div className="bg-sinister-black min-h-screen">
@@ -289,16 +333,12 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
                   src={formatIPFSUrl(metadata.image)} 
                   alt={metadata?.name || `NFT #${tokenId}`} 
                   className={`w-full object-cover aspect-square ${imageLoaded ? 'opacity-100' : 'opacity-30'} transition-opacity duration-300`}
-                  onLoad={handleImageLoad}
+                  onLoad={() => setImageLoaded(true)}
                   onError={handleImageError}
                 />
               ) : (
-                <div className="w-full aspect-square bg-sinister-black/50 flex items-center justify-center">
-                  <div className="text-sinister-orange text-center p-4">
-                    <div className="text-4xl mb-2">🖼️</div>
-                    <p>Image not available</p>
-                    <p className="text-xs mt-2 text-sinister-scroll">Token ID: {tokenId}</p>
-                  </div>
+                <div className="w-full h-full aspect-square bg-sinister-black/60 flex items-center justify-center">
+                  <span className="text-sinister-text text-opacity-50">No Image Available</span>
                 </div>
               )}
               
@@ -334,7 +374,7 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
               <div className="mt-8">
                 <h3 className="font-heading text-xl text-sinister-orange mb-4 uppercase tracking-wider">Attributes</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {metadata.attributes.map((attr, index) => (
+                  {metadata.attributes.map((attr: any, index: number) => (
                     <div 
                       key={index} 
                       className="bg-sinister-black/60 border-l border-t border-sinister-orange/20 p-3"
@@ -344,6 +384,27 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+            
+            {/* Fallback for image error */}
+            {imageError && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-sinister-black/80">
+                <div className="text-sinister-text mb-2">Image Failed to Load</div>
+                <button 
+                  className="text-sm bg-oracle-orange text-black px-4 py-2 rounded"
+                  onClick={() => {
+                    // Reset image state and try loading again
+                    setImageError(false);
+                    setImageLoaded(false);
+                    const img = document.querySelector(`img[alt="${metadata?.name || `NFT #${tokenId}`}"]`) as HTMLImageElement;
+                    if (img) {
+                      img.src = formatIPFSUrl(metadata?.image || '');
+                    }
+                  }}
+                >
+                  Try Again
+                </button>
               </div>
             )}
           </div>
@@ -384,20 +445,17 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
                 {!showPaymentOptions ? (
                   <button 
                     onClick={handleBuyClick}
-                    disabled={isLoading || (account && account.address === sellerAddress)}
+                    disabled={isLoading || account?.address === sellerAddress}
                     className={`btn-primary px-8 py-3 font-heading text-lg tracking-wider ${
-                      (account && account.address === sellerAddress) ? 'opacity-50 cursor-not-allowed' : ''
+                      account?.address === sellerAddress ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                   >
                     {isLoading ? (
-                      <span className="flex items-center justify-center w-full">
-                        <svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>Processing...</span>
-                      </span>
-                    ) : (account && account.address === sellerAddress) ? (
+                      <LoadingState 
+                        message="Processing your cosmic transaction..." 
+                        size="lg"
+                      />
+                    ) : (account?.address === sellerAddress) ? (
                       "You Own This"
                     ) : (
                       <span className="relative z-10">Buy Now</span>
@@ -414,39 +472,11 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
                   </div>
                 )}
               </div>
-              
-              {/* Payment options */}
-              {showPaymentOptions && (
-                <div className="bg-sinister-black/70 border border-sinister-orange/30 p-4 rounded-lg mt-4">
-                  <h4 className="text-sinister-orange font-heading text-lg mb-4">Select Payment Method</h4>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <button
-                      onClick={handleBuyWithMetis}
-                      disabled={isLoading}
-                      className="btn-primary p-4 flex flex-col items-center justify-center h-32"
-                    >
-                      <span className="text-2xl mb-2">METIS</span>
-                      <span className="text-sm opacity-80">Pay with native METIS</span>
-                    </button>
-                    
-                    <button
-                      onClick={handleBuyWithWMetis}
-                      disabled={isLoading || !enoughWmetis}
-                      className={`btn-tertiary p-4 flex flex-col items-center justify-center h-32 ${!enoughWmetis ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      <span className="text-2xl mb-2">WMETIS</span>
-                      <span className="text-sm opacity-80">Pay with Wrapped METIS</span>
-                      <span className="text-xs mt-2">Balance: {wmetisBalance} WMETIS</span>
-                      {!enoughWmetis && <span className="text-xs text-red-400 mt-1">Insufficient balance</span>}
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {!account && (
-                <div className="text-sinister-red text-sm italic">
-                  Connect your wallet to purchase this NFT
+
+              {/* Display transaction status */}
+              {txHash && (
+                <div className="mt-4 p-4 bg-sinister-black/30 border border-sinister-orange/20 rounded">
+                  <TransactionStatus transactionHash={txHash} />
                 </div>
               )}
             </div>
