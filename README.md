@@ -2,12 +2,13 @@
 
 Welcome to Delphi - "The Center of the World" for NFT trading on Metis and beyond. This decentralized marketplace connects artists, collectors, and enthusiasts in a visually stunning and interactive platform.
 
-## 🚀 Latest Updates
+## 🚀 Latest Updates (March 2025)
 
+- **ThirdWeb v5 SDK Migration**: Upgraded from v4 to v5 for improved performance and features
+- **Streamlined NFT Buying**: Simplified purchasing with native METIS for better UX and security
 - **Real Marketplace Integration**: Connected to real Metis blockchain marketplace contract
-- **NFT Buying Functionality**: Full support for buying NFTs with both METIS and WMETIS
-- **Metis Explorer Integration**: Links to view contracts, tokens, and transactions on Metis Explorer
-- **Enhanced User Experience**: Improved error handling, loading states, and transaction notifications
+- **Enhanced Error System**: Comprehensive error handling with recovery actions and notifications
+- **Metis Explorer Integration**: Links to view contracts, tokens, and transactions directly
 - **Cosmic Design System**: Unique interdimensional visual style throughout the application
 
 ## 🔮 Tech Stack Overview
@@ -25,17 +26,18 @@ Delphi is built using a modern tech stack with carefully selected technologies t
 - **Custom Design System**: Unique "Cosmic Overload" aesthetic with interdimensional effects
 
 ### Web3 Integration
-- **ThirdWeb SDK (v4)**: SDK for seamless Web3 integration
-  - `@thirdweb-dev/react`: React components and hooks for Web3 functionality
-  - `@thirdweb-dev/sdk`: Core SDK for blockchain interactions
-- **Ethers.js 5.7.2**: Ethereum library for blockchain interaction
+- **ThirdWeb SDK (v5)**: SDK for seamless Web3 integration
+  - `thirdweb/react`: React components and hooks for Web3 functionality
+  - `thirdweb`: Core SDK for blockchain interactions
+- **Viem**: Modern Ethereum library for blockchain interaction
 - **Metis Blockchain**: Layer 2 scaling solution for Ethereum with lower fees and faster transactions
 - **Smart Contract ABIs**: Direct interaction with marketplace contracts using their ABIs
 
 ### Transaction Management
 - **Custom Transaction System**: Real-time transaction notifications and error handling
 - **Wallet Integration**: Secure connection to MetaMask and other Web3 wallets
-- **Multi-Currency Support**: METIS (native) and WMETIS (wrapped) payment options
+- **Native METIS Payments**: Streamlined purchasing with native METIS for better UX and security
+- **Fee Distribution System**: 100% of marketplace fees distributed to community staking pools
 
 ### Package Management
 - **npm**: Node package manager for dependency management
@@ -131,57 +133,81 @@ These contracts are accessed using their ABIs stored in the `src/app/constants/`
 
 ### ThirdWeb SDK
 
-The project uses ThirdWeb SDK v4 for wallet connectivity:
+The project uses ThirdWeb SDK v5 for wallet connectivity:
 
 ```typescript
 // Example wallet connection
-import { useAddress, useMetamask, useSigner } from "@thirdweb-dev/react";
+import { useActiveAccount, useConnect, createWallet } from "thirdweb/react";
 
 const WalletButton = () => {
-  const address = useAddress();
-  const connectWithMetamask = useMetamask();
-  const signer = useSigner();
+  const account = useActiveAccount();
+  const { connect } = useConnect();
   
-  if (!address) {
-    return <button onClick={connectWithMetamask}>Sign In</button>;
+  if (!account) {
+    return <button onClick={() => connect(createWallet("io.metamask"))}>Sign In</button>;
   }
   
-  return <div>Connected: {address}</div>;
+  return <div>Connected: {account.address}</div>;
 };
 ```
 
 ### Direct Contract Interaction
 
-For marketplace interactions, we use direct ethers.js contract calls:
+For marketplace interactions, we use thirdweb v5 contract functions:
 
 ```typescript
 // Example: Buy an NFT with METIS
-const buyWithMetis = async (listingId, signer) => {
-  // Get the marketplace contract with signer
-  const marketplaceContract = getMarketplaceContract(signer);
+const buyWithMetis = async (listingId, wallet) => {
+  // Get the marketplace contract
+  const marketplaceContract = getContract({
+    client,
+    chain: metisChain,
+    address: CONTRACT_ADDRESS,
+  });
+  
+  // Get account from wallet
+  const account = useActiveAccount();
+  
+  // Create the buy transaction
+  const transaction = buyFromListing({
+    contract: marketplaceContract,
+    listingId: listingId,
+    quantity: 1,
+    recipient: account.address,
+  });
   
   // Execute the purchase transaction
-  const tx = await marketplaceContract.buyFromListing(
-    listingId,
-    buyerAddress,
-    1, // quantity
-    currencyAddress,
-    priceInWei,
-    { value: priceInWei }
-  );
+  const receipt = await sendTransaction({
+    transaction,
+    account,
+  });
   
   // Wait for transaction confirmation
-  const receipt = await tx.wait();
-  return receipt;
+  const confirmedReceipt = await waitForReceipt({
+    client,
+    chain: metisChain,
+    transactionHash: receipt.transactionHash,
+  });
+  
+  return confirmedReceipt;
 };
 ```
+
+### Fee Distribution Model
+
+Delphi features a unique economic model that benefits the entire Metis ecosystem:
+
+- **Community-First Approach**: 100% of marketplace fees are distributed to community staking pools
+- **50/50 Split**: Equal distribution between Vesta (VESTA) and Yeti-Apes (YAPES) token staking pools
+- **Rewards for Stakers**: Token holders who stake their tokens receive a portion of marketplace fees
+- **Sustainable Economics**: This model creates long-term value for the entire ecosystem without extracting value
 
 ## 🧠 Development Guidelines
 
 1. **Component Structure**: Follow atomic design principles
 2. **TypeScript**: Use proper typing for all components and functions
 3. **Styling**: Use Tailwind classes and follow design system
-4. **Web3**: Use ThirdWeb hooks for wallet connection, direct contract calls for transactions
+4. **Web3**: Use ThirdWeb v5 hooks for wallet connection, contract functions for transactions
 5. **Testing**: Write tests for critical components and functions
 6. **Animation**: Use Framer Motion for complex animations
 
@@ -189,11 +215,29 @@ const buyWithMetis = async (listingId, signer) => {
 
 - `next`: 14.1.0
 - `react`: 18.3+
-- `ethers`: 5.7.2 (exact version for ThirdWeb compatibility)
-- `@thirdweb-dev/react`: 4.9.4
-- `@thirdweb-dev/sdk`: 4.0.99
+- `thirdweb`: 5.91.0
+- `viem`: 1.20.1
+- `@tanstack/react-query`: 5.67.2
 - `framer-motion`: 12.4.10
 - `tailwindcss`: 3.3.0
+
+## 📅 Development Roadmap
+
+Delphi is currently in active development with a 5-week launch plan. Here are the key upcoming features:
+
+### Current Focus (Week 1)
+- **Error System Enhancement**: Improved error tracking, retry mechanisms, and network monitoring
+- **Listing Creation**: Implementing direct listing and auction creation flows
+- **User Profile**: Adding owned NFTs display and transaction history
+- **Staking Page**: Information on fee distribution and staking opportunities
+
+### Coming Soon
+- **Search and Filters**: Advanced search functionality and filtering options
+- **Enhanced NFT Detail View**: Transaction history, better metadata display, and price tracking
+- **Mobile Optimization**: Responsive design improvements for mobile users
+- **Enhanced Wallet Features**: Gas sponsorship and in-app wallet capabilities
+
+For the full roadmap, please see [ROADMAP.md](./docs/ROADMAP.md).
 
 ## 🔍 Troubleshooting
 

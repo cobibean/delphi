@@ -19,8 +19,9 @@ import { usePathname } from "next/navigation";
 import { ThirdwebProvider } from "thirdweb/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
-import { createThirdwebClient } from "thirdweb";
+import { createThirdwebClient, defineChain } from "thirdweb";
 import { THIRDWEB_CLIENT_ID } from "@/app/constants/contracts";
+import ToastNotification from './components/SharedComponents/ToastNotification';
 
 // Load Inter font for body text
 const inter = Inter({
@@ -49,8 +50,8 @@ const cormorantFont = {
 // We can't export metadata from a client component
 // Instead, we'll set the title and description directly in the head element
 
-// Define Metis chain with correct types
-const metisChain = {
+// Define Metis chain using defineChain
+const metisChain = defineChain({
   id: 1088,
   name: "Metis Andromeda",
   rpc: "https://andromeda.metis.io/?owner=1088",
@@ -60,7 +61,7 @@ const metisChain = {
     symbol: "METIS",
   },
   testnet: true, // For ThirdWeb v5 compatibility
-} as const;
+});
 
 // Create ThirdWeb client
 const thirdwebClient = createThirdwebClient({
@@ -100,6 +101,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${anton.variable} bg-oracle-black-void text-oracle-white oracle-texture constellation`}>
         <TransactionProvider>
+          {/* ThirdwebProvider with minimal required configuration */}
           <ThirdwebProvider>
             <QueryClientProvider client={queryClient}>
               <div className="flex flex-col min-h-screen relative overflow-hidden">
@@ -165,6 +167,7 @@ export default function RootLayout({
 
               {/* Notifications with cosmic styling */}
               <Toaster />
+              <ToastNotification />
             </QueryClientProvider>
           </ThirdwebProvider>
         </TransactionProvider>

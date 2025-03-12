@@ -9,31 +9,40 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Delphi Design System 2.0 Colors
         oracle: {
-          // Primary Colors
+          // Hyper Orange
           orange: '#FF5F1F',
           'orange-hot': '#FF3000',
           'orange-solar': '#FF7A00',
+          
+          // Void Black
           black: '#121212',
-          'black-void': '#000000', 
+          'black-void': '#000000',
           'black-matter': '#1D1D1D',
+          
+          // Quantum Turquoise
           turquoise: '#00D1C1',
           'turquoise-bright': '#00FFF0',
           'turquoise-deep': '#009E92',
-          white: '#F8F5F0',
-          'white-spectral': '#FFFFFF',
-          'white-ethereal': '#F2EBE0',
           
-          // Secondary Colors
+          // Spectral White
+          white: '#F8F5F0',
+          'white-bright': '#FFFFFF',
+          'white-warm': '#F2EBE0',
+          
+          // Dimensional Gold
           gold: '#FFD700',
           'gold-bright': '#FFC400',
-          'gold-pale': '#FFEA80',
+          'gold-glow': '#FFEA80',
+          
+          // Interdimensional Purple
           purple: '#6B46C1',
           'purple-bright': '#9B4DFF',
           'purple-deep': '#48318A',
+          
+          // Reality Error Red
           error: '#E53935',
-          'error-bright': '#FF0000',
+          'error-hot': '#FF0000',
           'error-deep': '#C90C00',
         },
         // Keeping the sinister theme for backward compatibility
@@ -54,8 +63,8 @@ const config: Config = {
       },
       backgroundImage: {
         // Delphi Design System 2.0 Gradients
-        'cosmic-combustion': 'linear-gradient(to right, #FF3000, #FF7A00, #FF5F1F)',
-        'quantum-entanglement': 'linear-gradient(to right, #00D1C1, #6B46C1, #00FFF0)',
+        'cosmic-combustion': 'linear-gradient(to right, #FF3000, #FF7A00)',
+        'quantum-entanglement': 'linear-gradient(to right, #00D1C1, #9B4DFF)',
         'event-horizon': 'radial-gradient(circle at center, #1D1D1D, #000000)',
         'hypernova': 'conic-gradient(from 0deg, #FF5F1F, #00D1C1, #6B46C1, #FFD700, #FF5F1F)',
         
@@ -231,10 +240,10 @@ const config: Config = {
         
         // Background Utilities
         '.bg-cosmic-combustion': {
-          background: 'linear-gradient(to right, #FF3000, #FF7A00, #FF5F1F)',
+          background: 'linear-gradient(to right, #FF3000, #FF7A00)',
         },
         '.bg-quantum-entanglement': {
-          background: 'linear-gradient(to right, #00D1C1, #6B46C1, #00FFF0)',
+          background: 'linear-gradient(to right, #00D1C1, #9B4DFF)',
         },
         '.bg-event-horizon': {
           background: 'radial-gradient(circle at center, #1D1D1D, #000000)',
