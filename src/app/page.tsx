@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getAllListings } from "@/app/services/marketplace";
+import { getAllListings } from "@/app/services/marketplace-v5";
 import { IListingWithNFT } from "@/app/interfaces/interfaces";
 import NFTMarketplaceDashboard from "@/app/components/NFTMarketplaceDashboard";
 import LoadingIndicator from "@/app/components/ui/LoadingIndicator";
@@ -17,7 +17,7 @@ interface MarketStats {
   averagePrice: string;
 }
 
-export default function Home() {
+export default function Page() {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [listings, setListings] = useState<IListingWithNFT[]>([]);
   const [featuredListings, setFeaturedListings] = useState<IListingWithNFT[]>([]);
@@ -364,7 +364,7 @@ export default function Home() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="stat-card">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-oracle-orange" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2M7 7h10" />
                   </svg>
                   <div className="stat-number">{marketStats.totalListings}</div>
                   <div className="stat-label">Total Listings</div>
