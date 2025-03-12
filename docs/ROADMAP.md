@@ -69,7 +69,7 @@ The Delphi NFT Marketplace is in an advanced stage of development with core func
    - [x] Fix wallet connection edge cases
 
 5. **Staking Page Implementation**
-   - [x] Create staking information page
+   - [ ] Create staking information page
    - [ ] Implement UI for explaining the 50/50 fee distribution model
    - [ ] Add deep links to Vesta and Yeti-Apes staking dApps
    - [ ] Implement stats display showing accumulated fees for each pool
