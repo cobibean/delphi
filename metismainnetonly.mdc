@@ -1,0 +1,16 @@
+# Metis Mainnet Only Policy
+
+For Delphi NFT Marketplace, we will **exclusively** use Metis Mainnet for all blockchain interactions until multi-chain support is explicitly implemented according to the roadmap.
+
+- Do not implement testnet support (no Metis Goerli)
+- Do not create network switching functionality
+- All contract interactions should target Metis Mainnet (Chain ID: 1088) only
+- Develop directly on Metis Mainnet using minimal gas fees for testing
+- Do not create conditional logic for different networks
+- Use fixed network configuration in the codebase
+- Chain ID should always be 1088 (Metis Andromeda)
+- RPC URL should target Metis Mainnet
+- Chain configuration should be simplified to only include Metis Mainnet
+- Remove any multi-chain or testnet-related code
+
+This rule may be revisited after public launch when we reach the "Multi-Chain Support" item in our roadmap. 

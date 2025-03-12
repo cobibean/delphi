@@ -1,0 +1,49 @@
+---
+description: Thirdweb API Reference. 
+globs: 
+alwaysApply: false
+---
+# Thirdweb V5 API Reference
+
+Always reference the Thirdweb V5 documentation in the `/thirdweb_typescript_docs` folder when implementing blockchain functionality.
+
+## Core Principles
+
+1. **Contract Interaction**:
+   - Use `getContract()` to get a contract instance
+   - Access contract functions with `contract.call("functionName", [args])`
+   - For marketplace contracts, use the marketplace extension
+
+2. **IPFS Handling**:
+   - Use Thirdweb's built-in IPFS resolvers when available
+   - For direct IPFS URLs, use reliable gateways (cloudflare-ipfs.com, etc.)
+
+3. **Error Handling**:
+   - Always include try/catch blocks for contract interactions
+   - Log detailed error information for debugging
+
+4. **Type Safety**:
+   - Use proper TypeScript types from Thirdweb
+   - Convert between BigInt and string values appropriately
+
+## Common Patterns
+
+```typescript
+// Getting a contract
+import { getContract } from "thirdweb";
+const contract = await getContract({
+  client,
+  chain: metisChain,
+  address: CONTRACT_ADDRESS,
+});
+
+// Reading from a contract
+const result = await contract.call("functionName", [arg1, arg2]);
+
+// Handling IPFS URLs
+const resolvedUrl = url.startsWith('ipfs://') 
+  ? url.replace('ipfs://', 'https://cloudflare-ipfs.com/ipfs/')
+  : url;
+```
+
+Always check the documentation for the most up-to-date API usage patterns. 

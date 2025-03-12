@@ -1,0 +1,8 @@
+---
+description: Never use mock data unless asked
+globs: 
+alwaysApply: false
+---
+# Never Use Mock Data
+
+- Never use placeholder or mock data unless specfically asked to. EVER! 

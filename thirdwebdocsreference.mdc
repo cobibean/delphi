@@ -1,0 +1,34 @@
+# Thirdweb Documentation Reference Policy
+
+When building with Thirdweb V5, always reference the official documentation located in the `/thirdweb_typescript_docs` directory.
+
+## Core Guidelines
+
+- **ALWAYS** check the relevant documentation before implementing any Thirdweb-related feature
+- After 2 unsolved error attempts, MUST reference the specific .MD files in `/thirdweb_typescript_docs`
+- Include documentation reference comments in code (e.g., `// See thirdweb_typescript_docs/React Hooks/useReadContract.md`)
+- When unsure about API usage, parameter types, or return values, consult the docs first - not external sources
+- When debugging Thirdweb-related errors, documentation should be the first reference point
+
+## Documentation Categories to Reference
+
+- **Core Functions** - for utility functions, chains, and basic blockchain operations
+- **React Hooks** - for all React component integration
+- **UI Components** - for pre-built UI elements
+- **Advanced Topics** - for complex operations like contract deployment or permissions
+
+## In Code Comments
+
+Include specific file references in comments when implementing Thirdweb functionality:
+
+```typescript
+// Reference: See thirdweb_typescript_docs/React Hooks/useReadContract.md
+const { data, isLoading } = useReadContract({...})
+```
+
+## Error Resolution Process
+
+1. First attempt to solve using your knowledge
+2. Second attempt exploring related areas of the code
+3. **After 2 attempts, MUST reference specific documentation files**
+4. Document the solution with a reference to the relevant documentation 
