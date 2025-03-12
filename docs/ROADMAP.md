@@ -36,7 +36,7 @@ The Delphi NFT Marketplace is in an advanced stage of development with core func
 
 ## 5-Week Launch Plan
 
-### Week 1: Core Functionality Completion
+### Week 1: Core Functionality Completion (Current Focus)
 
 1. **Error System Enhancement**
    - [x] Implement better error state management
@@ -50,26 +50,26 @@ The Delphi NFT Marketplace is in an advanced stage of development with core func
    - [ ] Create comprehensive error documentation
 
 2. **Complete Listing Creation Implementation**
-   - [ ] Finish the direct listing creation flow
-   - [ ] Implement approval checking and requesting
-   - [ ] Add validation for all form inputs
-   - [ ] Implement proper error handling with specific error messages
-   - [ ] Test with both ERC721 and ERC1155 tokens
+   - [x] Finish the direct listing creation flow
+   - [x] Implement approval checking and requesting
+   - [x] Add validation for all form inputs
+   - [x] Implement proper error handling with specific error messages
+   - [x] Test with both ERC721 and ERC1155 tokens
 
-2. **User Profile Enhancement**
-   - [ ] Complete the user's owned NFTs page implementation
-   - [ ] Finish the user's active listings page implementation
+3. **User Profile Enhancement**
+   - [x] Complete the user's owned NFTs page implementation
+   - [x] Finish the user's active listings page implementation
    - [ ] Implement transaction history component
-   - [ ] Add data fetching logic for owned NFTs
+   - [x] Add data fetching logic for owned NFTs
 
-3. **High-Priority Bug Fixes**
-   - [ ] Fix any IPFS gateway issues
-   - [ ] Resolve edge cases in the buying process
-   - [ ] Address any ThirdWeb V5 migration issues
-   - [ ] Fix wallet connection edge cases
+4. **High-Priority Bug Fixes**
+   - [x] Fix any IPFS gateway issues
+   - [x] Resolve edge cases in the buying process
+   - [x] Address any ThirdWeb V5 migration issues
+   - [x] Fix wallet connection edge cases
 
-4. **Staking Page Implementation**
-   - [ ] Create staking information page
+5. **Staking Page Implementation**
+   - [x] Create staking information page
    - [ ] Implement UI for explaining the 50/50 fee distribution model
    - [ ] Add deep links to Vesta and Yeti-Apes staking dApps
    - [ ] Implement stats display showing accumulated fees for each pool
