@@ -1,8 +1,13 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
 # Metis Mainnet Only Policy
 
 For Delphi NFT Marketplace, we will **exclusively** use Metis Mainnet for all blockchain interactions until multi-chain support is explicitly implemented according to the roadmap.
 
-- Do not implement testnet support (no Metis Goerli)
+- Do not implement testnet support (no Metis Sepolia)
 - Do not create network switching functionality
 - All contract interactions should target Metis Mainnet (Chain ID: 1088) only
 - Develop directly on Metis Mainnet using minimal gas fees for testing

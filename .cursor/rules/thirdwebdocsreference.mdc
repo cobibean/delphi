@@ -1,3 +1,8 @@
+---
+description: When building with Thirdweb V5, always reference the official documentation located in the `/thirdweb_typescript_docs` directory.
+globs: 
+alwaysApply: false
+---
 # Thirdweb Documentation Reference Policy
 
 When building with Thirdweb V5, always reference the official documentation located in the `/thirdweb_typescript_docs` directory.
