@@ -3,12 +3,14 @@ import { client } from "../config/client";
 import { metisChain } from "../config/chain";
 import { toEther, toWei } from "thirdweb/utils";
 import { IDirectListing, INFTMetadata, IListingWithNFT, INFTAttribute } from "../interfaces/interfaces";
-import { getAllValidListings } from "thirdweb/extensions/marketplace";
+import { getAllValidListings, getAllValidAuctions, bidInAuction as bidInAuctionThirdweb, buyoutAuction as buyoutAuctionThirdweb } from "thirdweb/extensions/marketplace";
 import { getNFT } from "thirdweb/extensions/erc721";
 import { buyFromListing } from "thirdweb/extensions/marketplace";
 import { getContractMetadata } from "thirdweb/extensions/common";
 import { waitForReceipt } from "thirdweb";
-import { balanceOf } from "thirdweb/extensions/erc20";
+import { balanceOf, allowance, approve } from "thirdweb/extensions/erc20";
+import { getContractEvents } from "thirdweb";
+import { getWinningBid, newBidEvent } from "thirdweb/extensions/marketplace";
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT || '';
 console.log(`Marketplace Contract: ${CONTRACT_ADDRESS}`);
@@ -51,6 +53,34 @@ const formatIPFSUrl = (url: string): string => {
   return url;
 };
 
+// Add interfaces for auctions
+export interface IAuction {
+  auctionId: string;
+  tokenId: string;
+  quantity: string;
+  minimumBidAmount: string;
+  buyoutBidAmount: string;
+  timeBufferInSeconds: number;
+  bidBufferBps: number;
+  startTimestamp: number;
+  endTimestamp: number;
+  auctionCreator: string;
+  assetContract: string;
+  currency: string;
+  tokenType: number;
+  status: number;
+  highestBid?: {
+    bidder: string;
+    amount: string;
+  };
+}
+
+export interface IAuctionWithNFT extends IAuction {
+  metadata?: INFTMetadata;
+  collectionName?: string;
+  sellerAddress?: string; // Alias for auctionCreator
+}
+
 /**
  * Get all active listings from the marketplace
  */
@@ -70,7 +100,14 @@ export const getAllListings = async (): Promise<IListingWithNFT[]> => {
       contract: marketplaceContract
     });
     
-    console.log(`Found ${listings.length} listings`);
+    console.log(`Found ${listings.length} direct listings`);
+    
+    // Get all valid auctions
+    const auctions = await getAllValidAuctions({
+      contract: marketplaceContract
+    });
+    
+    console.log(`Found ${auctions.length} auctions`);
     
     // Convert listings to our interface format
     const enhancedListings = await Promise.all(
@@ -84,11 +121,27 @@ export const getAllListings = async (): Promise<IListingWithNFT[]> => {
       })
     );
     
-    // Filter out null listings
-    const validListings = enhancedListings.filter(listing => listing !== null) as IListingWithNFT[];
+    // Convert auctions to our interface format
+    const enhancedAuctions = await Promise.all(
+      auctions.map(async (auction) => {
+        try {
+          return await getAuction(auction.id.toString());
+        } catch (error) {
+          console.error(`Error enhancing auction ${auction.id}:`, error);
+          return null;
+        }
+      })
+    );
     
-    console.log(`Found ${validListings.length} valid listings`);
-    return validListings;
+    // Filter out null listings and auctions
+    const validListings = enhancedListings.filter(listing => listing !== null) as IListingWithNFT[];
+    const validAuctions = enhancedAuctions.filter(auction => auction !== null) as IListingWithNFT[];
+    
+    // Combine both types into a single array
+    const allItems = [...validListings, ...validAuctions];
+    
+    console.log(`Found ${validListings.length} valid direct listings and ${validAuctions.length} valid auctions`);
+    return allItems;
     
   } catch (error) {
     console.error("Error fetching listings:", error);
@@ -199,6 +252,185 @@ export const getListing = async (listingId: string): Promise<IListingWithNFT | n
   } catch (error) {
     console.error(`Error fetching listing ${listingId}:`, error);
     return null;
+  }
+};
+
+/**
+ * Get a specific auction by ID with NFT metadata
+ */
+export const getAuction = async (auctionId: string): Promise<IListingWithNFT | null> => {
+  try {
+    // Get the marketplace contract
+    const marketplaceContract = getContract({
+      client,
+      chain: metisChain,
+      address: CONTRACT_ADDRESS as `0x${string}`,
+    });
+    
+    // Get all valid auctions to find the one we want
+    const allAuctions = await getAllValidAuctions({
+      contract: marketplaceContract
+    });
+    
+    // Find the auction with the matching ID
+    const auction = allAuctions.find(a => a.id.toString() === auctionId);
+    
+    if (!auction) {
+      console.error(`Auction ${auctionId} not found`);
+      return null;
+    }
+    
+    // Get the NFT contract
+    const nftContract = getContract({
+      client,
+      chain: metisChain,
+      address: auction.assetContractAddress as `0x${string}`,
+    });
+    
+    // Get NFT metadata
+    const nft = await getNFT({
+      contract: nftContract,
+      tokenId: auction.tokenId
+    });
+    
+    // Format attributes to match our interface
+    const attributes = Array.isArray(nft.metadata.attributes) 
+      ? nft.metadata.attributes.map(attr => ({
+          trait_type: String(attr.trait_type || ''),
+          value: String(attr.value || '')
+        })) 
+      : [];
+    
+    // Format NFT metadata
+    const metadata: INFTMetadata = {
+      name: nft.metadata.name || `NFT #${auction.tokenId.toString()}`,
+      description: nft.metadata.description || '',
+      image: formatIPFSUrl(nft.metadata.image || ''),
+      attributes
+    };
+    
+    // Get collection name
+    let collectionName = "Unknown Collection";
+    try {
+      const contractMetadata = await getContractMetadata({
+        contract: nftContract
+      });
+      collectionName = contractMetadata.name;
+      console.log(`Collection name: ${collectionName}`);
+    } catch (err) {
+      console.warn("Could not fetch collection metadata", err);
+    }
+    
+    // Get current highest bid
+    let currentBid = auction.minimumBidAmount;
+    let highestBidder = "";
+    
+    try {
+      const winningBid = await getWinningBid({
+        contract: marketplaceContract,
+        auctionId: auction.id
+      });
+      
+      if (winningBid) {
+        currentBid = winningBid.bidAmountWei;
+        highestBidder = winningBid.bidderAddress;
+        console.log(`Auction ${auctionId} has highest bid of ${toEther(currentBid)} from ${highestBidder}`);
+      }
+    } catch (error) {
+      console.warn(`Could not fetch winning bid for auction ${auctionId}:`, error);
+    }
+    
+    // Format price - use the highest bid if it exists, otherwise use minimum bid
+    let formattedPrice = "0";
+    try {
+      formattedPrice = toEther(currentBid);
+      console.log(`Formatted price for token ${auction.tokenId}: ${formattedPrice}`);
+    } catch (priceError) {
+      console.error(`Error formatting price for token ${auction.tokenId}:`, priceError);
+    }
+    
+    // Convert auction to listing format for compatibility with existing UI
+    const enhancedListing = {
+      listingId: auction.id.toString(),
+      tokenId: auction.tokenId.toString(),
+      quantity: auction.quantity.toString(),
+      pricePerToken: formattedPrice, // Use current highest bid as display price
+      startTimestamp: Number(auction.startTimeInSeconds || 0),
+      endTimestamp: Number(auction.endTimeInSeconds || 0),
+      listingCreator: auction.creatorAddress,
+      assetContract: auction.assetContractAddress,
+      currency: auction.currencyContractAddress,
+      tokenType: 0, // Assuming ERC721
+      status: 1, // Assuming active
+      reserved: false,
+      metadata,
+      collectionName,
+      sellerAddress: auction.creatorAddress,
+      // Add auction-specific fields
+      isAuction: true,
+      minimumBidAmount: toEther(auction.minimumBidAmount),
+      buyoutBidAmount: auction.buyoutBidAmount ? toEther(auction.buyoutBidAmount) : undefined,
+      highestBid: highestBidder ? {
+        bidder: highestBidder,
+        amount: formattedPrice
+      } : undefined,
+      currentBid: formattedPrice // Add the current bid amount
+    } as IListingWithNFT & { isAuction: boolean };
+    
+    console.log(`Enhanced auction created for ${auctionId}`);
+    
+    return enhancedListing;
+  } catch (error) {
+    console.error(`Error getting auction ${auctionId}:`, error);
+    return null;
+  }
+};
+
+/**
+ * Get bid history for an auction
+ */
+export const getAuctionBidHistory = async (auctionId: string): Promise<any[]> => {
+  try {
+    // Get the marketplace contract
+    const marketplaceContract = getContract({
+      client,
+      chain: metisChain,
+      address: CONTRACT_ADDRESS as `0x${string}`,
+    });
+    
+    // Get bid events
+    const bidEvents = await getContractEvents({
+      contract: marketplaceContract,
+      events: [
+        newBidEvent({
+          auctionId: BigInt(auctionId)
+        })
+      ],
+      // Get the last 100 events to ensure we don't miss any
+      fromBlock: "earliest",
+      toBlock: "latest"
+    });
+    
+    // Format bid history
+    const formattedBidHistory = bidEvents.map(event => {
+      // Access the args property safely with type assertion
+      const args = event.args as { bidder: string; bidAmount: bigint; };
+      
+      return {
+        bidder: args.bidder,
+        bidAmount: toEther(args.bidAmount),
+        // Just use current time as fallback since we can't access block timestamp reliably
+        timestamp: Math.floor(Date.now() / 1000) - (bidEvents.indexOf(event) * 60), // Approximate time (newer bids first)
+        transactionHash: event.transactionHash || ""
+      };
+    }).sort((a, b) => b.timestamp - a.timestamp); // Sort by timestamp (newest first)
+    
+    console.log(`Found ${formattedBidHistory.length} bids for auction ${auctionId}`);
+    
+    return formattedBidHistory;
+  } catch (error) {
+    console.error(`Error getting bid history for auction ${auctionId}:`, error);
+    return [];
   }
 };
 
@@ -391,6 +623,187 @@ export async function buyWithMetis(
     };
   } catch (error: any) {
     console.error("Error buying NFT:", error);
+    throw error;
+  }
+}
+
+/**
+ * Place a bid on an auction
+ */
+export async function bidInAuction(
+  auctionId: string,
+  bidAmount: string,
+  wallet: any
+): Promise<{ transactionHash: string, success: boolean, receipt: any }> {
+  try {
+    console.log("Placing bid on auction with parameters:", {
+      auctionId,
+      bidAmount
+    });
+    
+    // Get the marketplace contract
+    const marketplaceContract = await getContract({
+      client,
+      chain: metisChain,
+      address: CONTRACT_ADDRESS as `0x${string}`,
+    });
+    
+    // Create the bid transaction
+    const tx = bidInAuctionThirdweb({
+      contract: marketplaceContract,
+      auctionId: BigInt(auctionId),
+      bidAmount: bidAmount
+    });
+    
+    // Get the account from wallet
+    const account = wallet.getAccount();
+    if (!account) {
+      throw new Error("No connected account found");
+    }
+    
+    // Send the transaction
+    const result = await sendTransaction({
+      transaction: tx,
+      account
+    });
+    
+    console.log("Bid transaction sent:", result.transactionHash);
+    
+    // Wait for transaction confirmation
+    const confirmedReceipt = await waitForReceipt({
+      client,
+      chain: metisChain,
+      transactionHash: result.transactionHash,
+    });
+    
+    console.log("Bid transaction confirmed:", confirmedReceipt);
+    
+    return {
+      transactionHash: result.transactionHash,
+      success: true, 
+      receipt: confirmedReceipt
+    };
+  } catch (error: any) {
+    console.error("Error placing bid:", error);
+    throw error;
+  }
+}
+
+/**
+ * Buyout an auction at the buyout price
+ */
+export async function buyoutAuction(
+  auctionId: string,
+  wallet: any
+): Promise<{ transactionHash: string, success: boolean, receipt: any }> {
+  try {
+    console.log("Buying out auction with ID:", auctionId);
+    
+    // Get the marketplace contract
+    const marketplaceContract = await getContract({
+      client,
+      chain: metisChain,
+      address: CONTRACT_ADDRESS as `0x${string}`,
+    });
+    
+    // First we need to get the auction details to determine the currency and price
+    const allAuctions = await getAllValidAuctions({
+      contract: marketplaceContract
+    });
+    
+    // Find the auction with the matching ID
+    const auction = allAuctions.find(a => a.id.toString() === auctionId);
+    
+    if (!auction) {
+      throw new Error(`Auction ${auctionId} not found`);
+    }
+    
+    // Get the account from wallet
+    const account = wallet.getAccount();
+    if (!account) {
+      throw new Error("No connected account found");
+    }
+    
+    // For non-native token buyouts, we need to check allowance and approve if needed
+    if (auction.currencyContractAddress !== "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE") {
+      console.log(`Non-native token auction: ${auction.currencyContractAddress}`);
+      
+      // Get the ERC20 token contract
+      const tokenContract = getContract({
+        client,
+        chain: metisChain,
+        address: auction.currencyContractAddress as `0x${string}`,
+      });
+      
+      // Check if the marketplace has enough allowance
+      const currentAllowance = await allowance({
+        contract: tokenContract,
+        owner: account.address,
+        spender: CONTRACT_ADDRESS as `0x${string}`,
+      });
+      
+      console.log(`Current allowance: ${currentAllowance.toString()}, Buyout price: ${auction.buyoutBidAmount.toString()}`);
+      
+      // If allowance is less than buyout price, approve
+      if (currentAllowance < auction.buyoutBidAmount) {
+        console.log("Approving marketplace to spend tokens...");
+        
+        // Create approval transaction
+        const approveTx = approve({
+          contract: tokenContract,
+          spender: CONTRACT_ADDRESS as `0x${string}`,
+          amount: auction.buyoutBidAmount.toString()
+        });
+        
+        // Send approval transaction
+        const approveResult = await sendTransaction({
+          transaction: approveTx,
+          account
+        });
+        
+        console.log("Approval transaction sent:", approveResult.transactionHash);
+        
+        // Wait for approval transaction to be confirmed
+        await waitForReceipt({
+          client,
+          chain: metisChain,
+          transactionHash: approveResult.transactionHash,
+        });
+        
+        console.log("Approval transaction confirmed");
+      }
+    }
+    
+    // After ensuring proper approval, create the buyout transaction
+    const tx = buyoutAuctionThirdweb({
+      contract: marketplaceContract,
+      auctionId: BigInt(auctionId)
+    });
+    
+    // Send the transaction
+    const result = await sendTransaction({
+      transaction: tx,
+      account
+    });
+    
+    console.log("Buyout transaction sent:", result.transactionHash);
+    
+    // Wait for transaction confirmation
+    const confirmedReceipt = await waitForReceipt({
+      client,
+      chain: metisChain,
+      transactionHash: result.transactionHash,
+    });
+    
+    console.log("Buyout transaction confirmed:", confirmedReceipt);
+    
+    return {
+      transactionHash: result.transactionHash,
+      success: true, 
+      receipt: confirmedReceipt
+    };
+  } catch (error: any) {
+    console.error("Error buying out auction:", error);
     throw error;
   }
 }

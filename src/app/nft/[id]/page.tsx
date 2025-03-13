@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { getListing, getAllListings } from "@/app/services/marketplace";
+import { getListing, getAuction, getAllListings } from "@/app/services/marketplace-v5";
 import NFTDetailView from "@/app/components/NFTDetailView";
 import LoadingIndicator from "@/app/components/ui/LoadingIndicator";
 import Link from "next/link";
@@ -23,7 +23,15 @@ export default function ListingPage() {
         setIsLoading(true);
         // Fetch the specific listing by ID
         console.log(`Fetching listing ID: ${listingId}`);
-        const fetchedListing = await getListing(listingId);
+        
+        // Try to fetch as a direct listing first
+        let fetchedListing = await getListing(listingId);
+        
+        // If not found as a direct listing, try as an auction
+        if (!fetchedListing) {
+          console.log(`Listing not found, trying as auction ID: ${listingId}`);
+          fetchedListing = await getAuction(listingId);
+        }
         
         if (!fetchedListing) {
           setError("NFT listing not found");
@@ -34,6 +42,7 @@ export default function ListingPage() {
         console.log("Fetched listing:", fetchedListing);
         console.log("Listing metadata:", fetchedListing.metadata);
         console.log("Listing image URL:", fetchedListing.metadata?.image);
+        console.log("Is auction:", 'isAuction' in fetchedListing && fetchedListing.isAuction);
         
         setListing(fetchedListing);
         
@@ -50,9 +59,9 @@ export default function ListingPage() {
         
         setRelatedListings(related);
         setIsLoading(false);
-      } catch (err) {
-        console.error("Error fetching NFT data:", err);
-        setError(`Failed to load NFT: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      } catch (err: any) {
+        console.error("Error fetching listing:", err);
+        setError(err.message || "Failed to load NFT details");
         setIsLoading(false);
       }
     }

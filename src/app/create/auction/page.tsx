@@ -5,10 +5,12 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useActiveAccount, useActiveWallet } from "thirdweb/react";
 import * as ethers from "ethers";
-import { getMarketplaceContract, getERC721Contract } from "@/app/client";
+import { getMarketplaceContract, getERC721Contract, client, metisChain } from "@/app/client";
 import { CONTRACT_ADDRESS, WMETIS_CONTRACT_ADDRESS } from "@/app/constants/contracts";
 import { useTransaction } from "@/app/providers/TransactionProvider";
 import Link from "next/link";
+import { getContract, sendTransaction } from "thirdweb";
+import { setApprovalForAll, isApprovedForAll } from "thirdweb/extensions/erc721";
 
 export default function AuctionPage() {
   const router = useRouter();
@@ -85,8 +87,21 @@ export default function AuctionPage() {
         
         // Check if the marketplace is approved to transfer the NFT
         try {
-          const approvedAddress = await nftContract.getApproved(tokenId);
-          setIsApproved(approvedAddress.toLowerCase() === CONTRACT_ADDRESS.toLowerCase());
+          // Get the NFT contract with ThirdWeb
+          const thirdwebNftContract = await getContract({
+            client,
+            chain: metisChain,
+            address: assetContract as `0x${string}`,
+          });
+          
+          // Check if the token has approval
+          const isApprovedResult = await isApprovedForAll({
+            contract: thirdwebNftContract,
+            owner: account?.address as `0x${string}`,
+            operator: CONTRACT_ADDRESS as `0x${string}`,
+          });
+          
+          setIsApproved(isApprovedResult);
         } catch (err: any) {
           console.error("Error checking approval:", err);
           setIsApproved(false);
@@ -134,28 +149,48 @@ export default function AuctionPage() {
       setIsApproving(true);
       setError("");
       
-      const nftContract = getERC721Contract(assetContract);
-      
       console.log("Approving NFT for marketplace...");
-      const tx = await nftContract.approve(CONTRACT_ADDRESS, tokenId);
-      console.log("Approval transaction sent:", tx.hash);
       
-      // Add transaction to the transaction provider
+      // Get the NFT contract with ThirdWeb
+      const nftContract = await getContract({
+        client,
+        chain: metisChain,
+        address: assetContract as `0x${string}`,
+      });
+      
+      // Create the approval transaction
+      const tx = setApprovalForAll({
+        contract: nftContract,
+        operator: CONTRACT_ADDRESS as `0x${string}`,
+        approved: true,
+      });
+      
+      // Add transaction to the transaction provider (before sending)
       addTransaction(
         "loading",
         `Approve NFT #${tokenId} for marketplace`,
-        tx.hash
+        "Preparing transaction..."
       );
       
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
-      console.log("NFT approved:", receipt.hash);
+      // Get the account from the wallet
+      const account = wallet.getAccount();
+      if (!account) {
+        throw new Error("No connected account found");
+      }
+      
+      // Send the transaction using the connected account
+      const result = await sendTransaction({
+        transaction: tx,
+        account
+      });
+      
+      console.log("Approval transaction sent:", result.transactionHash);
       
       // Update transaction status
       addTransaction(
         "success",
         `Approve NFT #${tokenId} for marketplace`,
-        tx.hash
+        result.transactionHash
       );
       
       setIsApproved(true);
@@ -164,11 +199,11 @@ export default function AuctionPage() {
       setError("Error approving NFT for marketplace");
       
       // Update transaction status if there was a hash
-      if (err.hash) {
+      if (err.transactionHash) {
         addTransaction(
           "error",
           `Approve NFT #${tokenId} for marketplace`,
-          err.hash
+          err.transactionHash
         );
       }
     } finally {
@@ -192,11 +227,13 @@ export default function AuctionPage() {
       setIsLoading(true);
       setError("");
       
+      // Get ethereum provider from wallet object
+      const provider = new ethers.providers.JsonRpcProvider(metisChain.rpc);
       const marketplaceContract = getMarketplaceContract();
       
       // Calculate timestamps
-      const startTimestamp = Math.floor(Date.now() / 1000); // Now
-      const endTimestamp = startTimestamp + (duration * 24 * 60 * 60); // Now + duration in days
+      const startTimestamp = Math.floor(Date.now() / 1000);
+      const endTimestamp = startTimestamp + (duration * 24 * 60 * 60);
       
       // Create auction parameters
       const auctionParams = {
@@ -214,42 +251,56 @@ export default function AuctionPage() {
       
       console.log("Creating auction with params:", auctionParams);
       
-      // Create the auction
-      const tx = await marketplaceContract.createAuction(auctionParams);
-      console.log("Auction transaction sent:", tx.hash);
+      // Get the active account wallet address
+      const walletAddress = account?.address;
+      if (!walletAddress) {
+        throw new Error("No wallet address found");
+      }
       
       // Add transaction to the transaction provider
+      const txDescription = `Create auction for NFT #${tokenId}`;
       addTransaction(
         "loading",
-        `Create auction for NFT #${tokenId}`,
-        tx.hash
+        txDescription,
+        "Preparing transaction..."
       );
       
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
-      console.log("Auction created successfully:", receipt.hash);
+      console.log("Sending transaction with address:", walletAddress);
       
-      // Update transaction status
-      addTransaction(
-        "success",
-        `Create auction for NFT #${tokenId}`,
-        tx.hash
-      );
-      
-      // Navigate back to home page
-      router.push("/");
+      // Create a pop-up for the user to sign the transaction
+      await (window as any).ethereum.request({
+        method: "eth_sendTransaction",
+        params: [{
+          from: walletAddress,
+          to: CONTRACT_ADDRESS,
+          data: marketplaceContract.interface.encodeFunctionData(
+            "createAuction",
+            [auctionParams]
+          )
+        }]
+      }).then((txHash: string) => {
+        console.log("Transaction hash:", txHash);
+        addTransaction(
+          "success",
+          txDescription,
+          txHash
+        );
+        
+        // Navigate back to home page after successful transaction
+        router.push("/");
+      }).catch((error: Error) => {
+        console.error("Error creating auction:", error);
+        setError("Error creating auction: " + (error.message || "User rejected transaction"));
+        
+        addTransaction(
+          "error",
+          txDescription,
+          ""
+        );
+      });
     } catch (err: any) {
       console.error("Error creating auction:", err);
       setError("Error creating auction: " + (err.message || "Unknown error"));
-      
-      // Update transaction status if there was a hash
-      if (err.hash) {
-        addTransaction(
-          "error",
-          `Create auction for NFT #${tokenId}`,
-          err.hash
-        );
-      }
     } finally {
       setIsLoading(false);
     }

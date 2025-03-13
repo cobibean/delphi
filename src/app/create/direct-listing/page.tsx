@@ -5,10 +5,14 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useActiveAccount, useActiveWallet } from "thirdweb/react";
 import * as ethers from "ethers";
-import { getMarketplaceContract, getERC721Contract } from "@/app/client";
+import { getMarketplaceContract, getERC721Contract, client, metisChain } from "@/app/client";
 import { CONTRACT_ADDRESS, WMETIS_CONTRACT_ADDRESS } from "@/app/constants/contracts";
 import { useTransaction } from "@/app/providers/TransactionProvider";
 import Link from "next/link";
+import { getContract } from "thirdweb";
+import { sendTransaction } from "thirdweb";
+import { setApprovalForAll, isApprovedForAll } from "thirdweb/extensions/erc721";
+import { createListing as createDirectListing } from "thirdweb/extensions/marketplace";
 
 export default function DirectListingPage() {
   const router = useRouter();
@@ -84,8 +88,21 @@ export default function DirectListingPage() {
         
         // Check if the marketplace is approved to transfer the NFT
         try {
-          const approvedAddress = await nftContract.getApproved(tokenId);
-          setIsApproved(approvedAddress.toLowerCase() === CONTRACT_ADDRESS.toLowerCase());
+          // Get the NFT contract with ThirdWeb
+          const thirdwebNftContract = await getContract({
+            client,
+            chain: metisChain,
+            address: assetContract as `0x${string}`,
+          });
+          
+          // We need to import isApprovedForAll from thirdweb/extensions/erc721 at the top of the file
+          const isApprovedResult = await isApprovedForAll({
+            contract: thirdwebNftContract,
+            owner: account?.address as `0x${string}`,
+            operator: CONTRACT_ADDRESS as `0x${string}`,
+          });
+          
+          setIsApproved(isApprovedResult);
         } catch (err: any) {
           console.error("Error checking approval:", err);
           setIsApproved(false);
@@ -133,28 +150,48 @@ export default function DirectListingPage() {
       setIsApproving(true);
       setError("");
       
-      const nftContract = getERC721Contract(assetContract);
-      
       console.log("Approving NFT for marketplace...");
-      const tx = await nftContract.approve(CONTRACT_ADDRESS, tokenId);
-      console.log("Approval transaction sent:", tx.hash);
       
-      // Add transaction to the transaction provider
+      // Get the NFT contract with ThirdWeb
+      const nftContract = await getContract({
+        client,
+        chain: metisChain,
+        address: assetContract as `0x${string}`,
+      });
+      
+      // Create the approval transaction
+      const tx = setApprovalForAll({
+        contract: nftContract,
+        operator: CONTRACT_ADDRESS as `0x${string}`,
+        approved: true,
+      });
+      
+      // Add transaction to the transaction provider (before sending)
       addTransaction(
         "loading",
         `Approve NFT #${tokenId} for marketplace`,
-        tx.hash
+        "Preparing transaction..."
       );
       
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
-      console.log("NFT approved:", receipt.hash);
+      // Get the account from the wallet
+      const account = wallet.getAccount();
+      if (!account) {
+        throw new Error("No connected account found");
+      }
+      
+      // Send the transaction using the connected account
+      const result = await sendTransaction({ 
+        transaction: tx, 
+        account
+      });
+      
+      console.log("Approval transaction sent:", result.transactionHash);
       
       // Update transaction status
       addTransaction(
         "success",
         `Approve NFT #${tokenId} for marketplace`,
-        tx.hash
+        result.transactionHash
       );
       
       setIsApproved(true);
@@ -163,11 +200,11 @@ export default function DirectListingPage() {
       setError("Error approving NFT for marketplace");
       
       // Update transaction status if there was a hash
-      if (err.hash) {
+      if (err.transactionHash) {
         addTransaction(
           "error",
           `Approve NFT #${tokenId} for marketplace`,
-          err.hash
+          err.transactionHash
         );
       }
     } finally {
@@ -191,46 +228,65 @@ export default function DirectListingPage() {
       setIsLoading(true);
       setError("");
       
-      const marketplaceContract = getMarketplaceContract();
+      // Get the marketplace contract with ThirdWeb
+      const marketplaceContract = await getContract({
+        client,
+        chain: metisChain,
+        address: CONTRACT_ADDRESS as `0x${string}`,
+      });
       
       // Calculate timestamps
       const startTimestamp = Math.floor(Date.now() / 1000); // Now
       const endTimestamp = startTimestamp + (duration * 24 * 60 * 60); // Now + duration in days
       
-      // Create listing parameters
-      const listingParams = {
-        assetContract: assetContract,
-        tokenId: tokenId,
-        quantity: 1, // Single NFT
-        currency: WMETIS_CONTRACT_ADDRESS, // WMETIS as the currency
-        pricePerToken: ethers.utils.parseUnits(price, 18), // Convert to wei
-        startTimestamp: startTimestamp,
-        endTimestamp: endTimestamp,
-        reserved: false // No reservation
-      };
+      console.log("Creating listing with params:", {
+        assetContractAddress: assetContract,
+        tokenId,
+        pricePerToken: price,
+        startTimeInSeconds: BigInt(startTimestamp),
+        endTimeInSeconds: BigInt(endTimestamp),
+        quantity: 1n,
+        currencyContractAddress: WMETIS_CONTRACT_ADDRESS
+      });
       
-      console.log("Creating listing with params:", listingParams);
+      // Create the listing transaction
+      const tx = createDirectListing({
+        contract: marketplaceContract,
+        assetContractAddress: assetContract as `0x${string}`,
+        tokenId: BigInt(tokenId),
+        pricePerToken: price,
+        quantity: 1n,
+        currencyContractAddress: WMETIS_CONTRACT_ADDRESS as `0x${string}`,
+        startTimestamp: new Date(startTimestamp * 1000),
+        endTimestamp: new Date(endTimestamp * 1000)
+      });
       
-      // Create the listing
-      const tx = await marketplaceContract.createListing(listingParams);
-      console.log("Listing transaction sent:", tx.hash);
-      
-      // Add transaction to the transaction provider
+      // Add transaction to the transaction provider (before sending)
       addTransaction(
         "loading",
         `Create listing for NFT #${tokenId}`,
-        tx.hash
+        "Preparing transaction..."
       );
       
-      // Wait for transaction to be mined
-      const receipt = await tx.wait();
-      console.log("Listing created successfully:", receipt.hash);
+      // Get the account from the wallet
+      const account = wallet.getAccount();
+      if (!account) {
+        throw new Error("No connected account found");
+      }
+      
+      // Send the transaction using the connected account
+      const result = await sendTransaction({ 
+        transaction: tx, 
+        account
+      });
+      
+      console.log("Listing transaction sent:", result.transactionHash);
       
       // Update transaction status
       addTransaction(
         "success",
         `Create listing for NFT #${tokenId}`,
-        tx.hash
+        result.transactionHash
       );
       
       // Navigate back to home page
@@ -240,11 +296,11 @@ export default function DirectListingPage() {
       setError("Error creating listing: " + (err.message || "Unknown error"));
       
       // Update transaction status if there was a hash
-      if (err.hash) {
+      if (err.transactionHash) {
         addTransaction(
           "error",
           `Create listing for NFT #${tokenId}`,
-          err.hash
+          err.transactionHash
         );
       }
     } finally {

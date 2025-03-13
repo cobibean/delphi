@@ -3,10 +3,12 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { IListingWithNFT } from "@/app/interfaces/interfaces";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useActiveAccount, useActiveWallet } from "thirdweb/react";
 import { buyWithMetis } from "@/app/services/marketplace";
+import { buyoutAuction } from "@/app/services/marketplace-v5";
 import { useTransaction } from "@/app/providers/TransactionProvider";
 
 interface NFTCardProps {
@@ -38,7 +40,14 @@ const formatIPFSUrl = (url: string): string => {
 };
 
 export default function NFTCard({ listing, className }: NFTCardProps) {
+  const router = useRouter();
   const { listingId, tokenId, assetContract, pricePerToken, metadata, collectionName } = listing;
+  
+  // Check if this is an auction
+  const isAuction = 'isAuction' in listing && listing.isAuction === true;
+  const minimumBidAmount = isAuction && 'minimumBidAmount' in listing ? listing.minimumBidAmount as string : null;
+  const currentBid = isAuction && 'currentBid' in listing ? listing.currentBid as string : pricePerToken;
+  const buyoutBidAmount = isAuction && 'buyoutBidAmount' in listing ? listing.buyoutBidAmount as string : undefined;
   
   const [isHovering, setIsHovering] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -64,16 +73,19 @@ export default function NFTCard({ listing, className }: NFTCardProps) {
   
   // Format price for display
   const formattedPrice = useMemo(() => {
-    if (!pricePerToken) return "0";
+    // For auctions, use currentBid if available, otherwise use minimumBidAmount
+    const priceToFormat = isAuction ? currentBid : pricePerToken;
+    
+    if (!priceToFormat) return "0";
     
     try {
-      const priceValue = parseFloat(pricePerToken);
+      const priceValue = parseFloat(priceToFormat);
       
       // Log the raw price for debugging
       console.log(`NFTCard ${listingId} raw price:`, priceValue);
       
       if (isNaN(priceValue) || priceValue === 0) {
-        console.warn(`NFTCard ${listingId}: Invalid price:`, pricePerToken);
+        console.warn(`NFTCard ${listingId}: Invalid price:`, priceToFormat);
         return "0";
       }
       
@@ -98,7 +110,7 @@ export default function NFTCard({ listing, className }: NFTCardProps) {
       console.error(`NFTCard ${listingId}: Error formatting price:`, error);
       return "0";
     }
-  }, [pricePerToken, listingId]);
+  }, [pricePerToken, listingId, isAuction, currentBid]);
   
   // Handle image load success
   const handleImageLoad = () => {
@@ -121,13 +133,19 @@ export default function NFTCard({ listing, className }: NFTCardProps) {
     }
   };
   
-  // Handle quick buy
+  // Handle quick buy or place bid
   const handleQuickBuy = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigation to detail page
     e.stopPropagation(); // Stop event propagation
     
     if (!account || !wallet) {
       addTransaction("error", "Connect your wallet first to buy this NFT");
+      return;
+    }
+    
+    // For auctions, redirect to the detail page for bidding
+    if (isAuction) {
+      router.push(`/nft/${listingId}`);
       return;
     }
     
@@ -148,6 +166,43 @@ export default function NFTCard({ listing, className }: NFTCardProps) {
     } catch (error: any) {
       console.error("Error buying NFT:", error);
       addTransaction("error", error.message || "Failed to purchase NFT");
+    } finally {
+      setIsBuying(false);
+    }
+  };
+  
+  // Handle buyout for auctions
+  const handleBuyoutAuction = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation to detail page
+    e.stopPropagation(); // Stop event propagation
+    
+    if (!account || !wallet) {
+      addTransaction("error", "Connect your wallet first to buy this NFT");
+      return;
+    }
+    
+    try {
+      setIsBuying(true);
+      const txId = addTransaction("loading", `Buying out auction for NFT #${tokenId}...`);
+      
+      console.log(`Buying out auction ${listingId} with wallet:`, wallet);
+      
+      // Pass the wallet to the buyoutAuction function
+      const result = await buyoutAuction(listingId, wallet);
+      
+      if (result && result.success) {
+        addTransaction("success", `Successfully bought out auction for NFT #${tokenId}!`, result.transactionHash);
+        
+        // Redirect to profile page after successful purchase
+        setTimeout(() => {
+          window.location.href = '/profile';
+        }, 2000);
+      } else {
+        addTransaction("error", `Failed to buyout auction for NFT #${tokenId}`, result?.transactionHash);
+      }
+    } catch (error: any) {
+      console.error("Error buying out auction:", error);
+      addTransaction("error", error.message || "Failed to buyout auction");
     } finally {
       setIsBuying(false);
     }
@@ -204,6 +259,13 @@ export default function NFTCard({ listing, className }: NFTCardProps) {
             <div className="absolute top-2 right-2 bg-sinister-black/70 border-sinister-teal/30 border px-2 py-0.5 text-xs font-heading text-sinister-teal">
               #{tokenId || "0"}
             </div>
+            
+            {/* Auction badge */}
+            {isAuction && (
+              <div className="absolute bottom-2 right-2 bg-cosmic-combustion text-white px-2 py-1 text-xs font-bold rounded">
+                AUCTION
+              </div>
+            )}
           </div>
           
           {/* NFT Details */}
@@ -215,6 +277,11 @@ export default function NFTCard({ listing, className }: NFTCardProps) {
             <div className="flex justify-between items-center mt-2">
               <div className="text-sinister-orange font-mono">
                 {formattedPrice} <span className="text-xs">METIS</span>
+                {isAuction && (
+                  <span className="text-xs ml-1">
+                    {parseFloat(currentBid) > parseFloat(minimumBidAmount || "0") ? "(current bid)" : "(min bid)"}
+                  </span>
+                )}
               </div>
               
               <div className="text-sinister-scroll text-xs">
@@ -226,22 +293,57 @@ export default function NFTCard({ listing, className }: NFTCardProps) {
         
         {/* Quick Buy Button - Outside the Link component */}
         <div className="px-3 pb-3">
-          <motion.button
-            className="w-full py-2 px-4 bg-sinister-orange text-sinister-black font-bold rounded-sm text-sm hover:bg-sinister-orange/90 transition-colors flex items-center justify-center"
-            onClick={handleQuickBuy}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            disabled={isBuying}
-          >
-            {isBuying ? (
-              <>
-                <div className="animate-spin h-4 w-4 border-2 border-sinister-black border-t-transparent rounded-full mr-2"></div>
-                Processing...
-              </>
-            ) : (
-              'Quick Buy'
-            )}
-          </motion.button>
+          {isAuction ? (
+            <div className="space-y-2">
+              <motion.button
+                className="w-full py-1.5 px-3 bg-cosmic-combustion text-sinister-black font-bold rounded-sm text-xs hover:opacity-90 transition-colors flex items-center justify-center"
+                onClick={handleQuickBuy}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                disabled={isBuying}
+              >
+                {isBuying ? (
+                  <>
+                    <div className="animate-spin h-3 w-3 border-2 border-sinister-black border-t-transparent rounded-full mr-1"></div>
+                    Processing...
+                  </>
+                ) : 'Place Bid'}
+              </motion.button>
+              
+              {/* Only show buyout option if buyoutBidAmount exists */}
+              {buyoutBidAmount && (
+                <motion.button
+                  className="w-full py-1.5 px-3 bg-sinister-orange text-sinister-black font-bold rounded-sm text-xs hover:opacity-90 transition-colors flex items-center justify-center"
+                  onClick={handleBuyoutAuction}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  disabled={isBuying}
+                >
+                  {isBuying ? (
+                    <>
+                      <div className="animate-spin h-3 w-3 border-2 border-sinister-black border-t-transparent rounded-full mr-1"></div>
+                      Processing...
+                    </>
+                  ) : `Buy Now: ${buyoutBidAmount} METIS`}
+                </motion.button>
+              )}
+            </div>
+          ) : (
+            <motion.button
+              className="w-full py-2 px-4 bg-sinister-orange text-sinister-black font-bold rounded-sm text-sm hover:opacity-90 transition-colors flex items-center justify-center"
+              onClick={handleQuickBuy}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              disabled={isBuying}
+            >
+              {isBuying ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-sinister-black border-t-transparent rounded-full mr-2"></div>
+                  Processing...
+                </>
+              ) : 'Quick Buy'}
+            </motion.button>
+          )}
         </div>
       </motion.div>
     </div>
