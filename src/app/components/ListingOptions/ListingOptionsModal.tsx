@@ -16,21 +16,29 @@ export default function ListingOptionsModal({ onClose }: ListingOptionsModalProp
   const handleOptionSelect = (option: string) => {
     setSelectedOption(option);
     
-    if (option === "collection") {
-      // Collection creation is coming soon, don't navigate
-      return;
-    }
-    
     setIsLoading(true);
     
     // Navigate to the appropriate page
     setTimeout(() => {
-      if (option === "direct") {
-        router.push("/create/direct-listing");
-      } else if (option === "auction") {
-        router.push("/create/auction");
+      try {
+        if (option === "direct") {
+          router.push("/create/direct-listing");
+        } else if (option === "auction") {
+          router.push("/create/auction");
+        } else if (option === "collection") {
+          // Use window.location for direct navigation to avoid client-side routing issues
+          window.location.href = "/create/nft-generator";
+          return; // Don't call onClose() as we're doing a full page navigation
+        }
+        onClose();
+      } catch (error) {
+        console.error("Navigation error:", error);
+        // Fallback to direct navigation
+        if (option === "collection") {
+          window.location.href = "/create/nft-generator";
+        }
+        onClose();
       }
-      onClose();
     }, 500);
   };
 
@@ -146,13 +154,13 @@ export default function ListingOptionsModal({ onClose }: ListingOptionsModalProp
                 )}
               </motion.div>
               
-              {/* Create Collection Option (Coming Soon) */}
+              {/* Create Collection Option */}
               <motion.div 
                 className={`relative overflow-hidden rounded-xl border-2 ${
                   selectedOption === "collection" 
-                    ? "border-oracle-turquoise" 
-                    : "border-oracle-turquoise/30"
-                } p-6 cursor-pointer transition-all duration-300 hover:border-oracle-turquoise`}
+                    ? "border-oracle-orange" 
+                    : "border-oracle-orange/30"
+                } p-6 cursor-pointer transition-all duration-300 hover:border-oracle-orange`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleOptionSelect("collection")}
@@ -164,13 +172,10 @@ export default function ListingOptionsModal({ onClose }: ListingOptionsModalProp
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
                   </div>
-                  <h4 className="font-heading text-xl text-oracle-turquoise text-center mb-2">Create Collection</h4>
+                  <h4 className="font-heading text-xl text-oracle-orange text-center mb-2">Create Collection</h4>
                   <p className="text-oracle-white/70 text-center text-sm">
                     Create your own NFT collection
                   </p>
-                  <div className="mt-2 flex justify-center">
-                    <span className="badge-turquoise">Coming Soon</span>
-                  </div>
                 </div>
               </motion.div>
             </div>

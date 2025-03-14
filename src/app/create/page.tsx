@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { FiImage, FiPackage } from "react-icons/fi";
 
 export default function CreateListingPage() {
   const [activeModal, setActiveModal] = useState(false);
@@ -13,6 +15,42 @@ export default function CreateListingPage() {
       </div>
       
       <div className="container mx-auto px-4">
+        {/* NFT Generator Card */}
+        <section className="mb-16">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="font-heading text-3xl text-oracle-orange mb-6">CREATE OPTIONS</h1>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* NFT Generator Card */}
+              <Link href="/create/nft-generator">
+                <div className="bg-ancient-wisdom rounded-xl p-8 border border-oracle-orange/20 shadow-card-normal hover:shadow-card-hover transition-all cursor-pointer">
+                  <div className="w-16 h-16 bg-cosmic-connection rounded-full flex items-center justify-center mb-4">
+                    <FiImage className="h-8 w-8 text-oracle-white" />
+                  </div>
+                  <h3 className="font-heading text-xl text-oracle-turquoise mb-2">NFT Generator</h3>
+                  <p className="text-oracle-white/70">
+                    Create a generative NFT collection by combining different trait layers.
+                  </p>
+                </div>
+              </Link>
+              
+              {/* Direct Listing Card */}
+              <div 
+                className="bg-ancient-wisdom rounded-xl p-8 border border-oracle-orange/20 shadow-card-normal opacity-70 cursor-not-allowed"
+                onClick={() => setActiveModal(true)}
+              >
+                <div className="w-16 h-16 bg-cosmic-connection rounded-full flex items-center justify-center mb-4">
+                  <FiPackage className="h-8 w-8 text-oracle-white" />
+                </div>
+                <h3 className="font-heading text-xl text-oracle-turquoise mb-2">Direct Listing</h3>
+                <p className="text-oracle-white/70">
+                  Create a direct listing for your existing NFT (Coming Soon).
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+        
         {/* Form Preview/Mockup Section */}
         <section className="mb-16">
           <div className="max-w-4xl mx-auto bg-ancient-wisdom rounded-xl p-8 border border-oracle-orange/20 shadow-card-normal">
