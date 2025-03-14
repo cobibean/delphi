@@ -101,7 +101,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${anton.variable} bg-oracle-black-void text-oracle-white oracle-texture constellation`}>
         <TransactionProvider>
-          {/* ThirdwebProvider with minimal required configuration */}
+          {/* ThirdwebProvider with minimal configuration */}
           <ThirdwebProvider>
             <QueryClientProvider client={queryClient}>
               <div className="flex flex-col min-h-screen relative overflow-hidden">
