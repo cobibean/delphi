@@ -54,7 +54,7 @@ The Delphi NFT Marketplace is in an advanced stage of development with core func
    - [x] Implement approval checking and requesting
    - [x] Add validation for all form inputs
    - [x] Implement proper error handling with specific error messages
-   - [x] Test with both ERC721 and ERC1155 tokens
+   - [ ] Test with both ERC721 and ERC1155 tokens (works with 721's)
 
 3. **User Profile Enhancement**
    - [x] Complete the user's owned NFTs page implementation
@@ -75,6 +75,11 @@ The Delphi NFT Marketplace is in an advanced stage of development with core func
    - [ ] Implement stats display showing accumulated fees for each pool
 
 ### Week 2: Enhanced User Experience
+
+#### Collection Creation
+- Implement layer uploading and rarity selection using Hashlips Art Engine or similar tools.
+- Create a user-friendly interface for managing layers and rarity attributes.
+- Ensure compatibility with existing NFT standards and metadata requirements.
 
 1. **Search and Filter Implementation**
    - [ ] Develop reusable filtering component
