@@ -1,13 +1,13 @@
-import { ethers, providers, Contract } from "ethers";
 import ERC721ABI from "@/app/constants/ERC721ABI"; // Import your standard ERC721 ABI
+import { ethers } from "ethers";
 
 export const fetchTokenURI = async (
   tokenId: string,
   contractAddress: string,
-  provider: providers.JsonRpcProvider
+  provider: ethers.JsonRpcProvider
 ): Promise<string> => {
   try {
-    const contract = new Contract(contractAddress, ERC721ABI, provider);
+    const contract = new ethers.Contract(contractAddress, ERC721ABI, provider);
     const tokenURI = await contract.tokenURI(tokenId);
 
     // Use the gateway from the .env file or fallback to a public gateway

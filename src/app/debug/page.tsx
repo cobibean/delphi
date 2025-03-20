@@ -1,8 +1,8 @@
 "use client";
 
+import { getAllListings } from "@/app/features/marketplace/services/marketplace-v5";
 import TestToast from "@/components/feedback/test/TestToast";
 import { CONTRACT_ADDRESS } from "@/constants/contracts";
-import { getAllListings } from "@/features/marketplace/services/marketplace";
 import { IListingWithNFT } from "@/interfaces/interfaces";
 import Link from "next/link";
 import { useEffect, useState } from "react";

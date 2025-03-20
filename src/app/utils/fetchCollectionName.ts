@@ -1,4 +1,4 @@
-import { ethers, providers, Contract } from "ethers";
+import { ethers } from "ethers";
 
 /**
  * Fetches the collection name for a given NFT contract.
@@ -6,9 +6,9 @@ import { ethers, providers, Contract } from "ethers";
  * @param provider - An instance of ethers.JsonRpcProvider.
  * @returns The name of the NFT collection.
  */
-const fetchCollectionName = async (contractAddress: string, provider: providers.JsonRpcProvider) => {
+const fetchCollectionName = async (contractAddress: string, provider: ethers.JsonRpcProvider) => {
   try {
-    const contract = new Contract(contractAddress, [
+    const contract = new ethers.Contract(contractAddress, [
       "function name() view returns (string)",
     ], provider);
 

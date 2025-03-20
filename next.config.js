@@ -3,6 +3,7 @@ const { redirects } = require('./src/app/routes.tsx');
 
 const nextConfig = {
   reactStrictMode: true,
+  output: 'standalone',
   images: {
     domains: ['ipfs.io'],
   },

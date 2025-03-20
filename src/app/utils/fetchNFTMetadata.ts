@@ -1,5 +1,4 @@
-import { fetchTokenURI } from "./fetchTokenURI";
-import { ethers, providers, Contract } from "ethers";
+import { ethers } from "ethers";
 import ERC721ABI from "../constants/ERC721ABI";
 
 interface NFTMetadata {
@@ -11,10 +10,10 @@ interface NFTMetadata {
 export async function fetchNFTMetadata(
   tokenId: string,
   assetContract: string,
-  provider: providers.JsonRpcProvider
+  provider: ethers.JsonRpcProvider
 ): Promise<NFTMetadata> {
   try {
-    const contract = new Contract(assetContract, ERC721ABI, provider);
+    const contract = new ethers.Contract(assetContract, ERC721ABI, provider);
     const tokenURI = await contract.tokenURI(tokenId);
     
     // Replace custom gateway with fallback public gateways

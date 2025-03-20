@@ -1,19 +1,21 @@
 "use client";
 
-import React, { createContext, useContext, ReactNode } from "react";
 import { useWallet as useCustomWallet } from "@/app/features/wallet/hooks/useWallet";
+import React, { createContext, ReactNode, useContext } from "react";
 
 // Types
 type WalletContextType = {
   isConnected: boolean;
   isConnecting: boolean;
   address: string | undefined;
-  displayAddress: string | undefined;
+  displayAddress: string;
   connectWallet: (walletId: string) => Promise<void>;
   disconnectWallet: () => Promise<void>;
   copyAddressToClipboard: () => void;
-  copied: boolean;
-  wallet: any;
+  handleNetworkSwitch: (chainId: number) => Promise<void>;
+  isDropdownOpen: boolean;
+  setIsDropdownOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  chain: any;
   walletOptions: Array<{ id: string; name: string; icon: string }>;
 };
 

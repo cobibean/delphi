@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { type ToastProps, type ToastState } from './types';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { type ToastProps, type ToastState, type ToastVariant } from './types';
 
 // Create a context for the toast state
 const ToastContext = createContext<ToastState | undefined>(undefined);
@@ -20,25 +20,25 @@ const updateGlobalToasts = (newToasts: ToastProps[]) => {
 export const standalone = {
   success: (title: string, description?: string, duration?: number) => {
     const id = Math.random().toString(36).substring(2, 9);
-    const newToast = { id, title, description, variant: "success", duration };
+    const newToast: ToastProps = { id, title, description, variant: "success" as ToastVariant, duration };
     updateGlobalToasts([...globalToasts, newToast]);
     return id;
   },
   error: (title: string, description?: string, duration?: number) => {
     const id = Math.random().toString(36).substring(2, 9);
-    const newToast = { id, title, description, variant: "error", duration: duration || 10000 };
+    const newToast: ToastProps = { id, title, description, variant: "error" as ToastVariant, duration: duration || 10000 };
     updateGlobalToasts([...globalToasts, newToast]);
     return id;
   },
   info: (title: string, description?: string, duration?: number) => {
     const id = Math.random().toString(36).substring(2, 9);
-    const newToast = { id, title, description, variant: "info", duration };
+    const newToast: ToastProps = { id, title, description, variant: "info" as ToastVariant, duration };
     updateGlobalToasts([...globalToasts, newToast]);
     return id;
   },
   warning: (title: string, description?: string, duration?: number) => {
     const id = Math.random().toString(36).substring(2, 9);
-    const newToast = { id, title, description, variant: "warning", duration };
+    const newToast: ToastProps = { id, title, description, variant: "warning" as ToastVariant, duration };
     updateGlobalToasts([...globalToasts, newToast]);
     return id;
   },
@@ -99,16 +99,16 @@ export const ToastContextProvider = (props: { children: React.ReactNode }) => {
   // Convenience methods
   const toast = {
     success: (title: string, description?: string, duration?: number) => {
-      add({ title, description, variant: "success", duration });
+      add({ title, description, variant: "success" as ToastVariant, duration });
     },
     error: (title: string, description?: string, duration?: number) => {
-      add({ title, description, variant: "error", duration: duration || 10000 }); // Errors show longer by default
+      add({ title, description, variant: "error" as ToastVariant, duration: duration || 10000 }); // Errors show longer by default
     },
     info: (title: string, description?: string, duration?: number) => {
-      add({ title, description, variant: "info", duration });
+      add({ title, description, variant: "info" as ToastVariant, duration });
     },
     warning: (title: string, description?: string, duration?: number) => {
-      add({ title, description, variant: "warning", duration });
+      add({ title, description, variant: "warning" as ToastVariant, duration });
     },
     custom: (props: Omit<ToastProps, "id">) => {
       add(props);

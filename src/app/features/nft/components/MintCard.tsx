@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { useActiveAccount } from 'thirdweb/react';
-import { getContract } from 'thirdweb';
-import { client } from '@/config/client';
-import { metisChain } from '@/config/chain';
-import { useToast } from '@/components/feedback/Toast/useToast';
+"use client";
+
 import { formatIPFSUrl } from '@/app/utils/ipfs';
+import { useToast } from '@/components/feedback/Toast/useToast';
+import { metisChain } from '@/config/chain';
 import { ethers } from 'ethers';
+import Image from 'next/image';
+import React, { useEffect, useState } from 'react';
+import { useActiveAccount } from 'thirdweb/react';
 
 interface MintCardProps {
   contractAddress: string;

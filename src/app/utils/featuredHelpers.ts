@@ -1,5 +1,5 @@
+import { getAllListings } from "@/app/features/marketplace/services/marketplace-v5";
 import { IListingWithNFT } from "@/interfaces/interfaces";
-import { getAllListingsWithMetadata } from "@/features/marketplace/services/marketplace";
 
 // Featured NFT collection addresses
 export const FEATURED_COLLECTION_ADDRESSES = [
@@ -21,7 +21,7 @@ export function filterFeaturedListings(listings: IListingWithNFT[]): IListingWit
  */
 export async function getFeaturedCollectionListings(): Promise<IListingWithNFT[]> {
   // Get all listings using the updated marketplace service
-  const allListings = await getAllListingsWithMetadata();
+  const allListings = await getAllListings();
   
   // Filter to only include featured collections
   const featuredListings = filterFeaturedListings(allListings);

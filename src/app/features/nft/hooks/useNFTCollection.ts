@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { metisChain } from "@/app/config/chain";
+import { client } from "@/app/config/client";
+import { INFTMetadata } from "@/app/interfaces/interfaces";
+import { useEffect, useState } from "react";
 import { getContract } from "thirdweb";
 import { getOwnedNFTs } from "thirdweb/extensions/erc721";
-import { client, metisChain } from "@/config/client";
 import { useActiveAccount } from "thirdweb/react";
-import { INFTMetadata } from "@/app/interfaces/interfaces";
 
 // Helper function to handle IPFS URLs
 const formatIPFSUrl = (url: string): string => {
