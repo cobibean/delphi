@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const { redirects } = require('./src/app/routes.tsx');
+
 const nextConfig = {
   reactStrictMode: true,
   images: {
@@ -15,6 +17,18 @@ const nextConfig = {
         destination: '/api/static/:path*',
       },
     ];
+  },
+  async redirects() {
+    return redirects;
+  },
+  webpack: (config, { isServer }) => {
+    // Add handling for native modules
+    config.module.rules.push({
+      test: /\.node$/,
+      use: 'node-loader',
+    });
+
+    return config;
   },
 };
 

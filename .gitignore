@@ -35,3 +35,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/Users/cobibean/DEV/delphi/reference
+/Users/cobibean/DEV/delphi/tests

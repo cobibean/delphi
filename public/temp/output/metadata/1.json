@@ -1,0 +1,20 @@
+{
+  "name": "ghgh #1",
+  "description": "ghgh",
+  "image": "ipfs:///1.png",
+  "attributes": [
+    {
+      "trait_type": "1",
+      "value": "Leonardo_Phoenix_10_A_subtle_background_featuring_the_interior_0_1"
+    },
+    {
+      "trait_type": "2",
+      "value": "vectorvic"
+    },
+    {
+      "trait_type": "3",
+      "value": "whiteVector1"
+    }
+  ],
+  "dna": "054373d73d50a64a89fa819c04ed0bd37a0a0213"
+}

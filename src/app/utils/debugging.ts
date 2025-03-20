@@ -2,6 +2,13 @@
  * Utilities for transaction debugging and network validation
  */
 
+import { getContract } from "thirdweb";
+
+/* Interface for contract with call method - matches direct-buy.ts */
+interface Contract {
+  call: (functionName: string, args: any[]) => Promise<any>;
+}
+
 /**
  * Log transaction details to console
  * @param tx Transaction object to log
@@ -64,8 +71,11 @@ export async function checkContractConnection(contract: any, address: string) {
     console.group("Contract Connection Check");
     console.log("Contract:", contract);
     
-    // Try a simple view call
-    const result = await contract.call("owner");
+    // Cast contract to our Contract interface for type safety
+    const typedContract = contract as Contract;
+    
+    // Try a simple view call using the contract.call method
+    const result = await typedContract.call("owner", []);
     console.log("Contract owner call result:", result);
     
     console.log("Check successful");

@@ -1,6 +1,6 @@
 import { defineChain } from "thirdweb";
 
-// Define Metis chain using the chain ID
+// Define Metis Andromeda Mainnet chain using chain ID
 export const metisChain = defineChain(1088);
 
 // Also export as chain for backward compatibility

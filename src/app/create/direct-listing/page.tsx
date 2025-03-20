@@ -1,18 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { metisChain } from "@/config/chain";
+import { client } from "@/config/client";
+import { CONTRACT_ADDRESS, NATIVE_TOKEN_ADDRESS } from "@/constants/contracts";
+import { useTransaction } from "@/providers/TransactionProvider";
+import { ethers } from "ethers";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { useActiveAccount, useActiveWallet } from "thirdweb/react";
-import * as ethers from "ethers";
-import { getMarketplaceContract, getERC721Contract, client, metisChain } from "@/app/client";
-import { CONTRACT_ADDRESS, WMETIS_CONTRACT_ADDRESS } from "@/app/constants/contracts";
-import { useTransaction } from "@/app/providers/TransactionProvider";
 import Link from "next/link";
-import { getContract } from "thirdweb";
-import { sendTransaction } from "thirdweb";
-import { setApprovalForAll, isApprovedForAll } from "thirdweb/extensions/erc721";
-import { createListing as createDirectListing } from "thirdweb/extensions/marketplace";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getContract, isAddress, readContract, sendTransaction, waitForReceipt } from "thirdweb";
+import { isApprovedForAll, setApprovalForAll } from "thirdweb/extensions/erc721";
+import { useActiveAccount, useActiveWallet } from "thirdweb/react";
 
 export default function DirectListingPage() {
   const router = useRouter();
@@ -30,6 +29,26 @@ export default function DirectListingPage() {
   const [isNftLoading, setIsNftLoading] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
+  const [isWaitingForConfirmation, setIsWaitingForConfirmation] = useState(false);
+  const [success, setSuccess] = useState(false);
+  
+  // Helper function to create an ERC721 contract
+  const getERC721Contract = async (address: string) => {
+    return getContract({
+      client,
+      chain: metisChain,
+      address: address as `0x${string}`,
+    });
+  };
+  
+  // Helper function to create a marketplace contract
+  const getMarketplaceContract = async () => {
+    return getContract({
+      client,
+      chain: metisChain,
+      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+    });
+  };
   
   // Format IPFS URL helper
   const formatIPFSUrl = (url: string): string => {
@@ -57,7 +76,7 @@ export default function DirectListingPage() {
   // Fetch NFT details when contract and token ID are provided
   useEffect(() => {
     const fetchNftDetails = async () => {
-      if (!assetContract || !tokenId || !ethers.utils.isAddress(assetContract)) {
+      if (!assetContract || !tokenId || !isAddress(assetContract)) {
         setNftDetails(null);
         return;
       }
@@ -66,13 +85,18 @@ export default function DirectListingPage() {
         setIsNftLoading(true);
         setError("");
         
-        // Get NFT contract
-        const nftContract = getERC721Contract(assetContract);
+        // Get NFT contract using thirdweb
+        const nftContract = await getERC721Contract(assetContract);
         
         // Check if the token exists and is owned by the user
         try {
-          const owner = await nftContract.ownerOf(tokenId);
-          if (owner.toLowerCase() !== account?.address.toLowerCase()) {
+          const ownerResult = await readContract({
+            contract: nftContract,
+            method: "function ownerOf(uint256 tokenId) view returns (address)",
+            params: [BigInt(tokenId)]
+          });
+          
+          if (ownerResult.toLowerCase() !== account?.address.toLowerCase()) {
             setError("You don't own this NFT");
             setNftDetails(null);
             setIsNftLoading(false);
@@ -88,18 +112,10 @@ export default function DirectListingPage() {
         
         // Check if the marketplace is approved to transfer the NFT
         try {
-          // Get the NFT contract with ThirdWeb
-          const thirdwebNftContract = await getContract({
-            client,
-            chain: metisChain,
-            address: assetContract as `0x${string}`,
-          });
-          
-          // We need to import isApprovedForAll from thirdweb/extensions/erc721 at the top of the file
           const isApprovedResult = await isApprovedForAll({
-            contract: thirdwebNftContract,
+            contract: nftContract,
             owner: account?.address as `0x${string}`,
-            operator: CONTRACT_ADDRESS as `0x${string}`,
+            operator: CONTRACT_ADDRESS.MARKETPLACE_V5,
           });
           
           setIsApproved(isApprovedResult);
@@ -110,7 +126,12 @@ export default function DirectListingPage() {
         
         // Get token URI and metadata
         try {
-          const tokenURI = await nftContract.tokenURI(tokenId);
+          const tokenURI = await readContract({
+            contract: nftContract,
+            method: "function tokenURI(uint256 tokenId) view returns (string)",
+            params: [BigInt(tokenId)]
+          });
+          
           console.log("Token URI:", tokenURI);
           
           // Fetch metadata
@@ -148,21 +169,18 @@ export default function DirectListingPage() {
     
     try {
       setIsApproving(true);
+      setIsWaitingForConfirmation(false);
       setError("");
       
       console.log("Approving NFT for marketplace...");
       
       // Get the NFT contract with ThirdWeb
-      const nftContract = await getContract({
-        client,
-        chain: metisChain,
-        address: assetContract as `0x${string}`,
-      });
+      const nftContract = await getERC721Contract(assetContract);
       
       // Create the approval transaction
       const tx = setApprovalForAll({
         contract: nftContract,
-        operator: CONTRACT_ADDRESS as `0x${string}`,
+        operator: CONTRACT_ADDRESS.MARKETPLACE_V5,
         approved: true,
       });
       
@@ -187,17 +205,60 @@ export default function DirectListingPage() {
       
       console.log("Approval transaction sent:", result.transactionHash);
       
-      // Update transaction status
+      // Set waiting for confirmation state
+      setIsWaitingForConfirmation(true);
+      
+      // Update transaction status to pending while we wait for confirmation
+      addTransaction(
+        "loading",
+        `Approve NFT #${tokenId} for marketplace`,
+        `Waiting for confirmation: ${result.transactionHash}`
+      );
+      
+      // IMPORTANT: Wait for the transaction to be confirmed
+      const receipt = await waitForReceipt({
+        client,
+        chain: metisChain,
+        transactionHash: result.transactionHash,
+      });
+      
+      console.log("Approval transaction confirmed:", receipt);
+      
+      // Verify the approval again after confirmation to be sure
+      const isApprovedAfterTx = await isApprovedForAll({
+        contract: nftContract,
+        owner: account.address as `0x${string}`,
+        operator: CONTRACT_ADDRESS.MARKETPLACE_V5,
+      });
+      
+      if (!isApprovedAfterTx) {
+        throw new Error("Approval transaction was confirmed but approval status is still false");
+      }
+      
+      // Now that we have confirmation, update the transaction status
       addTransaction(
         "success",
         `Approve NFT #${tokenId} for marketplace`,
         result.transactionHash
       );
       
+      // Only set approved after confirmation
       setIsApproved(true);
+      
+      // ADD DELAY to ensure blockchain state is updated
+      await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds
+      
+      // Double check approval one more time
+      const finalApprovalCheck = await isApprovedForAll({
+        contract: nftContract,
+        owner: account.address as `0x${string}`,
+        operator: CONTRACT_ADDRESS.MARKETPLACE_V5,
+      });
+      
+      console.log("Final approval status check:", finalApprovalCheck);
     } catch (err: any) {
       console.error("Error approving NFT:", err);
-      setError("Error approving NFT for marketplace");
+      setError("Error approving NFT for marketplace: " + (err.message || "Unknown error"));
       
       // Update transaction status if there was a hash
       if (err.transactionHash) {
@@ -208,12 +269,13 @@ export default function DirectListingPage() {
         );
       }
     } finally {
+      setIsWaitingForConfirmation(false);
       setIsApproving(false);
     }
   };
   
   // Create direct listing
-  const createListing = async () => {
+  const handleCreateListing = async () => {
     if (!wallet || !assetContract || !tokenId || !price) {
       setError("Please fill in all required fields");
       return;
@@ -228,72 +290,148 @@ export default function DirectListingPage() {
       setIsLoading(true);
       setError("");
       
-      // Get the marketplace contract with ThirdWeb
-      const marketplaceContract = await getContract({
-        client,
-        chain: metisChain,
-        address: CONTRACT_ADDRESS as `0x${string}`,
-      });
+      // ADDITIONAL VERIFICATION: Double check ownership and approval before creating listing
+      const nftContract = await getERC721Contract(assetContract);
+      
+      try {
+        // Verify ownership
+        const ownerResult = await readContract({
+          contract: nftContract,
+          method: "function ownerOf(uint256 tokenId) view returns (address)",
+          params: [BigInt(tokenId)]
+        });
+        
+        if (ownerResult.toLowerCase() !== account?.address.toLowerCase()) {
+          setError("You don't own this NFT. Ownership verification failed.");
+          setIsLoading(false);
+          return;
+        }
+        
+        // Verify approval again
+        const isStillApproved = await isApprovedForAll({
+          contract: nftContract,
+          owner: account?.address as `0x${string}`,
+          operator: CONTRACT_ADDRESS.MARKETPLACE_V5,
+        });
+        
+        if (!isStillApproved) {
+          setError("Marketplace approval is no longer valid. Please approve again.");
+          setIsApproved(false);
+          setIsLoading(false);
+          return;
+        }
+        
+        console.log("Pre-listing verification passed: You own the NFT and marketplace is approved.");
+      } catch (verifyErr: any) {
+        console.error("Error during pre-listing verification:", verifyErr);
+        setError("Failed to verify NFT ownership or approval: " + 
+          (verifyErr.message || "Unknown error"));
+        setIsLoading(false);
+        return;
+      }
       
       // Calculate timestamps
-      const startTimestamp = Math.floor(Date.now() / 1000); // Now
-      const endTimestamp = startTimestamp + (duration * 24 * 60 * 60); // Now + duration in days
+      const startTimestamp = Math.floor(Date.now() / 1000);
+      const endTimestamp = startTimestamp + (duration * 24 * 60 * 60); // Convert days to seconds
       
-      console.log("Creating listing with params:", {
-        assetContractAddress: assetContract,
-        tokenId,
-        pricePerToken: price,
-        startTimeInSeconds: BigInt(startTimestamp),
-        endTimeInSeconds: BigInt(endTimestamp),
-        quantity: 1n,
-        currencyContractAddress: WMETIS_CONTRACT_ADDRESS
+      // Get the marketplace contract with ThirdWeb
+      const marketplaceContract = getContract({
+        client,
+        chain: metisChain,
+        address: CONTRACT_ADDRESS.MARKETPLACE_V5,
       });
       
-      // Create the listing transaction
-      const tx = createDirectListing({
-        contract: marketplaceContract,
-        assetContractAddress: assetContract as `0x${string}`,
-        tokenId: BigInt(tokenId),
-        pricePerToken: price,
-        quantity: 1n,
-        currencyContractAddress: WMETIS_CONTRACT_ADDRESS as `0x${string}`,
-        startTimestamp: new Date(startTimestamp * 1000),
-        endTimestamp: new Date(endTimestamp * 1000)
-      });
-      
-      // Add transaction to the transaction provider (before sending)
+      // Add transaction to the transaction provider
       addTransaction(
         "loading",
         `Create listing for NFT #${tokenId}`,
         "Preparing transaction..."
       );
       
-      // Get the account from the wallet
-      const account = wallet.getAccount();
-      if (!account) {
-        throw new Error("No connected account found");
-      }
+      // Use ThirdWeb's direct listing function
+      const { createListing } = await import("thirdweb/extensions/marketplace");
       
-      // Send the transaction using the connected account
-      const result = await sendTransaction({ 
-        transaction: tx, 
+      // Create the listing transaction
+      const listingTx = createListing({
+        contract: marketplaceContract,
+        assetContractAddress: assetContract as `0x${string}`,
+        tokenId: BigInt(tokenId),
+        pricePerToken: ethers.parseEther(price).toString(),
+        currencyContractAddress: NATIVE_TOKEN_ADDRESS, // Using native token
+        quantity: BigInt(1), // For ERC721, always 1
+        startTimestamp: new Date(startTimestamp * 1000),
+        endTimestamp: new Date(endTimestamp * 1000),
+        isReservedListing: false
+      });
+      
+      // Send the transaction
+      const listingResult = await sendTransaction({
+        transaction: listingTx,
         account
       });
       
-      console.log("Listing transaction sent:", result.transactionHash);
+      console.log("Listing transaction sent:", listingResult.transactionHash);
       
-      // Update transaction status
+      // Update transaction status to pending
       addTransaction(
-        "success",
+        "loading",
         `Create listing for NFT #${tokenId}`,
-        result.transactionHash
+        `Waiting for confirmation: ${listingResult.transactionHash}`
       );
       
-      // Navigate back to home page
-      router.push("/");
+      // Wait for transaction confirmation
+      const receipt = await waitForReceipt({
+        client,
+        chain: metisChain,
+        transactionHash: listingResult.transactionHash,
+      });
+      
+      console.log("Listing transaction confirmed:", receipt);
+      
+      // Mark transaction as successful
+      addTransaction(
+        "success",
+        `Listed NFT #${tokenId} for ${price} METIS`,
+        listingResult.transactionHash
+      );
+      
+      // Update UI state
+      setIsLoading(false);
+      setSuccess(true);
+      
+      // Delay redirect to give time for user to see success message
+      setTimeout(() => {
+        router.push('/features/marketplace');
+      }, 3000);
+      
     } catch (err: any) {
       console.error("Error creating listing:", err);
-      setError("Error creating listing: " + (err.message || "Unknown error"));
+      
+      // For debugging, log complete error details
+      if (err.transaction) console.error("Error transaction:", err.transaction);
+      if (err.receipt) console.error("Error receipt:", err.receipt);
+      if (err.reason) console.error("Error reason:", err.reason);
+      
+      // Extract error message
+      let errorMessage = "Failed to create listing: ";
+      
+      if (err.message && err.message.includes("execution reverted")) {
+        if (err.message.includes("not owner or approved tokens")) {
+          errorMessage += "You don't own this NFT or haven't approved it for the marketplace.";
+        } else {
+          // Try to extract revert reason
+          const revertMatch = err.message.match(/reason string '([^']+)'/);
+          if (revertMatch && revertMatch[1]) {
+            errorMessage += revertMatch[1];
+          } else {
+            errorMessage += "Transaction reverted by the contract";
+          }
+        }
+      } else {
+        errorMessage += (err.message || "Unknown error");
+      }
+      
+      setError(errorMessage);
       
       // Update transaction status if there was a hash
       if (err.transactionHash) {
@@ -303,7 +441,7 @@ export default function DirectListingPage() {
           err.transactionHash
         );
       }
-    } finally {
+      
       setIsLoading(false);
     }
   };
@@ -338,7 +476,7 @@ export default function DirectListingPage() {
               </Link>
             </div>
             <p className="mt-4 text-oracle-white/70 text-sm">
-              <span className="text-oracle-orange">Direct Listing:</span> Sell your NFT for a fixed price. Buyers can purchase immediately.
+              <span className="text-oracle-orange">Direct Listing:</span> Set a fixed price for your NFT. Buyers can purchase immediately at your listed price.
             </p>
           </div>
           
@@ -384,11 +522,71 @@ export default function DirectListingPage() {
                     </div>
                   </div>
                 )}
+                
+                {/* Approval Status Card - Added to make approval flow clear */}
+                {nftDetails && (
+                  <div className={`mt-4 rounded-lg p-4 border ${
+                    isApproved 
+                      ? "border-green-500 bg-green-500/10" 
+                      : "border-oracle-orange bg-oracle-orange/10"
+                  }`}>
+                    <div className="flex items-center">
+                      <div className={`flex-shrink-0 rounded-full w-8 h-8 flex items-center justify-center mr-3 ${
+                        isApproved ? "bg-green-500" : "bg-oracle-orange"
+                      }`}>
+                        {isApproved 
+                          ? <span className="text-white text-sm">✓</span> 
+                          : <span className="text-white text-sm">1</span>}
+                      </div>
+                      <div>
+                        <h3 className="font-heading text-sm">
+                          {isApproved 
+                            ? "NFT Approved" 
+                            : "Approval Required"}
+                        </h3>
+                        <p className={`text-xs ${isApproved ? "text-green-500" : "text-oracle-orange"}`}>
+                          {isApproved 
+                            ? "Your NFT is approved for trading" 
+                            : "Approve this NFT for marketplace trading first"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               
               {/* Right Column - Form Fields */}
               <div>
                 <h2 className="font-heading text-xl text-oracle-orange mb-4">Listing Details</h2>
+                
+                {/* Approval Step Status - Added to make the steps clear */}
+                {nftDetails && (
+                  <div className="mb-6 flex items-center">
+                    <div className="flex-1 flex items-center">
+                      <div className={`rounded-full w-8 h-8 flex items-center justify-center mr-2 ${
+                        isApproved ? "bg-green-500" : "bg-oracle-orange"
+                      }`}>
+                        <span className="text-white text-sm">1</span>
+                      </div>
+                      <span className={`text-sm ${isApproved ? "text-green-500" : "text-oracle-orange"}`}>
+                        {isApproved ? "NFT Approved ✓" : "Approve NFT"}
+                      </span>
+                    </div>
+                    
+                    <div className="w-8 h-px bg-oracle-orange/30"></div>
+                    
+                    <div className="flex-1 flex items-center">
+                      <div className={`rounded-full w-8 h-8 flex items-center justify-center mr-2 ${
+                        isApproved ? "bg-oracle-orange" : "bg-oracle-black-void border border-oracle-orange/30"
+                      }`}>
+                        <span className={`text-sm ${isApproved ? "text-white" : "text-oracle-orange/50"}`}>2</span>
+                      </div>
+                      <span className={`text-sm ${isApproved ? "text-oracle-orange" : "text-oracle-orange/50"}`}>
+                        Create Listing
+                      </span>
+                    </div>
+                  </div>
+                )}
                 
                 <div className="space-y-6">
                   {/* NFT Contract Address */}
@@ -434,7 +632,7 @@ export default function DirectListingPage() {
                       <input 
                         type="range" 
                         min="1" 
-                        max="90" 
+                        max="30" 
                         step="1"
                         className="w-full h-2 bg-oracle-black-void rounded-lg appearance-none cursor-pointer accent-oracle-orange"
                         value={duration}
@@ -444,14 +642,14 @@ export default function DirectListingPage() {
                     </div>
                     <div className="flex justify-between text-oracle-white/50 text-sm mt-1">
                       <span>1 day</span>
-                      <span>90 days</span>
+                      <span>30 days</span>
                     </div>
                   </div>
                   
                   {/* Approval Button */}
                   {nftDetails && !isApproved && (
                     <motion.button
-                      className="w-full bg-oracle-black-void border border-oracle-orange rounded-lg p-3 text-oracle-orange hover:bg-oracle-orange/10 transition-colors relative overflow-hidden group"
+                      className="w-full bg-oracle-orange text-white rounded-lg p-4 font-heading tracking-wider hover:bg-oracle-orange/90 transition-colors relative overflow-hidden group"
                       onClick={approveNFT}
                       disabled={isApproving}
                       whileHover={{ scale: 1.02 }}
@@ -461,11 +659,11 @@ export default function DirectListingPage() {
                       <span className="relative z-10 flex items-center justify-center">
                         {isApproving ? (
                           <>
-                            <div className="w-5 h-5 border-2 border-oracle-orange border-t-transparent rounded-full animate-spin mr-2"></div>
-                            Approving...
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                            {isWaitingForConfirmation ? "Waiting for confirmation..." : "Approving..."}
                           </>
                         ) : (
-                          <>Approve NFT for Marketplace</>
+                          <>Step 1: Approve NFT for Marketplace</>
                         )}
                       </span>
                     </motion.button>
@@ -473,13 +671,17 @@ export default function DirectListingPage() {
                   
                   {/* Create Listing Button */}
                   <motion.button
-                    className="w-full bg-cosmic-combustion rounded-lg p-4 text-oracle-white font-heading tracking-wider hover:bg-cosmic-combustion/90 transition-colors relative overflow-hidden group"
-                    onClick={createListing}
+                    className={`w-full rounded-lg p-4 text-white font-heading tracking-wider relative overflow-hidden group ${
+                      (!isApproved || !nftDetails || isLoading) 
+                        ? "bg-cosmic-combustion/50 cursor-not-allowed" 
+                        : "bg-cosmic-combustion hover:bg-cosmic-combustion/90"
+                    }`}
+                    onClick={handleCreateListing}
                     disabled={isLoading || !isApproved || !nftDetails}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={isApproved && nftDetails && !isLoading ? { scale: 1.02 } : {}}
+                    whileTap={isApproved && nftDetails && !isLoading ? { scale: 0.98 } : {}}
                   >
-                    <span className="absolute inset-0 w-full h-full bg-white/10 transform scale-0 group-hover:scale-100 rounded-full transition-transform duration-500 origin-center"></span>
+                    <span className={`absolute inset-0 w-full h-full bg-white/10 transform scale-0 ${isApproved && nftDetails && !isLoading ? "group-hover:scale-100" : ""} rounded-full transition-transform duration-500 origin-center`}></span>
                     <span className="relative z-10 flex items-center justify-center">
                       {isLoading ? (
                         <>
@@ -487,10 +689,17 @@ export default function DirectListingPage() {
                           Creating Listing...
                         </>
                       ) : (
-                        <>Create Listing</>
+                        <>{isApproved ? "Create Listing" : "Step 2: Create Listing"}</>
                       )}
                     </span>
                   </motion.button>
+                  
+                  {/* Approval reminder message */}
+                  {nftDetails && !isApproved && (
+                    <div className="text-oracle-orange text-sm mt-2 text-center">
+                      You must approve your NFT for marketplace trading before creating a listing
+                    </div>
+                  )}
                   
                   {/* Error Message */}
                   {error && (
@@ -509,19 +718,23 @@ export default function DirectListingPage() {
             <ul className="space-y-3 text-oracle-white/70">
               <li className="flex items-start">
                 <span className="text-oracle-orange mr-2">•</span>
-                <span>Direct listings allow you to sell your NFT for a fixed price.</span>
+                <span>Direct listings allow you to sell your NFT at a fixed price.</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-oracle-orange mr-2">•</span>
+                <span>Buyers can purchase your NFT immediately at your listed price.</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-oracle-orange mr-2">•</span>
+                <span>You can set a duration for how long the listing will be active.</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-oracle-orange mr-2">•</span>
+                <span>Once a buyer purchases your NFT, the payment will be sent directly to your wallet.</span>
               </li>
               <li className="flex items-start">
                 <span className="text-oracle-orange mr-2">•</span>
                 <span>You can cancel your listing at any time before it's purchased.</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-oracle-orange mr-2">•</span>
-                <span>When someone buys your NFT, the funds will be sent directly to your wallet.</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-oracle-orange mr-2">•</span>
-                <span>A small platform fee will be deducted from the sale price.</span>
               </li>
             </ul>
           </div>

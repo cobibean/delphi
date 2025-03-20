@@ -1,0 +1,56 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "javascript.preferences.importModuleSpecifier": "non-relative",
+  "typescript.preferences.importModuleSpecifierEnding": "minimal",
+  "javascript.preferences.importModuleSpecifierEnding": "minimal",
+  "workbench.colorCustomizations": {
+    "editorError.foreground": "#ff0000",
+    "editorWarning.foreground": "#ff9900"
+  },
+  "eslint.validate": ["typescript", "typescriptreact"],
+  "editor.suggest.showImports": true,
+  "editor.suggest.showCompletions": true,
+  "editor.suggest.showSuggest": true,
+  "editor.suggest.showDeprecated": false,
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": "string.quoted.double.ts",
+        "settings": {
+          "foreground": "#569CD6"
+        }
+      },
+      {
+        "scope": "string.quoted.single.ts",
+        "settings": {
+          "foreground": "#569CD6"
+        }
+      },
+      {
+        "scope": [
+          "meta.import string.quoted.double.ts"
+        ],
+        "settings": {
+          "foreground": "#CE9178"
+        }
+      }
+    ]
+  },
+  "editor.snippets": [
+    {
+      "name": "Import CONTRACT_ADDRESS",
+      "prefix": "importcontract",
+      "body": "import { CONTRACT_ADDRESS } from '@/constants/contracts';",
+      "description": "Import CONTRACT_ADDRESS from constants"
+    }
+  ],
+  "importWarning.paths": [
+    {
+      "path": "@/constants/contracts",
+      "message": "⚠️ Importing from contracts.ts - Ensure proper usage of CONTRACT_ADDRESS.MARKETPLACE_V5"
+    }
+  ]
+} 

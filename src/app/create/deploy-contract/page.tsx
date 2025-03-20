@@ -3,6 +3,9 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiSettings, FiDollarSign, FiPackage, FiUpload, FiCheck } from 'react-icons/fi';
+import { deployNFTContract } from '@/app/features/marketplace/services/marketplace-v5';
+import { useActiveAccount } from 'thirdweb/react';
+import { useTransaction } from '@/providers/TransactionProvider';
 
 // Define types
 interface DeploymentConfig {
@@ -65,6 +68,8 @@ const ContractTypeCard = ({
 // Main Contract Deployment Page
 export default function DeployContractPage() {
   const router = useRouter();
+  const account = useActiveAccount();
+  const { addTransaction } = useTransaction();
   const [isLoading, setIsLoading] = useState(false);
   const [deploymentStep, setDeploymentStep] = useState(0);
   const [deploymentConfig, setDeploymentConfig] = useState<DeploymentConfig>({
@@ -139,9 +144,13 @@ export default function DeployContractPage() {
     setDeploymentStep(1);
 
     try {
-      // In a real implementation, you would call an API to deploy the contract
-      // For now, we'll just simulate the deployment process
-      
+      // Add transaction to the transaction provider
+      addTransaction(
+        "loading",
+        `Deploy NFT Contract: ${deploymentConfig.collectionName}`,
+        "Preparing deployment..."
+      );
+
       // Simulate contract deployment (step 1)
       await new Promise(resolve => setTimeout(resolve, 2000));
       setDeploymentStep(2);
@@ -150,18 +159,40 @@ export default function DeployContractPage() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       setDeploymentStep(3);
       
-      // Simulate contract initialization (step 3)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call our marketplace-v5 service to deploy the contract
+      const result = await deployNFTContract(
+        deploymentConfig.collectionName,
+        deploymentConfig.symbol,
+        deploymentConfig.description,
+        deploymentConfig.contractType,
+        deploymentConfig.royaltyPercentage,
+        deploymentConfig.royaltyRecipient
+      );
+      
+      // Update transaction status
+      addTransaction(
+        "success",
+        `Deploy NFT Contract: ${deploymentConfig.collectionName}`,
+        result.transactionHash
+      );
       
       // Set success status
       setDeploymentStatus({
         success: true,
         error: '',
-        contractAddress: '0x1234567890123456789012345678901234567890',
-        transactionHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'
+        contractAddress: result.contractAddress,
+        transactionHash: result.transactionHash
       });
     } catch (error) {
       console.error('Error deploying contract:', error instanceof Error ? error.message : 'Unknown error');
+      
+      // Update transaction status
+      addTransaction(
+        "error",
+        `Deploy NFT Contract: ${deploymentConfig.collectionName}`,
+        "Deployment failed"
+      );
+      
       setDeploymentStatus({
         ...deploymentStatus,
         success: false,

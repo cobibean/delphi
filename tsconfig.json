@@ -20,9 +20,20 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
+      "@/components/*": ["./src/app/components/*"],
+      "@/features/*": ["./src/app/features/*"],
+      "@/hooks/*": ["./src/app/hooks/*"],
+      "@/utils/*": ["./src/app/utils/*"],
+      "@/providers/*": ["./src/app/providers/*"],
+      "@/constants/*": ["./src/app/constants/*"],
+      "@/interfaces/*": ["./src/app/interfaces/*"],
+      "@/services/*": ["./src/app/services/*"],
+      "@/stores/*": ["./src/app/stores/*"],
+      "@/client/*": ["./src/app/client/*"],
+      "@/config/*": ["./src/app/config/*"],
       "@public/*": ["./public/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/features/nft/[id]/page.tsx.backup"],
   "exclude": ["node_modules"]
 }

@@ -1,3 +1,22 @@
 {
-	"extends": "next/core-web-vitals"
+	"extends": ["next/core-web-vitals", "eslint:recommended", "plugin:@typescript-eslint/recommended"],
+	"plugins": ["@typescript-eslint"],
+	"rules": {
+		"no-unused-vars": "warn",
+		"prefer-const": "warn",
+		"@typescript-eslint/no-explicit-any": "warn",
+		// Custom rule to enforce proper contract address usage
+		"no-restricted-imports": [
+			"error",
+			{
+				"paths": [
+					{
+						"name": "@/constants/contracts",
+						"importNames": ["CONTRACT_ADDRESS"],
+						"message": "Please make sure to use CONTRACT_ADDRESS.MARKETPLACE_V5 when accessing the contract address."
+					}
+				]
+			}
+		]
+	}
 }

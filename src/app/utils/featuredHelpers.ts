@@ -1,6 +1,5 @@
-import { IListingWithNFT } from "@/app/interfaces/interfaces";
-import { getAllListingsWithMetadata } from "@/app/services/marketplace";
-import { JsonRpcProvider } from "ethers";
+import { IListingWithNFT } from "@/interfaces/interfaces";
+import { getAllListingsWithMetadata } from "@/features/marketplace/services/marketplace";
 
 // Featured NFT collection addresses
 export const FEATURED_COLLECTION_ADDRESSES = [
@@ -20,12 +19,9 @@ export function filterFeaturedListings(listings: IListingWithNFT[]): IListingWit
 /**
  * Fetch all listings and filter to only include those from featured collections
  */
-export async function getFeaturedCollectionListings(
-  provider: JsonRpcProvider,
-  marketplaceAddress: string
-): Promise<IListingWithNFT[]> {
-  // Get all listings
-  const allListings = await getAllListingsWithMetadata(provider, marketplaceAddress);
+export async function getFeaturedCollectionListings(): Promise<IListingWithNFT[]> {
+  // Get all listings using the updated marketplace service
+  const allListings = await getAllListingsWithMetadata();
   
   // Filter to only include featured collections
   const featuredListings = filterFeaturedListings(allListings);

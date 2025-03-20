@@ -1,5 +1,5 @@
-import NFTMarketplaceDashboard from "@/app/components/NFTMarketplaceDashboard"; // Your main marketplace component
+import NFTMarketplaceDashboard from "@/app/features/marketplace/components/NFTMarketplaceDashboard"; // Your main marketplace component
 
 export default function Home() {
-  return <NFTMarketplaceDashboard />;
+  return <NFTMarketplaceDashboard listings={[]} />;
 }

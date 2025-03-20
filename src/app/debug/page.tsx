@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getAllListings } from "@/app/services/marketplace";
-import { IListingWithNFT } from "@/app/interfaces/interfaces";
+import TestToast from "@/components/feedback/test/TestToast";
+import { CONTRACT_ADDRESS } from "@/constants/contracts";
+import { getAllListings } from "@/features/marketplace/services/marketplace";
+import { IListingWithNFT } from "@/interfaces/interfaces";
 import Link from "next/link";
-import { CONTRACT_ADDRESS } from "@/app/constants/contracts";
+import { useEffect, useState } from "react";
 
 export default function DebugPage() {
   const [listings, setListings] = useState<IListingWithNFT[]>([]);
@@ -14,7 +15,7 @@ export default function DebugPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        console.log("Fetching listings from contract at:", CONTRACT_ADDRESS);
+        console.log("Fetching listings from contract at:", CONTRACT_ADDRESS.MARKETPLACE_V5);
         setIsLoading(true);
         const result = await getAllListings();
         console.log("Fetched listings:", result);
@@ -33,8 +34,15 @@ export default function DebugPage() {
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-3xl font-bold mb-4 text-oracle-orange">Marketplace Debug</h1>
+      
+      {/* Toast Test Section */}
+      <div className="mb-8 border border-oracle-orange/20 rounded-lg p-6 bg-oracle-black/20">
+        <h2 className="text-2xl font-bold mb-4 text-oracle-turquoise">Toast Testing</h2>
+        <TestToast />
+      </div>
+      
       <div className="mb-6">
-        <p className="text-white mb-2">Contract Address: <span className="font-mono text-oracle-turquoise">{CONTRACT_ADDRESS}</span></p>
+        <p className="text-white mb-2">Contract Address: <span className="font-mono text-oracle-turquoise">{CONTRACT_ADDRESS.MARKETPLACE_V5}</span></p>
         <Link href="/" className="text-oracle-orange hover:underline mb-4 inline-block">
           &larr; Back to Home
         </Link>

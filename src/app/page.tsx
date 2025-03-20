@@ -4,10 +4,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getAllListings } from "@/app/services/marketplace-v5";
-import { IListingWithNFT } from "@/app/interfaces/interfaces";
-import NFTMarketplaceDashboard from "@/app/components/NFTMarketplaceDashboard";
-import LoadingIndicator from "@/app/components/ui/LoadingIndicator";
+import { getAllListings } from "@/features/marketplace/services/marketplace-v5";
+import { IListingWithNFT } from "@/interfaces/interfaces";
+import { NFTMarketplaceDashboard } from "@/features/marketplace/components";
+import LoadingIndicator from "@/components/feedback/LoadingIndicator";
 
 // Define interface for market stats
 interface MarketStats {
@@ -29,19 +29,21 @@ export default function Page() {
     async function fetchListings() {
       try {
         setIsLoading(true);
-        console.log("Fetching real marketplace listings...");
         const fetchedListings = await getAllListings();
-        console.log(`Fetched ${fetchedListings.length} listings from marketplace contract`);
+        
+        if (!fetchedListings || fetchedListings.length === 0) {
+          console.log("No listings found or empty response");
+          setError("No listings available");
+          return;
+        }
         
         setListings(fetchedListings);
-        
-        // Select the first 3 listings as featured (or all if less than 3)
         setFeaturedListings(fetchedListings.slice(0, Math.min(3, fetchedListings.length)));
         
-        setIsLoading(false);
       } catch (err) {
         console.error("Error fetching listings:", err);
         setError("Failed to load marketplace data. Please try again later.");
+      } finally {
         setIsLoading(false);
       }
     }

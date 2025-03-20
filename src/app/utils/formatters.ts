@@ -1,3 +1,8 @@
+/**
+ * @deprecated This file is deprecated. Please use @/app/utils/format.ts instead.
+ * All functions from this file have been consolidated there.
+ */
+
 const shortenAddress = (address: string): string => {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 };
@@ -31,10 +36,6 @@ const formatError = (error: any): string => {
 };
 
 export {
-  shortenAddress,
-  formatCurrency,
-  formatDate,
-  abbreviateNumber,
-  normalizeTokenId,
-  formatError,
+  abbreviateNumber, formatCurrency,
+  formatDate, formatError, normalizeTokenId, shortenAddress
 };

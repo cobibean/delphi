@@ -1,13 +1,14 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
-import TransactionNotification, { NotificationType } from "../components/TransactionNotification";
+import { TransactionNotification, TransactionStatusType as NotificationType } from "@/features/marketplace/components/TransactionNotification";
 
 interface Transaction {
   id: string;
   type: NotificationType;
   message: string;
   txHash?: string;
+  timestamp: number;
 }
 
 interface TransactionContextType {
@@ -31,7 +32,7 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
 
   const addTransaction = (type: NotificationType, message: string, txHash?: string): string => {
     const id = Date.now().toString();
-    setTransactions(prev => [...prev, { id, type, message, txHash }]);
+    setTransactions(prev => [...prev, { id, type, message, txHash, timestamp: Date.now() }]);
     return id;
   };
 
@@ -51,9 +52,13 @@ export function TransactionProvider({ children }: { children: ReactNode }) {
         {transactions.map((tx) => (
           <TransactionNotification
             key={tx.id}
-            type={tx.type}
-            message={tx.message}
-            txHash={tx.txHash}
+            notification={{
+              id: tx.id,
+              type: tx.type,
+              message: tx.message,
+              transactionHash: tx.txHash,
+              timestamp: tx.timestamp
+            }}
             onClose={() => removeTransaction(tx.id)}
           />
         ))}

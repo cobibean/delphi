@@ -1,0 +1,91 @@
+.container {
+  width: 100%;
+  overflow-x: auto;
+  background-color: rgba(var(--cosmic-black-rgb), 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(var(--cosmic-grey-800-rgb), 0.6);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.header {
+  background-color: rgba(var(--cosmic-black-rgb), 0.6);
+  color: var(--cosmic-grey-300);
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+}
+
+.headerCell {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.headerCell:last-child,
+.headerCell:nth-child(3),
+.headerCell:nth-child(4),
+.headerCell:nth-child(5) {
+  text-align: right;
+}
+
+.row {
+  border-bottom: 1px solid rgba(var(--cosmic-grey-800-rgb), 0.4);
+  transition: background-color 0.2s ease;
+}
+
+.row:hover {
+  background-color: rgba(var(--cosmic-grey-900-rgb), 0.5);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.cell {
+  padding: 1rem;
+  color: var(--cosmic-grey-100);
+}
+
+.cell:last-child,
+.cell:nth-child(3),
+.cell:nth-child(4),
+.cell:nth-child(5) {
+  text-align: right;
+}
+
+.indexCell {
+  color: var(--cosmic-grey-300);
+}
+
+.positive {
+  color: var(--success);
+}
+
+.negative {
+  color: var(--danger);
+}
+
+.shimmer {
+  animation: shimmer 1.5s infinite linear;
+  background: linear-gradient(
+    90deg,
+    rgba(var(--cosmic-grey-800-rgb), 0.5) 0%,
+    rgba(var(--cosmic-grey-700-rgb), 0.5) 50%,
+    rgba(var(--cosmic-grey-800-rgb), 0.5) 100%
+  );
+  background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+} 
