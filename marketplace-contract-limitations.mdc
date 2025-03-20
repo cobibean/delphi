@@ -1,0 +1,60 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+ # Marketplace Contract Limitations
+
+## ThirdWeb Extension Incompatibilities
+
+The marketplace contract deployed at `0x7e9EE861e3721F9F3664C18A539e63aCb784a208` has **critical incompatibilities** with ThirdWeb's marketplace extensions. These limitations must be considered when implementing functionality:
+
+### ❌ Incompatible Functions
+
+The following ThirdWeb marketplace extension functions **DO NOT WORK** with our contract:
+
+- `buyFromListing`: The contract does not support ThirdWeb's high-level buyFromListing function
+- Other marketplace extension functions may also be incompatible and should be tested
+
+### ✅ Required Implementation Approach
+
+For purchasing NFTs, **ALWAYS**:
+
+1. Use Viem to directly encode function calls
+2. Use the contract's native `buyFromListing` function directly with proper parameters
+3. Format arguments according to the contract's ABI
+4. Still use ThirdWeb for wallet functionality and contract reading
+
+### Example Implementation Pattern
+
+```typescript
+// DO NOT use this:
+const transaction = buyFromListing({
+  contract,
+  listingId: BigInt(listingId),
+  quantity: BigInt(quantity),
+  recipient: account.address
+});
+
+// INSTEAD use this pattern:
+const data = encodeFunctionData({
+  abi: MarketplaceABI,
+  functionName: 'buyFromListing',
+  args: [
+    BigInt(listingId),
+    account.address,  // recipient
+    BigInt(quantity), // quantity
+    NATIVE_TOKEN_ADDRESS, // currency
+    totalPrice // expected price
+  ]
+});
+
+// Then send transaction with wallet
+const hash = await wallet.sendTransaction({
+  to: CONTRACT_ADDRESS,
+  value: totalPrice.toString(),
+  data
+});
+```
+
+This rule must be followed for all marketplace purchase implementations.

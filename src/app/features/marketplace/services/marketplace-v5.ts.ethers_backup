@@ -1,0 +1,902 @@
+/**
+ * Marketplace service for V5 of the marketplace contract
+ * Handles listing retrieval and auction functionality
+ */
+
+import { CONTRACT_ADDRESS } from "@/app/constants/contracts";
+import { metisChain } from "@/app/config/chain";
+import { IListingWithNFT, IDirectListing } from "@/app/interfaces/interfaces";
+import { getMarketplaceContract } from "@/app/config/client";
+import { ethers } from "ethers";
+
+// Fix for wallet provider access
+declare global {
+  interface Window {
+    ethereum: any;
+  }
+}
+
+/**
+ * Get a specific listing by ID with metadata included
+ * 
+ * @param listingId The ID of the listing to retrieve
+ * @returns The listing details with metadata included
+ */
+export const getListingWithMetadata = async (listingId: string): Promise<any> => {
+  try {
+    console.log(`Fetching listing ${listingId}...`);
+    
+    // Get the contract instance
+    const contract = await getMarketplaceContract();
+    if (!contract) {
+      throw new Error("Failed to get marketplace contract");
+    }
+    
+    // Create a promise that rejects after 5 seconds to avoid hanging
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`Timeout fetching listing ${listingId}`)), 5000);
+    });
+    
+    // Create the listing fetch promise
+    const fetchPromise = (async () => {
+      try {
+        // Use ethers contract method
+        const listing = await contract.getListing(listingId);
+        console.log(`Listing ${listingId} fetch successful`);
+        return listing;
+      } catch (error) {
+        console.error(`Contract error fetching listing ${listingId}:`, error);
+        return null;
+      }
+    })();
+    
+    // Race the fetch against the timeout
+    const listing = await Promise.race([fetchPromise, timeoutPromise]);
+    
+    if (!listing) {
+      console.log(`No listing found with ID ${listingId}`);
+      return null;
+    }
+    
+    return listing;
+  } catch (error) {
+    console.error(`Error in getListingWithMetadata for listing ${listingId}:`, error);
+    return null; // Return null instead of throwing to prevent app crash
+  }
+};
+
+/**
+ * Get a list of active listings from the marketplace
+ * 
+ * @param start Starting index for pagination
+ * @param count Number of listings to retrieve
+ * @returns Array of listings with metadata included
+ */
+export const getActiveListings = async (start: number = 0, count: number = 20): Promise<any[]> => {
+  try {
+    console.log(`Getting active listings from index ${start}, count: ${count}...`);
+    
+    // Get the contract instance
+    const contract = await getMarketplaceContract();
+    if (!contract) {
+      throw new Error("Failed to get marketplace contract");
+    }
+    
+    // Log contract connection
+    console.log("Contract interface connected successfully");
+    
+    // Try to get total listings count
+    let totalCount;
+    try {
+      totalCount = await contract.totalListings();
+      console.log("Total listings count:", totalCount.toString());
+    } catch (error) {
+      console.error("Error getting total listings:", error);
+      // Fallback to a reasonable number if we can't get the total
+      totalCount = BigInt(50);
+      console.log("Using fallback total count:", totalCount.toString());
+    }
+    
+    // Adjust count if it exceeds the total
+    const adjustedCount = Math.min(Number(totalCount) - start, count);
+    
+    if (adjustedCount <= 0) {
+      console.log("No listings to fetch within the specified range");
+      return [];
+    }
+    
+    console.log(`Fetching ${adjustedCount} listings starting from ${start}`);
+    
+    // Generate listing IDs to try fetching
+    const listingIds = [];
+    for (let i = start; i < start + adjustedCount; i++) {
+      listingIds.push(i.toString());
+    }
+    
+    console.log(`Generated ${listingIds.length} listing IDs to fetch`);
+    
+    // Fetch all listings in parallel with a 5-second timeout for each
+    const listingPromises = listingIds.map(async (id) => {
+      try {
+        // Create a promise that rejects after 5 seconds
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error(`Timeout fetching listing ${id}`)), 5000);
+        });
+        
+        // Create the listing fetch promise
+        const fetchPromise = (async () => {
+          try {
+            console.log(`Fetching listing ${id}...`);
+            const listing = await contract.getListing(id);
+            console.log(`Listing ${id} fetch result:`, listing ? "SUCCESS" : "NOT FOUND");
+            return listing;
+          } catch (error) {
+            console.warn(`Error fetching individual listing ${id}:`, error);
+            return null;
+          }
+        })();
+        
+        // Race the fetch against the timeout
+        return await Promise.race([fetchPromise, timeoutPromise]);
+      } catch (error) {
+        console.warn(`Failed to fetch listing ${id}:`, error);
+        return null;
+      }
+    });
+    
+    // Get all listing results, including null values for failed fetches
+    const listingsWithNulls = await Promise.allSettled(listingPromises);
+    
+    // Process results and filter out nulls and rejections
+    const validListings = listingsWithNulls
+      .filter(result => result.status === 'fulfilled' && result.value !== null)
+      .map(result => (result as PromiseFulfilledResult<any>).value);
+    
+    console.log(`Successfully fetched ${validListings.length} valid listings`);
+    
+    // Don't filter by status to ensure we show all listings
+    // We'll let the UI handle filtering if needed
+    return validListings;
+  } catch (error) {
+    console.error("Error in getActiveListings:", error);
+    // Return empty array instead of throwing to prevent app crash
+    return [];
+  }
+};
+
+interface DirectListingStructOutput {
+  listingId: bigint;
+  tokenId: bigint;
+  tokenContract: string;
+  creator: string;
+  assetContract: string;
+  pricePerToken: bigint;
+  currencyValuePerToken: {
+    symbol: string;
+    value: bigint;
+    decimals: number;
+  };
+  startTimestamp: bigint;
+  endTimestamp: bigint;
+  quantity: bigint;
+  currency: string;
+  status: number;
+}
+
+/**
+ * Fetch metadata for an NFT from its token URI
+ * 
+ * @param assetContract The NFT contract address
+ * @param tokenId The token ID
+ * @returns The NFT metadata
+ */
+async function fetchNFTMetadata(assetContract: string, tokenId: string) {
+  try {
+    console.log(`Fetching metadata for token ${tokenId} on contract ${assetContract}`);
+    
+    // Create a contract instance for the NFT
+    const provider = new ethers.JsonRpcProvider(metisChain.rpc);
+    
+    // Basic ERC721 interface for tokenURI function
+    const abi = [
+      "function tokenURI(uint256 tokenId) view returns (string)",
+      "function name() view returns (string)",
+      "function symbol() view returns (string)"
+    ];
+    
+    const nftContract = new ethers.Contract(assetContract, abi, provider);
+    
+    // Get collection name first (to return it even if tokenURI fails)
+    let collectionName = "Unknown Collection";
+    try {
+      collectionName = await nftContract.name();
+      console.log(`Collection name: ${collectionName}`);
+    } catch (err) {
+      console.warn("Could not fetch collection name:", err);
+    }
+    
+    // Get the token URI with timeout to prevent hanging
+    let tokenURI;
+    try {
+      const tokenURIPromise = nftContract.tokenURI(tokenId);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout fetching tokenURI")), 5000)
+      );
+      
+      tokenURI = await Promise.race([tokenURIPromise, timeoutPromise]);
+      console.log(`Token URI for ${tokenId}: ${tokenURI}`);
+    } catch (error) {
+      console.error(`Error fetching tokenURI for ${tokenId}:`, error);
+      return {
+        name: `NFT #${tokenId}`,
+        description: "Metadata unavailable",
+        image: "/images/placeholder.jpg",
+        collectionName
+      };
+    }
+    
+    if (!tokenURI) {
+      console.warn(`No tokenURI found for token ${tokenId}`);
+      return {
+        name: `NFT #${tokenId}`,
+        description: "No metadata URI available",
+        image: "/images/placeholder.jpg",
+        collectionName
+      };
+    }
+    
+    // List of IPFS gateways to try
+    const ipfsGateways = [
+      "https://ipfs.io/ipfs/",
+      "https://cloudflare-ipfs.com/ipfs/",
+      "https://gateway.pinata.cloud/ipfs/"
+    ];
+    
+    // Handle different URI formats
+    let formattedURI = tokenURI;
+    
+    // IPFS protocol (ipfs://...)
+    if (tokenURI.startsWith("ipfs://")) {
+      formattedURI = tokenURI.replace("ipfs://", ipfsGateways[0]);
+    }
+    // IPFS with CID format (ipfs:CID)
+    else if (tokenURI.startsWith("ipfs:") && !tokenURI.startsWith("ipfs://")) {
+      const cid = tokenURI.split("ipfs:")[1];
+      formattedURI = `${ipfsGateways[0]}${cid}`;
+    }
+    // HTTP/HTTPS protocol
+    else if (tokenURI.startsWith("http")) {
+      formattedURI = tokenURI;
+    }
+    // Base64 encoded JSON
+    else if (tokenURI.startsWith("data:application/json;base64,")) {
+      try {
+        const base64Data = tokenURI.split(",")[1];
+        const decodedData = Buffer.from(base64Data, "base64").toString();
+        const metadata = JSON.parse(decodedData);
+        
+        // Format image URI if it's IPFS
+        if (metadata.image && metadata.image.startsWith("ipfs://")) {
+          metadata.image = metadata.image.replace("ipfs://", ipfsGateways[0]);
+        }
+        
+        return {
+          ...metadata,
+          collectionName
+        };
+      } catch (error) {
+        console.error(`Error decoding base64 metadata for token ${tokenId}:`, error);
+      }
+    }
+    // On-chain JSON
+    else if (tokenURI.startsWith("{")) {
+      try {
+        const metadata = JSON.parse(tokenURI);
+        
+        // Format image URI if it's IPFS
+        if (metadata.image && metadata.image.startsWith("ipfs://")) {
+          metadata.image = metadata.image.replace("ipfs://", ipfsGateways[0]);
+        }
+        
+        return {
+          ...metadata,
+          collectionName
+        };
+      } catch (error) {
+        console.error(`Error parsing on-chain JSON metadata for token ${tokenId}:`, error);
+      }
+    }
+    
+    // Try to fetch metadata from the formatted URI
+    if (formattedURI) {
+      // Try each IPFS gateway if it's an IPFS URI
+      const urisToTry = tokenURI.startsWith("ipfs://") 
+        ? ipfsGateways.map(gateway => tokenURI.replace("ipfs://", gateway))
+        : [formattedURI];
+      
+      // Try each URI until one works
+      for (const uri of urisToTry) {
+        try {
+          console.log(`Trying to fetch metadata from ${uri}`);
+          
+          // Create a fetch request with timeout
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          const response = await fetch(uri, { signal: controller.signal });
+          clearTimeout(timeoutId);
+          
+          if (response.ok) {
+            const metadata = await response.json();
+            
+            // Format IPFS image URL if needed
+            if (metadata.image && metadata.image.startsWith("ipfs://")) {
+              metadata.image = metadata.image.replace("ipfs://", ipfsGateways[0]);
+            }
+            
+            // Some APIs return data in a nested format
+            const finalMetadata = metadata.data || metadata;
+            
+            // Add image placeholder if not present
+            if (!finalMetadata.image || finalMetadata.image === "") {
+              finalMetadata.image = "/images/placeholder.jpg";
+            }
+            
+            console.log(`Successfully fetched metadata for token ${tokenId}`);
+            return {
+              ...finalMetadata,
+              collectionName
+            };
+          } else {
+            console.warn(`Failed to fetch metadata: ${response.status} ${response.statusText}`);
+          }
+        } catch (error: any) {
+          if (error.name === 'AbortError') {
+            console.warn(`Metadata fetch timed out for ${uri}`);
+          } else {
+            console.error(`Error fetching metadata from ${uri}:`, error);
+          }
+          // Continue to the next URI
+        }
+      }
+    }
+    
+    // Return placeholder if all fetch attempts failed
+    console.warn(`All metadata fetch attempts failed for token ${tokenId}`);
+    return {
+      name: `NFT #${tokenId}`,
+      description: "Metadata unavailable",
+      image: "/images/placeholder.jpg",
+      collectionName
+    };
+  } catch (error) {
+    console.error(`Error in fetchNFTMetadata for token ${tokenId}:`, error);
+    return {
+      name: `NFT #${tokenId}`,
+      description: "Error loading metadata",
+      image: "/images/placeholder.jpg",
+      collectionName: "Unknown Collection"
+    };
+  }
+}
+
+/**
+ * Get all listings from the marketplace
+ * 
+ * @returns Array of all listings with metadata included
+ */
+export async function getAllListings(): Promise<IListingWithNFT[]> {
+  try {
+    console.log("Starting getAllListings...");
+    const contract = await getMarketplaceContract();
+    if (!contract) {
+      throw new Error("Failed to initialize marketplace contract");
+    }
+    
+    // Get total listings count
+    const totalListings = await contract.totalListings();
+    console.log(`Total listings count: ${totalListings}`);
+    
+    if (totalListings === 0n) {
+      console.log("No listings found (totalListings is 0)");
+      return [];
+    }
+    
+    // Use small batches to prevent "invalid range" error
+    // The contract expects _startId and _endId
+    const batchSize = 5n;
+    let allListings: any[] = [];
+    
+    try {
+      // Fetch only the first batch to start
+      // Note: endId is exclusive, so we need to add 1 to include the last item
+      console.log(`Fetching valid listings from 0 to ${batchSize}...`);
+      const validListings = await contract.getAllValidListings(0n, batchSize);
+      console.log(`Fetched ${validListings.length} valid listings`);
+      
+      if (validListings && validListings.length > 0) {
+        allListings = validListings;
+      }
+    } catch (error) {
+      console.error("Error fetching valid listings:", error);
+      return [];
+    }
+    
+    if (allListings.length === 0) {
+      console.log("No valid listings found");
+      return [];
+    }
+    
+    console.log(`Processing ${allListings.length} listings to add metadata`);
+    
+    // Transform listings into the application's format with metadata
+    const transformedListings: IListingWithNFT[] = await Promise.all(
+      allListings.map(async (listing: any) => {
+        // Log the listing being processed
+        console.log(`Processing listing ${listing.listingId.toString()}:`, { 
+          listingId: listing.listingId.toString(),
+          tokenId: listing.tokenId.toString(),
+          status: listing.status 
+        });
+        
+        // Format the listing data
+        const formattedListing = {
+          listingId: listing.listingId.toString(),
+          tokenId: listing.tokenId.toString(),
+          quantity: listing.quantity.toString(),
+          pricePerToken: ethers.formatEther(listing.pricePerToken),
+          startTimestamp: Number(listing.startTimestamp),
+          endTimestamp: Number(listing.endTimestamp),
+          listingCreator: listing.listingCreator,
+          assetContract: listing.assetContract,
+          currency: listing.currency,
+          tokenType: Number(listing.tokenType),
+          status: Number(listing.status),
+          reserved: listing.reserved,
+          metadata: {
+            name: `NFT #${listing.tokenId.toString()}`,
+            description: "Loading...",
+            image: "/images/placeholder.jpg",
+          },
+          collectionName: "Loading..."
+        };
+        
+        // Fetch metadata for this NFT
+        try {
+          if (formattedListing.assetContract && formattedListing.tokenId) {
+            const metadata = await fetchNFTMetadata(
+              formattedListing.assetContract, 
+              formattedListing.tokenId
+            );
+            
+            // Update with real metadata
+            formattedListing.metadata = {
+              name: metadata.name || `NFT #${formattedListing.tokenId}`,
+              description: metadata.description || "No description available",
+              image: metadata.image || "/images/placeholder.jpg",
+            };
+            
+            formattedListing.collectionName = metadata.collectionName || "Unknown Collection";
+          }
+        } catch (error) {
+          console.error(`Error fetching metadata for listing ${formattedListing.listingId}:`, error);
+          // Keep the default placeholder metadata
+        }
+
+        return formattedListing;
+      })
+    );
+
+    console.log(`Successfully transformed ${transformedListings.length} listings with metadata`);
+    return transformedListings;
+  } catch (error) {
+    console.error("Error in getAllListings:", error);
+    throw error;
+  }
+}
+
+/**
+ * Get a specific auction by ID
+ * 
+ * @param auctionId The ID of the auction to retrieve
+ * @returns The auction details or null if not found
+ */
+export const getAuction = async (auctionId: string): Promise<IListingWithNFT | null> => {
+  console.log(`Getting auction ${auctionId}`);
+  try {
+    // For now, we just try to get the listing as regular listing
+    // In the future, this could be enhanced to specifically handle auctions
+    return await getListingWithMetadata(auctionId) as IListingWithNFT;
+  } catch (error) {
+    console.error(`Error fetching auction ${auctionId}:`, error);
+    return null;
+  }
+};
+
+/**
+ * Buy an NFT from a direct listing
+ * 
+ * @param listingId The ID of the listing to buy from
+ * @param quantity The quantity to buy
+ * @param buyerAddress The address of the buyer
+ * @returns Transaction details
+ */
+export const buyFromListing = async (
+  listingId: string, 
+  quantity: number = 1,
+  buyerAddress: string
+) => {
+  try {
+    console.log(`Buying from listing ${listingId}, quantity: ${quantity}`);
+    
+    // Check if browser wallet is available
+    if (!window.ethereum) {
+      throw new Error("No Ethereum wallet found. Please install MetaMask or another wallet.");
+    }
+    
+    // Get the provider and signer
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    
+    // Get the contract directly with the signer
+    const contract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      (await import("@/app/constants/MarketplaceABI")).default,
+      signer
+    );
+    
+    // Get listing details to determine price
+    const listing = await contract.getListing(listingId);
+    console.log("Listing details:", listing);
+    
+    // Calculate total price based on quantity
+    const pricePerToken = ethers.getBigInt(listing.pricePerToken);
+    const totalPrice = pricePerToken * BigInt(quantity);
+    
+    console.log(`Buying at price: ${ethers.formatEther(totalPrice)} ETH`);
+    
+    // Execute the purchase transaction
+    const tx = await contract.buyFromListing(
+      listingId,
+      buyerAddress,
+      quantity,
+      listing.currency,
+      totalPrice,
+      { value: totalPrice }
+    );
+    
+    console.log("Transaction submitted:", tx.hash);
+    
+    // Wait for transaction to be mined
+    const receipt = await tx.wait();
+    console.log("Transaction confirmed:", receipt);
+    
+    return {
+      transactionHash: tx.hash,
+      success: true,
+      receipt: receipt
+    };
+  } catch (error) {
+    console.error(`Error buying from listing ${listingId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Create a direct listing
+ * 
+ * @param tokenContract The address of the NFT contract
+ * @param tokenId The ID of the NFT to list
+ * @param pricePerToken The price per token in ETH
+ * @param quantity The quantity to list
+ * @param startTime The start time of the listing (optional)
+ * @param endTime The end time of the listing (optional)
+ * @returns Transaction details
+ */
+export const createDirectListing = async (
+  tokenContract: string,
+  tokenId: string,
+  pricePerToken: string,
+  quantity: number = 1,
+  startTime?: number,
+  endTime?: number
+) => {
+  try {
+    console.log(`Creating listing for token ${tokenId} at ${pricePerToken} ETH`);
+    
+    // Check if browser wallet is available
+    if (!window.ethereum) {
+      throw new Error("No Ethereum wallet found. Please install MetaMask or another wallet.");
+    }
+    
+    // Get the provider and signer
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    
+    // Get the contract directly with the signer
+    const contract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      (await import("@/app/constants/MarketplaceABI")).default,
+      signer
+    );
+    
+    // Set default times if not provided
+    const now = Math.floor(Date.now() / 1000);
+    const listingStartTime = startTime || now;
+    const listingEndTime = endTime || now + 30 * 24 * 60 * 60; // Default 30 days
+    
+    // Convert price to wei
+    const priceInWei = ethers.parseEther(pricePerToken);
+    
+    // Configure the listing
+    const listingParams = {
+      assetContract: tokenContract,
+      tokenId: tokenId,
+      pricePerToken: priceInWei,
+      currency: "0x0000000000000000000000000000000000000000", // ETH
+      quantity: quantity,
+      startTimestamp: listingStartTime,
+      endTimestamp: listingEndTime,
+      reserved: false,
+    };
+    
+    console.log("Creating listing with params:", listingParams);
+    
+    // Create the listing
+    const tx = await contract.createListing(listingParams);
+    console.log("Transaction submitted:", tx.hash);
+    
+    // Wait for transaction to be mined
+    const receipt = await tx.wait();
+    console.log("Transaction confirmed:", receipt);
+    
+    return {
+      transactionHash: tx.hash,
+      success: true,
+      receipt: receipt
+    };
+  } catch (error) {
+    console.error("Error creating listing:", error);
+    throw error;
+  }
+};
+
+/**
+ * Cancel a listing
+ * 
+ * @param listingId The ID of the listing to cancel
+ * @returns Transaction details
+ */
+export const cancelListing = async (listingId: string) => {
+  try {
+    console.log(`Cancelling listing ${listingId}`);
+    
+    // Check if browser wallet is available
+    if (!window.ethereum) {
+      throw new Error("No Ethereum wallet found. Please install MetaMask or another wallet.");
+    }
+    
+    // Get the provider and signer
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    
+    // Get the contract directly with the signer
+    const contract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      (await import("@/app/constants/MarketplaceABI")).default,
+      signer
+    );
+    
+    // Cancel the listing
+    const tx = await contract.cancelListing(listingId);
+    console.log("Transaction submitted:", tx.hash);
+    
+    // Wait for transaction to be mined
+    const receipt = await tx.wait();
+    console.log("Transaction confirmed:", receipt);
+    
+    return {
+      transactionHash: tx.hash,
+      success: true,
+      receipt: receipt
+    };
+  } catch (error) {
+    console.error(`Error cancelling listing ${listingId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Get the bid history for an auction
+ * 
+ * @param auctionId The ID of the auction
+ * @returns Array of bid history objects
+ */
+export const getAuctionBidHistory = async (auctionId: string) => {
+  try {
+    console.log(`Fetching bid history for auction ${auctionId}...`);
+    
+    // Get the contract instance
+    const contract = await getMarketplaceContract();
+    if (!contract) {
+      throw new Error("Failed to get marketplace contract");
+    }
+    
+    // Call the contract method to get bid history
+    // Note: This is a placeholder implementation until the actual contract method is available
+    // When implementing with the real contract, replace this with the actual method call
+    
+    // For now, return mock data to allow UI development
+    return [
+      {
+        bidder: "0x123...",
+        bidAmount: "1.5",
+        timestamp: Date.now() / 1000 - 86400, // 1 day ago
+      },
+      {
+        bidder: "0x456...",
+        bidAmount: "1.2",
+        timestamp: Date.now() / 1000 - 172800, // 2 days ago
+      }
+    ];
+  } catch (error) {
+    console.error(`Error fetching bid history for auction ${auctionId}:`, error);
+    return [];
+  }
+};
+
+/**
+ * Place a bid in an auction
+ * 
+ * @param listingId The ID of the auction listing
+ * @param bidAmount The amount to bid in METIS
+ * @param wallet The wallet object from ThirdWeb
+ * @returns Transaction details
+ */
+export const bidInAuction = async (listingId: string, bidAmount: string, wallet: any) => {
+  try {
+    console.log(`Bidding ${bidAmount} METIS on auction ${listingId}...`);
+    
+    // Check if browser wallet is available
+    if (!window.ethereum) {
+      throw new Error("No Ethereum wallet found. Please install MetaMask or another wallet.");
+    }
+    
+    // Get the provider and signer
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    
+    // Get the contract directly with the signer
+    const contract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      (await import("@/app/constants/MarketplaceABI")).default,
+      signer
+    );
+    
+    // Convert bid amount to wei
+    const bidAmountInWei = ethers.parseEther(bidAmount);
+    
+    // Call the contract's bid function (modify this according to your actual contract's method)
+    // This is a placeholder implementation until the actual contract method is implemented
+    console.log(`Would place bid of ${bidAmountInWei} wei on listing ${listingId}`);
+    
+    // Placeholder for transaction result - replace with actual implementation when contract is ready
+    return {
+      transactionHash: "0x123...",
+      success: true,
+      receipt: {}
+    };
+  } catch (error) {
+    console.error(`Error bidding on auction ${listingId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Buy out an auction at the buyout price
+ * 
+ * @param listingId The ID of the auction listing
+ * @param wallet The wallet object from ThirdWeb
+ * @returns Transaction details
+ */
+export const buyoutAuction = async (listingId: string, wallet: any) => {
+  try {
+    console.log(`Buying out auction ${listingId}...`);
+    
+    // Check if browser wallet is available
+    if (!window.ethereum) {
+      throw new Error("No Ethereum wallet found. Please install MetaMask or another wallet.");
+    }
+    
+    // Get the provider and signer
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    
+    // Get the contract directly with the signer
+    const contract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      (await import("@/app/constants/MarketplaceABI")).default,
+      signer
+    );
+    
+    // Placeholder for buyout implementation - replace with actual contract call when available
+    console.log(`Would buy out auction ${listingId}`);
+    
+    // Placeholder for transaction result - replace with actual implementation when contract is ready
+    return {
+      transactionHash: "0x123...",
+      success: true,
+      receipt: {}
+    };
+  } catch (error) {
+    console.error(`Error buying out auction ${listingId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Deploy an NFT contract
+ * 
+ * @param collectionName The name of the collection
+ * @param symbol The symbol of the collection
+ * @param description The description of the collection
+ * @param contractType The type of contract (ERC721, ERC1155)
+ * @param royaltyPercentage The royalty percentage (0-15%)
+ * @param royaltyRecipient The address that will receive royalties
+ * @returns Transaction details
+ */
+export const deployNFTContract = async (
+  collectionName: string,
+  symbol: string,
+  description: string,
+  contractType: string,
+  royaltyPercentage: number,
+  royaltyRecipient: string
+) => {
+  try {
+    console.log(`Deploying ${contractType} contract: ${collectionName} (${symbol})`);
+    
+    // Check if browser wallet is available
+    if (!window.ethereum) {
+      throw new Error("No Ethereum wallet found. Please install MetaMask or another wallet.");
+    }
+    
+    // Get the provider and signer
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    
+    // For a real implementation, you'd deploy the contract here using ethers.js
+    // This is a placeholder implementation
+    console.log("Contract deployment parameters:", {
+      collectionName,
+      symbol,
+      description,
+      contractType,
+      royaltyPercentage,
+      royaltyRecipient
+    });
+    
+    // Simulate contract deployment
+    // In a real implementation, you would use ContractFactory from ethers.js
+    // const factory = new ethers.ContractFactory(abi, bytecode, signer);
+    // const contract = await factory.deploy(collectionName, symbol, royaltyRecipient, royaltyPercentage * 100);
+    
+    // Simulate a transaction hash for now
+    const mockTxHash = "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890";
+    console.log("Mock deployment transaction:", mockTxHash);
+    
+    // Return simulated success response
+    return {
+      transactionHash: mockTxHash,
+      success: true,
+      contractAddress: "0x1234567890123456789012345678901234567890", // Mock contract address
+      receipt: {
+        status: 1,
+        blockNumber: 12345678
+      }
+    };
+  } catch (error) {
+    console.error("Error deploying NFT contract:", error);
+    throw error;
+  }
+}; 

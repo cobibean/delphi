@@ -162,7 +162,7 @@ const buyWithMetis = async (listingId, wallet) => {
   const marketplaceContract = getContract({
     client,
     chain: metisChain,
-    address: CONTRACT_ADDRESS,
+    address: CONTRACT_ADDRESS.MARKETPLACE_V5,
   });
   
   // Get account from wallet
@@ -264,3 +264,47 @@ For questions or support, please reach out to the development team at [team@delp
 ## 📝 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Contract Addresses
+
+All contract addresses are centralized in `/src/constants/contracts.ts`. When using contract addresses in your code, always follow these guidelines:
+
+### Correct Usage
+
+```typescript
+import { CONTRACT_ADDRESS } from "@/constants/contracts";
+
+// For ThirdWeb SDK
+const marketplaceContract = getContract({
+  client,
+  chain: metisChain,
+  address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+});
+
+// For Ethers.js
+const contract = new ethers.Contract(
+  CONTRACT_ADDRESS.MARKETPLACE_V5,
+  MarketplaceABI,
+  signer
+);
+```
+
+### Incorrect Usage (Avoid)
+
+```typescript
+// Don't use CONTRACT_ADDRESS without property
+const tx = setApprovalForAll({
+  contract: nftContract,
+  operator: CONTRACT_ADDRESS, // WRONG!
+  approved: true,
+});
+
+// Always use the proper property
+const tx = setApprovalForAll({
+  contract: nftContract,
+  operator: CONTRACT_ADDRESS.MARKETPLACE_V5, // CORRECT!
+  approved: true,
+});
+```
+
+Using the proper contract address structure ensures consistency across the codebase and makes future updates to contract addresses easier to manage.
