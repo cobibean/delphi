@@ -8,7 +8,6 @@
 
 // Export all NFT domain components
 export * from './AuctionActions';
-export * from './MintCard';
 export * from './NFTAttributes';
 export * from './NFTCard';
 export * from './NFTCarousel';

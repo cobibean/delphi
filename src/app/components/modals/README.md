@@ -7,59 +7,93 @@ This directory contains modal dialog components used for overlays, alerts, and i
 Modal components provide overlay interfaces for:
 
 - Confirmation dialogs
-- Alert messages
-- Form inputs that require focused attention
-- Detail views without navigation
+- Interactive forms and inputs
+- Feature-specific interfaces (like NFT listing creation)
+- Wallet connection and transaction confirmation
 - Settings and configuration interfaces
 
-## Component Types
+## Modal System
 
-This directory should contain modal-focused components such as:
+Our modal system provides:
 
-- `ConfirmationModal`: For confirming user actions
-- `AlertModal`: For displaying important alerts
-- `FormModal`: Reusable modal with form functionality
-- `DetailModal`: For displaying detailed information
-- `DialogProvider`: Context provider for managing modals
+- Consistent styling and behavior across the application
+- Accessibility support with keyboard navigation and focus management
+- Animation and transition effects
+- Backdrop handling and click-outside behavior
+- Mobile-responsive design
 
-## Best Practices
+## Key Components
 
-- Keep modal content focused and minimal
-- Provide clear actions (confirm, cancel, etc.)
-- Use consistent animations for opening/closing
-- Make modals accessible (keyboard navigation, focus trapping)
-- Allow closing via escape key, backdrop click, and explicit buttons
-- Handle scrolling appropriately for large content
+- `ListingOptionsModal`: Interface for creating NFT listings
+- Base modal components for various use cases
+
+## Integration with Features
+
+The modal components integrate with various features:
+
+- NFT listing creation in the marketplace
+- Wallet connection and transaction confirmation
+- NFT minting confirmation and status
+- User settings and preferences
 
 ## Usage Example
 
 ```tsx
-import { ConfirmationModal } from "@/components/modals";
+import { useState } from "react";
+import { ListingOptionsModal } from "@/components/modals";
 
-const DeleteItemComponent = () => {
-  const [isOpen, setIsOpen] = useState(false);
+const ListingCreationButton = () => {
+  const [showModal, setShowModal] = useState(false);
 
-  const handleDelete = () => {
-    // Delete logic
-    setIsOpen(false);
+  const handleModalOpen = () => {
+    setShowModal(true);
+  };
+
+  const handleModalClose = () => {
+    setShowModal(false);
   };
 
   return (
     <>
-      <Button onClick={() => setIsOpen(true)} variant="danger">
-        Delete Item
-      </Button>
+      <button 
+        onClick={handleModalOpen}
+        className="bg-cosmic-combustion hover:bg-cosmic-combustion/90 text-oracle-white px-4 py-2 rounded-lg"
+      >
+        Create Listing
+      </button>
 
-      <ConfirmationModal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        onConfirm={handleDelete}
-        title="Confirm Deletion"
-        description="Are you sure you want to delete this item? This action cannot be undone."
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-      />
+      {showModal && (
+        <ListingOptionsModal 
+          onClose={handleModalClose} 
+        />
+      )}
     </>
   );
 };
-``` 
+```
+
+## Styling
+
+Our modal components use:
+- Tailwind CSS for styling
+- Framer Motion for animations
+- "Cosmic Overload" design system with space themes
+- Dark mode support
+- Responsive design for all device sizes
+
+## Accessibility
+
+All modals implement these accessibility features:
+- Focus trapping within the modal
+- Keyboard navigation (Escape to close)
+- ARIA attributes for screen readers
+- Focus restoration when closed
+
+## Future Enhancements
+
+Planned improvements to modal components:
+
+- Enhanced animation library
+- More specialized modal types for specific use cases
+- Improved mobile interaction patterns
+- Multi-step modal workflows 

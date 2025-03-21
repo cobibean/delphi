@@ -10,44 +10,100 @@ The UI components serve as the building blocks for the entire application interf
 - Highly reusable
 - Customizable through props
 - Focused on presentation rather than business logic
+- Consistent with our "Cosmic Overload" design system
 
-## Component Types
+## Component List
 
-This directory should contain primitive UI elements such as:
+### Core Components
 
-- `Button`: Various button styles and variants
-- `Input`: Text input fields
-- `Select`: Dropdown selectors
-- `Checkbox`: Toggle and checkbox components
-- `Modal`: Base modal component
-- `Tabs`: Tab navigation component
-- `Card`: Base card container
-- `Typography`: Text components (headings, paragraphs, etc.)
-- `Icons`: SVG icon components
+- `Button`: Versatile button component with various styles and sizes
+- `Carousel`: Component for displaying rotating content and images
 
-## Best Practices
+### Upcoming Components
 
-- Keep components as pure as possible
-- Use TypeScript interfaces for props
-- Document usage with JSDoc comments
-- Implement consistent theming and styling
-- Create variants through props rather than new components
-- Provide sensible defaults for all props
+- Input fields and form elements
+- Navigation components
+- Media display components
+- Typography system
+- Card variations
+
+## Features
+
+### Button
+
+The `Button` component provides:
+- Multiple visual variants (primary, secondary, ghost, etc.)
+- Size variations (sm, md, lg)
+- Loading states
+- Icon support
+- Full width option
+- Disabled states
+
+### Carousel
+
+The `Carousel` component provides:
+- Smooth slide transitions
+- Automatic or manual navigation
+- Customizable controls
+- Responsive behavior
+- Support for various content types
+
+## Integration with Features
+
+These UI components are used across all features:
+
+- NFT marketplace listings and displays
+- NFT mintzone interface
+- User profile components
+- Wallet connection interface
+- Transaction confirmations
 
 ## Usage Example
 
 ```tsx
-import { Button } from "@/components/ui";
+import { Button } from "@/app/components/ui";
 
-const MyComponent = () => {
+const ActionButton = () => {
+  const [loading, setLoading] = useState(false);
+  
+  const handleAction = async () => {
+    setLoading(true);
+    try {
+      await someAsyncAction();
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   return (
     <Button 
       variant="primary" 
       size="md" 
-      onClick={() => console.log('Clicked')}
+      loading={loading}
+      onClick={handleAction}
+      className="hover:shadow-glow"
     >
-      Click Me
+      Mint NFT
     </Button>
   );
 };
-``` 
+```
+
+## Design System Integration
+
+Our UI components implement:
+- "Cosmic Overload" design language
+- Space-themed effects and animations
+- Dark mode by default with light mode support
+- Consistent spacing and sizing
+- Accessibility considerations
+
+## Future Enhancements
+
+Planned improvements to UI components:
+
+- Complete form element suite
+- Animation library integration
+- Enhanced accessibility features
+- Theme customization options
+- Interactive documentation 

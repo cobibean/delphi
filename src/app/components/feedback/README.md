@@ -11,44 +11,90 @@ Feedback components communicate important information to users about:
 - Success messages
 - System notifications
 - Progress indicators
+- Transaction statuses
 
-## Component Types
+## Component List
 
-This directory should contain feedback-focused components such as:
+### Core Components
 
-- `LoadingState`: Loading indicators and spinners
-- `ErrorDisplay`: Error message display
-- `ToastNotification`: Temporary notifications
-- `Alert`: Alert messages (error, warning, info, success)
-- `ProgressBar`: Progress indicators
-- `Skeleton`: Loading placeholders
-- `EmptyState`: Displays for empty data
+- `LoadingIndicator`: Simple loading spinner with customizable size and color
+- `LoadingState`: Enhanced loading display with messages and animation
+- `toastNotification`: Toast message system for temporary notifications
+- `Toast`: Toast container and management system
 
-## Best Practices
+### Hooks
 
-- Provide clear and informative messages
-- Use appropriate colors and icons for different feedback types
-- Make feedback accessible (screen readers, animations, etc.)
-- Maintain consistent styling with the rest of the UI
-- Consider mobile and responsive views
-- Allow customization through props
+- `useToast`: Hook for triggering toast notifications from any component
 
-## Usage Example
+## Directory Structure
+
+- `Toast/`: Components for the toast notification system
+- `hooks/`: Hooks for feedback components
+- `test/`: Test utilities for feedback components
+
+## Integration with Features
+
+Feedback components are used across various features:
+
+- NFT minting status notifications
+- Transaction confirmations
+- Error handling in API calls
+- Loading states during data fetching
+- Form submission feedback
+
+## Usage Examples
+
+### Loading States
 
 ```tsx
-import { LoadingState, ErrorDisplay } from "@/components/feedback";
+import { LoadingState, LoadingIndicator } from "@/components/feedback";
 
-const DataFetchComponent = () => {
-  const { data, isLoading, error } = useSomeData();
+// Simple spinner
+<LoadingIndicator size="md" />
 
-  if (isLoading) {
-    return <LoadingState message="Loading data..." size="md" />;
-  }
+// Enhanced loading with message
+<LoadingState 
+  message="Loading your NFTs..." 
+  size="lg"
+  showSpinner={true} 
+/>
+```
 
-  if (error) {
-    return <ErrorDisplay message={error.message} />;
-  }
+### Toast Notifications
 
-  return <div>{/* Render data */}</div>;
+```tsx
+import { useToast } from "@/components/feedback";
+
+const MyComponent = () => {
+  const { toast } = useToast();
+  
+  const handleAction = async () => {
+    try {
+      await someAsyncAction();
+      toast({
+        title: "Success!",
+        description: "Your action was completed successfully",
+        variant: "success",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+  
+  return <Button onClick={handleAction}>Perform Action</Button>;
 };
-``` 
+```
+
+## Future Enhancements
+
+Planned additions to the feedback system:
+
+- Progress bar for multi-step processes
+- Skeleton loading placeholders
+- Enhanced error display components
+- Animated success indicators
+- Blockchain transaction status tracking 

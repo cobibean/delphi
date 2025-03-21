@@ -17,6 +17,13 @@ const redirects = [
     destination: '/features/nft/:id',
     permanent: true,
   },
+  
+  // NFT Mintzone redirect
+  {
+    source: '/mint',
+    destination: '/features/nft/mintzone',
+    permanent: true,
+  },
 
   // Profile redirects
   {

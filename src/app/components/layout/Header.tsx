@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { useState, useEffect } from "react";
-import { WalletConnect } from "@/features/wallet/components";
-import { motion, AnimatePresence } from "framer-motion";
 import { ListingOptionsModal } from "@/features/marketplace/components";
+import { WalletConnect } from "@/features/wallet/components";
+import { AnimatePresence, motion } from "framer-motion";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -59,6 +59,7 @@ export default function Header() {
     { name: "Create", href: "/create" },
     { name: "My NFTs", href: "/my-nfts" },
     { name: "My Listings", href: "/my-listings" },
+    { name: "Mint NFT", href: "/features/nft/mintzone" },
     { name: "Stats", href: "/stats" },
   ];
   

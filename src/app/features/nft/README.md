@@ -16,6 +16,9 @@ The NFT domain handles the core functionality related to Non-Fungible Tokens, in
 
 - `components/`: NFT-specific UI components
 - `hooks/`: NFT-specific hooks and logic
+- `[id]/`: Dynamic routes for individual NFT details
+- `services/`: Service functions for NFT interactions
+- `mintzone/`: NFT minting interface with ThirdWeb integration
 
 ## Key Components
 
@@ -24,6 +27,8 @@ The NFT domain handles the core functionality related to Non-Fungible Tokens, in
 - `NFTAttributes`: Display of NFT traits and properties
 - `NFTCarousel`: Carousel display of multiple NFTs
 - `ListingOptionsModal`: Interface for creating NFT listings
+- `MintCard`: Interface for minting NFTs from collections
+- `HomepageMintCard`: Client-side minting component for homepage integration
 
 ## Key Hooks
 
@@ -36,4 +41,16 @@ The NFT domain interacts with:
 
 - Marketplace domain for listing and sales functionality
 - Wallet domain for ownership and transaction verification
-- Profile domain for user-owned NFTs 
+- Profile domain for user-owned NFTs
+- ThirdWeb SDK for minting and contract interactions
+
+## Subdomains
+
+### Mintzone
+
+The mintzone subdomain provides a complete NFT minting experience:
+- Supports ERC721 and ERC1155 NFT standards
+- Allows minting multiple tokens at once
+- Supports custom recipient addresses
+- Provides both dedicated page and reusable component for homepage integration
+- See the [mintzone README](./mintzone/README.md) for more details 
