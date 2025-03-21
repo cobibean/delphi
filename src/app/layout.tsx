@@ -8,19 +8,19 @@
 
 "use client";
 
-import "./globals.css";
-import { Inter, Anton } from "next/font/google";
+import { ToastProvider } from "@/app/components/feedback";
+import Footer from "@/components/layout/Footer";
+import Header from "@/components/layout/Header";
 import { TransactionProvider } from "@/providers/TransactionProvider";
 import { WalletProvider } from "@/providers/WalletProvider";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import { motion, AnimatePresence } from "framer-motion";
-import { usePathname } from "next/navigation";
-import { ThirdwebProvider } from "thirdweb/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "framer-motion";
+import { Anton, Inter } from "next/font/google";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { createThirdwebClient, defineChain } from "thirdweb";
-import { ToastProvider } from "@/app/components/feedback";
+import { ThirdwebProvider } from "thirdweb/react";
+import "./globals.css";
 
 // Load Inter font for body text
 const inter = Inter({
@@ -90,7 +90,7 @@ export default function RootLayout({
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="icon" href="/images/delphi-logo.svg" />
+        <link rel="icon" href="/images/logo/black-box.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* Add Impact, Anton, and Roboto Slab fonts for Delphi theme */}

@@ -56,9 +56,7 @@ export default function Header() {
   // Define navigation items
   const navigationItems = [
     { name: "Marketplace", href: "/" },
-    { name: "Create", href: "/create" },
-    { name: "My NFTs", href: "/my-nfts" },
-    { name: "My Listings", href: "/my-listings" },
+    { name: "Profile", href: "/profile" },
     { name: "Mint NFT", href: "/features/nft/mintzone" },
     { name: "Stats", href: "/stats" },
   ];
@@ -141,18 +139,45 @@ export default function Header() {
               whileHover="hover"
             >
               <img 
-                src="/images/logo/logo-transparent.png" 
+                src="/images/logo/D-trans-back.png" 
                 alt="Delphi NFT Marketplace" 
                 className="h-10 w-auto"
               />
-              <span className="text-2xl font-bold text-oracle-white">Delphi</span>
+              <span className="text-2xl font-anton text-oracle-white">Delphi</span>
             </motion.div>
           </Link>
           
           {/* Desktop Navigation */}
           <motion.nav className="hidden md:flex items-center space-x-8">
-            {navigationItems.map((item, index) => (
+            {/* First two navigation items */}
+            {navigationItems.slice(0, 2).map((item, index) => (
               <motion.div key={index} variants={navItemVariants}>
+                <Link href={item.href}>
+                  <span className="text-cosmic-grey-300 hover:text-oracle-white transition-colors duration-200">
+                    {item.name}
+                  </span>
+                </Link>
+              </motion.div>
+            ))}
+            
+            {/* Create Button (centered) */}
+            <motion.div
+              variants={createButtonVariants}
+              initial="initial" 
+              whileHover="hover" 
+              whileTap="tap"
+            >
+              <button 
+                onClick={handleListingModalOpen}
+                className="bg-cosmic-combustion hover:bg-cosmic-combustion/90 text-oracle-white px-4 py-2 rounded-lg font-heading transition-colors"
+              >
+                Create
+              </button>
+            </motion.div>
+            
+            {/* Last two navigation items */}
+            {navigationItems.slice(2).map((item, index) => (
+              <motion.div key={index + 2} variants={navItemVariants}>
                 <Link href={item.href}>
                   <span className="text-cosmic-grey-300 hover:text-oracle-white transition-colors duration-200">
                     {item.name}
@@ -164,22 +189,6 @@ export default function Header() {
           
           {/* Right Actions */}
           <div className="flex items-center space-x-4">
-            {/* Create Button */}
-            <motion.div
-              variants={createButtonVariants}
-              initial="initial" 
-              whileHover="hover" 
-              whileTap="tap"
-              className="hidden md:block"
-            >
-              <button 
-                onClick={handleListingModalOpen}
-                className="bg-cosmic-combustion hover:bg-cosmic-combustion/90 text-oracle-white px-4 py-2 rounded-lg font-heading transition-colors"
-              >
-                Create
-              </button>
-            </motion.div>
-            
             {/* Connect Wallet Button */}
             <div className="hidden md:block">
               <WalletConnect />

@@ -2,12 +2,16 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { getAllListings } from "@/features/marketplace/services/marketplace-v5";
-import { IListingWithNFT } from "@/interfaces/interfaces";
-import { NFTMarketplaceDashboard } from "@/features/marketplace/components";
 import LoadingIndicator from "@/components/feedback/LoadingIndicator";
+import { NFTMarketplaceDashboard } from "@/features/marketplace/components";
+import { getAllListings } from "@/features/marketplace/services/marketplace-v5";
+import { HomepageMintCard } from "@/features/nft/mintzone/components";
+import { IListingWithNFT } from "@/interfaces/interfaces";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+// Define the contract address for the mint card
+const MINT_CONTRACT_ADDRESS = "0x8938fc030Df8780A479f393982890980A192c63f";
 
 // Define interface for market stats
 interface MarketStats {
@@ -49,6 +53,7 @@ export default function Page() {
     }
     
     fetchListings();
+    console.log("Page component mounted, will use HomepageMintCard with address:", MINT_CONTRACT_ADDRESS);
   }, []);
   
   useEffect(() => {
@@ -127,99 +132,119 @@ export default function Page() {
       {/* Content when loaded successfully */}
       {!isLoading && !error && (
         <>
-          {/* 1. Featured Carousel Section */}
-          {featuredListings.length > 0 && (
-            <section className="relative overflow-hidden pt-4 pb-12">
-              <div className="container mx-auto px-4">
-                <h2 className="font-heading text-3xl md:text-4xl text-oracle-orange mb-8 text-center uppercase tracking-wide">
-                  Featured Creations
-                </h2>
-                
-                <div className="relative max-w-5xl mx-auto">
-                  {/* Carousel slider */}
-                  <div className="overflow-hidden rounded-xl">
-                    <div className="flex transition-transform duration-500 ease-in-out" 
-                      style={{ transform: `translateX(-${carouselIndex * 100}%)` }}>
-                      {featuredListings.map((item) => (
-                        <div key={item.listingId} className="w-full flex-shrink-0 px-4">
-                          <div className="bg-ancient-wisdom rounded-xl overflow-hidden shadow-card-normal border border-oracle-orange/20 hover-lift">
-                            <div className="aspect-[1.5/1] relative overflow-hidden">
-                              <img 
-                                src={item.metadata?.image || "/images/placeholder.jpg"} 
-                                alt={item.metadata?.name || `NFT #${item.tokenId}`} 
-                                className="w-full h-full object-cover" 
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-oracle-black/80 to-transparent"></div>
-                              <div className="absolute bottom-0 left-0 w-full p-6">
-                                <h3 className="font-heading text-3xl text-oracle-white mb-2">
-                                  {item.metadata?.name || `NFT #${item.tokenId}`}
-                                </h3>
-                                <div className="flex justify-between items-end">
-                                  <div className="flex items-center">
-                                    <span className="text-oracle-white/70 text-sm">
-                                      {item.collectionName || "Metis Collection"}
-                                    </span>
+          {/* Two-Column Hero Section with Featured Carousel and Mint Card */}
+          <section className="relative overflow-hidden pt-4 pb-12">
+            <div className="container mx-auto px-4">
+              <div className="flex flex-col lg:flex-row gap-8">
+                {/* Left Column: Featured Carousel (65-70%) */}
+                <div className="w-full lg:w-2/3">
+                  {featuredListings.length > 0 && (
+                    <>
+                      <h2 className="font-heading text-3xl md:text-4xl text-oracle-orange mb-8 text-center uppercase tracking-wide">
+                        Featured Creations
+                      </h2>
+                      
+                      <div className="relative max-w-full mx-auto">
+                        {/* Carousel slider */}
+                        <div className="overflow-hidden rounded-xl">
+                          <div className="flex transition-transform duration-500 ease-in-out" 
+                            style={{ transform: `translateX(-${carouselIndex * 100}%)` }}>
+                            {featuredListings.map((item) => (
+                              <div key={item.listingId} className="w-full flex-shrink-0 px-4">
+                                <div className="bg-ancient-wisdom rounded-xl overflow-hidden shadow-card-normal border border-oracle-orange/20 hover-lift">
+                                  <div className="aspect-[1.5/1] relative overflow-hidden">
+                                    <img 
+                                      src={item.metadata?.image || "/images/placeholder.jpg"} 
+                                      alt={item.metadata?.name || `NFT #${item.tokenId}`} 
+                                      className="w-full h-full object-cover" 
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-oracle-black/80 to-transparent"></div>
+                                    <div className="absolute bottom-0 left-0 w-full p-6">
+                                      <h3 className="font-heading text-3xl text-oracle-white mb-2">
+                                        {item.metadata?.name || `NFT #${item.tokenId}`}
+                                      </h3>
+                                      <div className="flex justify-between items-end">
+                                        <div className="flex items-center">
+                                          <span className="text-oracle-white/70 text-sm">
+                                            {item.collectionName || "Metis Collection"}
+                                          </span>
+                                        </div>
+                                        <span className="text-oracle-orange text-2xl font-bold">
+                                          {item.pricePerToken} METIS
+                                        </span>
+                                      </div>
+                                    </div>
                                   </div>
-                                  <span className="text-oracle-orange text-2xl font-bold">
-                                    {item.pricePerToken} METIS
-                                  </span>
+                                  <div className="p-6 flex justify-between items-center">
+                                    <Link href={`/nft/${item.listingId}`} className="btn-primary py-2 px-6">
+                                      <span className="relative z-10">View Details</span>
+                                    </Link>
+                                    <button className="btn-icon">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                      </svg>
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            <div className="p-6 flex justify-between items-center">
-                              <Link href={`/nft/${item.listingId}`} className="btn-primary py-2 px-6">
-                                <span className="relative z-10">View Details</span>
-                              </Link>
-                              <button className="btn-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                </svg>
-                              </button>
-                            </div>
+                            ))}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Carousel controls - only show if more than one listing */}
-                  {featuredListings.length > 1 && (
-                    <>
-                      <button 
-                        onClick={prevSlide}
-                        className="absolute top-1/2 left-6 transform -translate-y-1/2 w-10 h-10 rounded-full bg-oracle-black/50 flex items-center justify-center text-oracle-white hover:bg-oracle-orange hover:text-oracle-black transition-colors"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                      </button>
-                      <button 
-                        onClick={nextSlide}
-                        className="absolute top-1/2 right-6 transform -translate-y-1/2 w-10 h-10 rounded-full bg-oracle-black/50 flex items-center justify-center text-oracle-white hover:bg-oracle-orange hover:text-oracle-black transition-colors"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
+                        
+                        {/* Carousel controls - only show if more than one listing */}
+                        {featuredListings.length > 1 && (
+                          <>
+                            <button 
+                              onClick={prevSlide}
+                              className="absolute top-1/2 left-6 transform -translate-y-1/2 w-10 h-10 rounded-full bg-oracle-black/50 flex items-center justify-center text-oracle-white hover:bg-oracle-orange hover:text-oracle-black transition-colors"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                              </svg>
+                            </button>
+                            <button 
+                              onClick={nextSlide}
+                              className="absolute top-1/2 right-6 transform -translate-y-1/2 w-10 h-10 rounded-full bg-oracle-black/50 flex items-center justify-center text-oracle-white hover:bg-oracle-orange hover:text-oracle-black transition-colors"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </button>
+                          </>
+                        )}
+                        
+                        {/* Carousel indicators */}
+                        {featuredListings.length > 1 && (
+                          <div className="flex justify-center mt-4">
+                            {featuredListings.map((_, index) => (
+                              <button 
+                                key={index}
+                                onClick={() => setCarouselIndex(index)}
+                                className={`w-3 h-3 mx-1 rounded-full ${index === carouselIndex ? 'bg-oracle-orange' : 'bg-oracle-white/30'}`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </>
                   )}
-                  
-                  {/* Carousel indicators */}
-                  {featuredListings.length > 1 && (
-                    <div className="flex justify-center mt-4">
-                      {featuredListings.map((_, index) => (
-                        <button 
-                          key={index}
-                          onClick={() => setCarouselIndex(index)}
-                          className={`w-3 h-3 mx-1 rounded-full ${index === carouselIndex ? 'bg-oracle-orange' : 'bg-oracle-white/30'}`}
-                        />
-                      ))}
-                    </div>
-                  )}
+                </div>
+                
+                {/* Right Column: HomepageMintCard (30-35%) */}
+                <div className="w-full lg:w-1/3 mt-8 lg:mt-0">
+                  <h2 className="font-heading text-2xl md:text-3xl text-oracle-orange mb-4 text-center uppercase tracking-wide">
+                    Mint Your Delphi Day One Now
+                  </h2>
+                  <div className="bg-cosmic-connection animate-cosmic-flow bg-[length:200%_200%] rounded-xl p-4 overflow-hidden shadow-dark border border-oracle-orange/20">
+                    <HomepageMintCard 
+                      contractAddress={MINT_CONTRACT_ADDRESS}
+                      className="hover-lift"
+                    />
+                  </div>
                 </div>
               </div>
-            </section>
-          )}
+            </div>
+          </section>
           
           {/* Main marketplace section with all listings */}
           {listings.length > 0 ? (
