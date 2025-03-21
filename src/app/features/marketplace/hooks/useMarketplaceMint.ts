@@ -3,7 +3,7 @@
 import { useToast } from "@/components/feedback/Toast/useToast";
 import { metisChain } from "@/config/chain";
 import { client } from "@/config/client";
-import { CONTRACT_ADDRESS, WMETIS_CONTRACT_ADDRESS } from "@/constants/contracts";
+import { MARKETPLACE_ADDRESS, WMETIS_CONTRACT_ADDRESS } from "@/constants/contracts";
 import { useTransaction } from "@/features/wallet/hooks";
 import { IDirectListing } from "@/interfaces/interfaces";
 import { getContract, prepareContractCall, sendTransaction } from "thirdweb";
@@ -49,7 +49,7 @@ export function useMarketplaceMint() {
       const marketplaceContract = await getContract({
         client,
         chain: metisChain,
-        address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+        address: MARKETPLACE_ADDRESS,
       });
       
       // Calculate the total price (price per token * quantity)
@@ -91,7 +91,7 @@ export function useMarketplaceMint() {
       const approveCall = prepareContractCall({
         contract: wmetisContract,
         method: "function approve(address spender, uint256 amount) external returns (bool)",
-        params: [CONTRACT_ADDRESS.MARKETPLACE_V5, totalPriceWei],
+        params: [MARKETPLACE_ADDRESS, totalPriceWei],
       });
       
       const approveTx = await sendTransaction({
