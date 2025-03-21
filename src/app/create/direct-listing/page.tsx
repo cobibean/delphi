@@ -2,7 +2,7 @@
 
 import { metisChain } from "@/config/chain";
 import { client } from "@/config/client";
-import { CONTRACT_ADDRESS, NATIVE_TOKEN_ADDRESS } from "@/constants/contracts";
+import { MARKETPLACE_ADDRESS, NATIVE_TOKEN_ADDRESS } from "@/constants/contracts";
 import { useTransaction } from "@/providers/TransactionProvider";
 import { ethers } from "ethers";
 import { motion } from "framer-motion";
@@ -46,7 +46,7 @@ export default function DirectListingPage() {
     return getContract({
       client,
       chain: metisChain,
-      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+      address: MARKETPLACE_ADDRESS,
     });
   };
   
@@ -115,7 +115,7 @@ export default function DirectListingPage() {
           const isApprovedResult = await isApprovedForAll({
             contract: nftContract,
             owner: account?.address as `0x${string}`,
-            operator: CONTRACT_ADDRESS.MARKETPLACE_V5,
+            operator: MARKETPLACE_ADDRESS,
           });
           
           setIsApproved(isApprovedResult);
@@ -180,7 +180,7 @@ export default function DirectListingPage() {
       // Create the approval transaction
       const tx = setApprovalForAll({
         contract: nftContract,
-        operator: CONTRACT_ADDRESS.MARKETPLACE_V5,
+        operator: MARKETPLACE_ADDRESS,
         approved: true,
       });
       
@@ -228,7 +228,7 @@ export default function DirectListingPage() {
       const isApprovedAfterTx = await isApprovedForAll({
         contract: nftContract,
         owner: account.address as `0x${string}`,
-        operator: CONTRACT_ADDRESS.MARKETPLACE_V5,
+        operator: MARKETPLACE_ADDRESS,
       });
       
       if (!isApprovedAfterTx) {
@@ -252,7 +252,7 @@ export default function DirectListingPage() {
       const finalApprovalCheck = await isApprovedForAll({
         contract: nftContract,
         owner: account.address as `0x${string}`,
-        operator: CONTRACT_ADDRESS.MARKETPLACE_V5,
+        operator: MARKETPLACE_ADDRESS,
       });
       
       console.log("Final approval status check:", finalApprovalCheck);
@@ -311,7 +311,7 @@ export default function DirectListingPage() {
         const isStillApproved = await isApprovedForAll({
           contract: nftContract,
           owner: account?.address as `0x${string}`,
-          operator: CONTRACT_ADDRESS.MARKETPLACE_V5,
+          operator: MARKETPLACE_ADDRESS,
         });
         
         if (!isStillApproved) {
@@ -338,7 +338,7 @@ export default function DirectListingPage() {
       const marketplaceContract = getContract({
         client,
         chain: metisChain,
-        address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+        address: MARKETPLACE_ADDRESS,
       });
       
       // Add transaction to the transaction provider

@@ -2,7 +2,7 @@
 
 import { metisChain } from "@/config/chain";
 import { client } from "@/config/client";
-import { CONTRACT_ADDRESS } from "@/constants/contracts";
+import { MARKETPLACE_ADDRESS } from "@/constants/contracts";
 import { useTransaction } from "@/providers/TransactionProvider";
 import { ethers } from "ethers";
 import { motion } from "framer-motion";
@@ -107,7 +107,7 @@ export default function AuctionPage() {
           const isApprovedResult = await isApprovedForAll({
             contract: nftContract,
             owner: account?.address as `0x${string}`,
-            operator: CONTRACT_ADDRESS.MARKETPLACE_V5,
+            operator: MARKETPLACE_ADDRESS,
           });
           
           setIsApproved(isApprovedResult);
@@ -172,7 +172,7 @@ export default function AuctionPage() {
       // Create the approval transaction
       const tx = setApprovalForAll({
         contract: nftContract,
-        operator: CONTRACT_ADDRESS.MARKETPLACE_V5,
+        operator: MARKETPLACE_ADDRESS,
         approved: true,
       });
 
@@ -220,7 +220,7 @@ export default function AuctionPage() {
       const isApprovedAfterTx = await isApprovedForAll({
         contract: nftContract,
         owner: account.address as `0x${string}`,
-        operator: CONTRACT_ADDRESS.MARKETPLACE_V5,
+        operator: MARKETPLACE_ADDRESS,
       });
       
       if (!isApprovedAfterTx) {
@@ -289,7 +289,7 @@ export default function AuctionPage() {
       const marketplaceContract = await getContract({
         client,
         chain: metisChain,
-        address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+        address: MARKETPLACE_ADDRESS,
       });
       
       // Get the account

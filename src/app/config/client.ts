@@ -1,4 +1,4 @@
-import { CONTRACT_ADDRESS } from "@/constants/contracts";
+import { MARKETPLACE_ADDRESS } from "@/constants/contracts";
 import MarketplaceABI from "@/constants/MarketplaceABI";
 import { ethers } from "ethers";
 import { createThirdwebClient } from "thirdweb";
@@ -54,12 +54,12 @@ export const getMarketplaceContract = async (signerOrProvider = getProvider()) =
   try {
     // Create ethers contract instance
     const contract = new ethers.Contract(
-      CONTRACT_ADDRESS.MARKETPLACE_V5,
+      MARKETPLACE_ADDRESS,
       MarketplaceABI,
       signerOrProvider
     );
     
-    console.log("Contract interface created for marketplace at", CONTRACT_ADDRESS.MARKETPLACE_V5);
+    console.log("Contract interface created for marketplace at", MARKETPLACE_ADDRESS);
     return contract;
   } catch (error) {
     console.error("Failed to get marketplace contract", error);
@@ -80,12 +80,12 @@ export const getSigner = async () => {
     
     // Create contract interface using ethers.js
     const contract = new ethers.Contract(
-      CONTRACT_ADDRESS.MARKETPLACE_V5,
+      MARKETPLACE_ADDRESS,
       MarketplaceABI,
       signer
     );
     
-    console.log("Contract interface created for marketplace at", CONTRACT_ADDRESS.MARKETPLACE_V5);
+    console.log("Contract interface created for marketplace at", MARKETPLACE_ADDRESS);
     return signer;
   } catch (error) {
     console.error("Failed to get signer", error);

@@ -1,7 +1,7 @@
 import { metisChain } from "@/app/config/chain";
 import { client } from "@/app/config/client";
 import { INFTAttribute, INFTMetadata } from "@/app/interfaces/interfaces";
-import { CONTRACT_ADDRESS } from "@/constants/contracts";
+import { MARKETPLACE_ADDRESS } from "@/constants/contracts";
 import { ethers } from "ethers";
 import { getContract, getContractEvents, NATIVE_TOKEN_ADDRESS, sendTransaction, waitForReceipt } from "thirdweb";
 import { getContractMetadata } from "thirdweb/extensions/common";
@@ -18,7 +18,7 @@ declare global {
 }
 
 // Log the marketplace contract address for debugging
-console.log(`Marketplace Contract: ${CONTRACT_ADDRESS.MARKETPLACE_V5}`);
+console.log(`Marketplace Contract: ${MARKETPLACE_ADDRESS}`);
 
 // Enhanced error logging utility for contract interactions
 const logContractError = (error: any, operation: string) => {
@@ -147,13 +147,13 @@ export interface IListingWithNFT extends IDirectListing {
  */
 export const getAllListings = async (): Promise<IListingWithNFT[]> => {
   try {
-    console.log("Getting marketplace contract at", CONTRACT_ADDRESS.MARKETPLACE_V5);
+    console.log("Getting marketplace contract at", MARKETPLACE_ADDRESS);
     
     // Get the marketplace contract
     const marketplaceContract = getContract({
       client,
       chain: metisChain,
-      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+      address: MARKETPLACE_ADDRESS,
     });
     
     // Get all valid listings using the marketplace extension
@@ -219,7 +219,7 @@ export const getListing = async (listingId: string): Promise<IListingWithNFT | n
     const marketplaceContract = getContract({
       client,
       chain: metisChain,
-      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+      address: MARKETPLACE_ADDRESS,
     });
     
     // Get all valid listings to find the one we want
@@ -326,7 +326,7 @@ export const getAuction = async (auctionIdOrContractAddress: string, tokenId?: s
     const marketplaceContract = getContract({
       client,
       chain: metisChain,
-      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+      address: MARKETPLACE_ADDRESS,
     });
     
     // Get all valid auctions to find the one we want
@@ -451,7 +451,7 @@ export const getAuctionBidHistory = async (auctionId: string): Promise<any[]> =>
     const marketplaceContract = getContract({
       client,
       chain: metisChain,
-      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+      address: MARKETPLACE_ADDRESS,
     });
     
     // Get bid events
@@ -625,7 +625,7 @@ export async function buyWithMetis(
     const marketplaceContract = getContract({
       client,
       chain: metisChain,
-      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+      address: MARKETPLACE_ADDRESS,
     });
     
     // Get all valid listings to find the one we want
@@ -717,7 +717,7 @@ export async function placeBid(
     const marketplaceContract = await getContract({
       client,
       chain: metisChain,
-      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+      address: MARKETPLACE_ADDRESS,
     });
     
     // Extract account from wallet
@@ -733,7 +733,7 @@ export async function placeBid(
     // Log bid details
     console.log("Bidding with amount:", bidAmountInEth, "METIS");
     console.log("Auction ID:", auctionId);
-    console.log("Contract address:", CONTRACT_ADDRESS.MARKETPLACE_V5);
+    console.log("Contract address:", MARKETPLACE_ADDRESS);
     
     // Ensure bidAmount is in wei format for the contract call
     const bidAmountInWei = isWeiFormat ? bidAmount : ethers.parseEther(bidAmount).toString();
@@ -792,7 +792,7 @@ export async function buyoutAuction(
     const marketplaceContract = await getContract({
       client,
       chain: metisChain,
-      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+      address: MARKETPLACE_ADDRESS,
     });
     
     // First we need to get the auction details to determine the currency and price
@@ -828,7 +828,7 @@ export async function buyoutAuction(
       const currentAllowance = await allowance({
         contract: tokenContract,
         owner: account.address,
-        spender: CONTRACT_ADDRESS.MARKETPLACE_V5,
+        spender: MARKETPLACE_ADDRESS,
       });
       
       console.log(`Current allowance: ${currentAllowance.toString()}, Buyout price: ${auction.buyoutBidAmount.toString()}`);
@@ -840,7 +840,7 @@ export async function buyoutAuction(
         // Create approval transaction
         const approveTx = approve({
           contract: tokenContract,
-          spender: CONTRACT_ADDRESS.MARKETPLACE_V5,
+          spender: MARKETPLACE_ADDRESS,
           amount: auction.buyoutBidAmount.toString()
         });
         
@@ -931,7 +931,7 @@ export const createDirectListing = async (
     // Import the ABI and create contract instance with ethers
     const abi = (await import("@/app/constants/MarketplaceABI")).default;
     const contract = new ethers.Contract(
-      CONTRACT_ADDRESS.MARKETPLACE_V5,
+      MARKETPLACE_ADDRESS,
       abi,
       signer
     );
@@ -999,7 +999,7 @@ export const cancelListing = async (listingId: string) => {
     
     // Get the contract directly with the signer
     const contract = new ethers.Contract(
-      CONTRACT_ADDRESS.MARKETPLACE_V5,
+        MARKETPLACE_ADDRESS,
       (await import("@/app/constants/MarketplaceABI")).default,
       signer
     );
@@ -1115,7 +1115,7 @@ export const createAuction = async (
 ): Promise<{ transactionHash: string; success: boolean; receipt: any }> => {
   try {
     console.log(`Creating auction for token ${tokenId} with minimum bid ${minimumBidAmount} ETH`);
-    console.log("Marketplace contract address:", CONTRACT_ADDRESS.MARKETPLACE_V5);
+    console.log("Marketplace contract address:", MARKETPLACE_ADDRESS);
     console.log("Token contract address:", tokenContract);
     
     // Check if browser wallet is available
@@ -1129,7 +1129,7 @@ export const createAuction = async (
     
     // Get the contract directly with the signer
     const contract = new ethers.Contract(
-      CONTRACT_ADDRESS.MARKETPLACE_V5,
+      MARKETPLACE_ADDRESS,
       (await import("@/app/constants/MarketplaceABI")).default,
       signer
     );
@@ -1210,7 +1210,7 @@ export async function buyFromDirectListing(
     const marketplaceContract = await getContract({
       client,
       chain: metisChain,
-      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+      address: MARKETPLACE_ADDRESS,
     });
     
     // Extract wallet address for recipient
@@ -1285,7 +1285,7 @@ export async function getDirectListing(contractAddress: string, tokenId: string)
     const marketplaceContract = await getContract({
       client,
       chain: metisChain,
-      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+      address: MARKETPLACE_ADDRESS,
     });
     
     // Get all active listings
@@ -1340,7 +1340,7 @@ export async function checkIfNewWinningBid(
     const marketplaceContract = await getContract({
       client,
       chain: metisChain,
-      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+      address: MARKETPLACE_ADDRESS,
     });
     
     // Convert bid amount to wei as BigInt
@@ -1389,7 +1389,7 @@ export async function getAuctionWinningBid(auctionId: string): Promise<{
     const marketplaceContract = await getContract({
       client,
       chain: metisChain,
-      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+      address: MARKETPLACE_ADDRESS,
     });
     
     // Get the winning bid
@@ -1434,7 +1434,7 @@ export async function collectAuctionNFT(
     const marketplaceContract = await getContract({
       client,
       chain: metisChain,
-      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+      address: MARKETPLACE_ADDRESS,
     });
     
     // Extract account from wallet
@@ -1452,7 +1452,7 @@ export async function collectAuctionNFT(
     const signer = await provider.getSigner();
     const abi = (await import("@/app/constants/MarketplaceABI")).default;
     const marketplaceEthersContract = new ethers.Contract(
-      CONTRACT_ADDRESS.MARKETPLACE_V5,
+      MARKETPLACE_ADDRESS,
       abi,
       signer
     );
@@ -1503,7 +1503,7 @@ export async function collectAuctionPayoutForSeller(
     const marketplaceContract = await getContract({
       client,
       chain: metisChain,
-      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+      address: MARKETPLACE_ADDRESS,
     });
     
     // Extract account from wallet
@@ -1584,7 +1584,7 @@ export function watchForAuctionClosedEvents(
       const marketplaceContract = await getContract({
         client,
         chain: metisChain,
-        address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+        address: MARKETPLACE_ADDRESS,
       });
       
       // In a real implementation, we would fetch all auctions and check which ones have ended
