@@ -2,7 +2,7 @@
 
 import { getAllListings } from "@/app/features/marketplace/services/marketplace-v5";
 import TestToast from "@/components/feedback/test/TestToast";
-import { CONTRACT_ADDRESS } from "@/constants/contracts";
+import { MARKETPLACE_ADDRESS } from "@/constants/contracts";
 import { IListingWithNFT } from "@/interfaces/interfaces";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -15,7 +15,7 @@ export default function DebugPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        console.log("Fetching listings from contract at:", CONTRACT_ADDRESS.MARKETPLACE_V5);
+        console.log("Fetching listings from contract at:", MARKETPLACE_ADDRESS);
         setIsLoading(true);
         const result = await getAllListings();
         console.log("Fetched listings:", result);
@@ -42,7 +42,7 @@ export default function DebugPage() {
       </div>
       
       <div className="mb-6">
-        <p className="text-white mb-2">Contract Address: <span className="font-mono text-oracle-turquoise">{CONTRACT_ADDRESS.MARKETPLACE_V5}</span></p>
+        <p className="text-white mb-2">Contract Address: <span className="font-mono text-oracle-turquoise">{MARKETPLACE_ADDRESS}</span></p>
         <Link href="/" className="text-oracle-orange hover:underline mb-4 inline-block">
           &larr; Back to Home
         </Link>
