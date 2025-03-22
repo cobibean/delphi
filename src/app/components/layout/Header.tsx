@@ -5,6 +5,8 @@ import { WalletConnect } from "@/features/wallet/components";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { TestnetGuideModal } from "../modals";
+import Button from "../ui/Button";
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -13,6 +15,7 @@ export default function Header() {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [particleEffect, setParticleEffect] = useState(false);
   const [showListingModal, setShowListingModal] = useState(false);
+  const [showTestnetGuideModal, setShowTestnetGuideModal] = useState(false);
   
   useEffect(() => {
     setIsMounted(true);
@@ -51,6 +54,14 @@ export default function Header() {
   
   const handleListingModalClose = () => {
     setShowListingModal(false);
+  };
+
+  const handleTestnetGuideModalOpen = () => {
+    setShowTestnetGuideModal(true);
+  };
+  
+  const handleTestnetGuideModalClose = () => {
+    setShowTestnetGuideModal(false);
   };
   
   // Define navigation items
@@ -189,6 +200,17 @@ export default function Header() {
           
           {/* Right Actions */}
           <div className="flex items-center space-x-4">
+            {/* Testnet Guide Button */}
+            <div className="hidden md:block">
+              <Button 
+                variant="turquoise" 
+                size="sm"
+                onClick={handleTestnetGuideModalOpen}
+              >
+                Testnet Guide
+              </Button>
+            </div>
+            
             {/* Connect Wallet Button */}
             <div className="hidden md:block">
               <WalletConnect />
@@ -249,6 +271,17 @@ export default function Header() {
                     Create
                   </button>
                   
+                  <Button
+                    variant="turquoise"
+                    fullWidth
+                    onClick={() => {
+                      handleTestnetGuideModalOpen();
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    Testnet Guide
+                  </Button>
+                  
                   <div className="py-2">
                     <WalletConnect />
                   </div>
@@ -266,6 +299,13 @@ export default function Header() {
       {showListingModal && (
         <ListingOptionsModal 
           onClose={handleListingModalClose} 
+        />
+      )}
+
+      {/* Testnet Guide Modal */}
+      {showTestnetGuideModal && (
+        <TestnetGuideModal 
+          onClose={handleTestnetGuideModalClose} 
         />
       )}
     </>

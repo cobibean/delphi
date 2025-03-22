@@ -8,7 +8,7 @@ import { getActiveClaimCondition as getActiveClaimCondition721, isERC721 } from 
 import { MintCard } from "./components";
 
 // Define the NFT contract address
-const nftContractAddress = "0x8938fc030Df8780A479f393982890980A192c63f";
+const nftContractAddress = "0x27ae488a309A3F7c57AEA80490dF7c1cDbD69525";
 // Default token ID (for ERC1155)
 const tokenId = BigInt(0);
 

@@ -1,9 +1,9 @@
 import { metisChain } from "@/app/config/chain";
 import { client } from "@/app/config/client";
 import { INFTAttribute, INFTMetadata } from "@/app/interfaces/interfaces";
-import { MARKETPLACE_ADDRESS } from "@/constants/contracts";
+import { MARKETPLACE_ADDRESS, NATIVE_TOKEN_ADDRESS } from "@/constants/contracts";
 import { ethers } from "ethers";
-import { getContract, getContractEvents, NATIVE_TOKEN_ADDRESS, sendTransaction, waitForReceipt } from "thirdweb";
+import { getContract, getContractEvents, sendTransaction, waitForReceipt } from "thirdweb";
 import { getContractMetadata } from "thirdweb/extensions/common";
 import { allowance, approve } from "thirdweb/extensions/erc20";
 import { getNFT } from "thirdweb/extensions/erc721";
@@ -814,7 +814,7 @@ export async function buyoutAuction(
     }
     
     // For non-native token buyouts, we need to check allowance and approve if needed
-    if (auction.currencyContractAddress !== "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE") {
+    if (auction.currencyContractAddress !== NATIVE_TOKEN_ADDRESS) {
       console.log(`Non-native token auction: ${auction.currencyContractAddress}`);
       
       // Get the ERC20 token contract

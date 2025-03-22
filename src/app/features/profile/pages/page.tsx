@@ -1,9 +1,11 @@
 "use client";
 
+import { SocialConnectionsModal } from "@/components/modals";
 import { useState } from "react";
 
 export default function ProfilePage() {
   const [activeModal, setActiveModal] = useState(false);
+  const [showSocialModal, setShowSocialModal] = useState(false);
   
   return (
     <main className="bg-oracle-black min-h-screen pt-6">
@@ -89,7 +91,7 @@ export default function ProfilePage() {
             
             <div className="text-center">
               <button 
-                onClick={() => setActiveModal(true)}
+                onClick={() => setShowSocialModal(true)}
                 className="btn-primary"
               >
                 <span className="relative z-10">GET NOTIFIED WHEN READY</span>
@@ -139,6 +141,11 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+      )}
+      
+      {/* Social Connections Modal */}
+      {showSocialModal && (
+        <SocialConnectionsModal onClose={() => setShowSocialModal(false)} />
       )}
     </main>
   );

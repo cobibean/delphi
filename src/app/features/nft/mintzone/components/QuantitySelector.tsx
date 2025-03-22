@@ -40,15 +40,16 @@ export function QuantitySelector({
         onClick={decreaseQuantity}
         disabled={quantity <= min}
         aria-label="Decrease quantity"
-        className="rounded-r-none"
+        className="rounded-r-none border-r-0 bg-oracle-black/60 hover:bg-oracle-black/80"
       >
-        <Minus className="h-4 w-4" />
+        <Minus className="h-4 w-4 text-oracle-white" />
       </Button>
       <input
         type="number"
         value={quantity}
         onChange={handleQuantityChange}
-        className="w-28 text-center rounded-none border-x-0 pl-6 py-2 border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+        className="w-28 text-center rounded-none border-oracle-orange/30 pl-6 py-0 h-10
+                  bg-white text-sinister-black font-anton focus:outline-none focus:border-oracle-orange"
         min={min}
         max={max}
       />
@@ -58,9 +59,9 @@ export function QuantitySelector({
         onClick={increaseQuantity}
         disabled={quantity >= max}
         aria-label="Increase quantity"
-        className="rounded-l-none"
+        className="rounded-l-none border-l-0 bg-oracle-black/60 hover:bg-oracle-black/80"
       >
-        <Plus className="h-4 w-4" />
+        <Plus className="h-4 w-4 text-oracle-white" />
       </Button>
     </div>
   );

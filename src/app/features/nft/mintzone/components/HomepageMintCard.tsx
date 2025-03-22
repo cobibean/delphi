@@ -99,19 +99,26 @@ export function HomepageMintCard({
 
   if (loading) {
     return (
-      <div className={`bg-gray-100 dark:bg-gray-800 rounded-xl p-4 animate-pulse ${className}`}>
-        <div className="h-40 bg-gray-200 dark:bg-gray-700 rounded-lg mb-4"></div>
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full mb-6"></div>
-        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+      <div className={`bg-ancient-wisdom border border-oracle-orange/20 rounded-xl p-4 animate-pulse shadow-card-normal ${className}`}>
+        <div className="h-40 bg-sinister-black/30 rounded-lg mb-4"></div>
+        <div className="h-6 bg-sinister-black/30 rounded w-3/4 mb-2"></div>
+        <div className="h-4 bg-sinister-black/30 rounded w-full mb-6"></div>
+        <div className="h-10 bg-sinister-black/30 rounded"></div>
       </div>
     );
   }
 
   if (error || !nftInfo) {
     return (
-      <div className={`bg-gray-100 dark:bg-gray-800 rounded-xl p-4 ${className}`}>
-        <p className="text-red-500">Failed to load NFT data</p>
+      <div className={`bg-ancient-wisdom border border-oracle-orange/20 rounded-xl p-4 shadow-card-normal ${className}`}>
+        <div className="text-cosmic-combustion mb-2 font-heading">Failed to load NFT data</div>
+        <p className="text-oracle-white/70 text-sm mb-4">{error}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-cosmic-combustion hover:bg-cosmic-combustion/90 text-oracle-white font-heading rounded-md transition-colors text-sm"
+        >
+          Try Again
+        </button>
       </div>
     );
   }

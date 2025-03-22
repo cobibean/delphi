@@ -11,7 +11,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 // Define the contract address for the mint card
-const MINT_CONTRACT_ADDRESS = "0x8938fc030Df8780A479f393982890980A192c63f";
+const MINT_CONTRACT_ADDRESS = "0x27ae488a309A3F7c57AEA80490dF7c1cDbD69525";
 
 // Define interface for market stats
 interface MarketStats {
@@ -242,9 +242,9 @@ export default function Page() {
                 {/* Right Column: HomepageMintCard (30-35%) */}
                 <div className="w-full lg:w-1/3 mt-8 lg:mt-0">
                   <h2 className="font-heading text-2xl md:text-3xl text-oracle-orange mb-4 text-center uppercase tracking-wide">
-                    Mint Your Delphi Day One Now
+                    Mint Your "Delphi Pioneer" Now
                   </h2>
-                  <div className="bg-cosmic-connection animate-cosmic-flow bg-[length:200%_200%] rounded-xl p-4 overflow-hidden shadow-dark border border-oracle-orange/20">
+                  <div className="bg-gradient-to-br from-oracle-orange/50 via-oracle-orange/40 to-oracle-black shadow-lg shadow-oracle-turquoise/30 rounded-xl p-4 overflow-hidden border border-oracle-orange/20">
                     <HomepageMintCard 
                       contractAddress={MINT_CONTRACT_ADDRESS}
                       className="hover-lift"

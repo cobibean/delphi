@@ -2,14 +2,14 @@
 
 import { metisChain } from "@/config/chain";
 import { client } from "@/config/client";
-import { MARKETPLACE_ADDRESS } from "@/constants/contracts";
+import { MARKETPLACE_ADDRESS, NATIVE_TOKEN_ADDRESS } from "@/constants/contracts";
 import { useTransaction } from "@/providers/TransactionProvider";
 import { ethers } from "ethers";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getContract, isAddress, NATIVE_TOKEN_ADDRESS, readContract, sendTransaction, waitForReceipt } from "thirdweb";
+import { getContract, isAddress, readContract, sendTransaction, waitForReceipt } from "thirdweb";
 import { isApprovedForAll, setApprovalForAll } from "thirdweb/extensions/erc721";
 import { createAuction } from "thirdweb/extensions/marketplace";
 import { useActiveAccount, useActiveWallet } from "thirdweb/react";

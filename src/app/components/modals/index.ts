@@ -4,4 +4,9 @@
 // export * from './AlertModal';
 // export * from './FormModal';
 // export * from './DetailModal';
-// export * from './DialogProvider'; 
+// export * from './DialogProvider';
+
+// Export all modal components
+export { SocialConnectionsModal } from './SocialConnectionsModal';
+export { TestnetGuideModal } from './TestnetGuideModal';
+
