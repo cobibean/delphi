@@ -1,7 +1,10 @@
 "use client";
 
-import { buyWithMetis, isAuctionEnded } from "@/app/features/marketplace/services/marketplace-v5";
+import { metisChain } from "@/app/config/chain";
+import { useMarketplaceWallet } from "@/app/features/marketplace/hooks/useMarketplaceWallet";
+import { isAuctionEnded } from "@/app/features/marketplace/services/auctions/helpers";
 import { useToast } from '@/components/feedback/Toast/useToast';
+import { MARKETPLACE_ADDRESS, THIRDWEB_CLIENT_ID } from "@/constants/contracts";
 import { IListingWithNFT } from "@/interfaces/interfaces";
 import { useTransaction } from "@/providers/TransactionProvider";
 import { ethers } from "ethers";
@@ -9,6 +12,8 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createThirdwebClient, getContract } from "thirdweb";
+import { buyFromListing } from "thirdweb/extensions/marketplace";
 import { useActiveAccount, useActiveWallet } from "thirdweb/react";
 
 interface NFTCardProps {
@@ -44,22 +49,29 @@ const formatCryptoValue = (value: string | number | undefined): string => {
   if (!value) return "0";
   
   try {
-    // If the value is a hex string or a very large number string, assume it's in wei
-    if (typeof value === 'string' && (value.startsWith('0x') || value.length > 18)) {
-      // Convert from wei to METIS using ethers.js formatting
-      return ethers.formatEther(value);
+    // Simple logging for transparency
+    console.log("NFTCard processing price value:", value, typeof value);
+    
+    // Handle string values
+    if (typeof value === 'string') {
+      // If it's already a properly formatted decimal, return it directly
+      if (value.includes('.')) {
+        return value;
+      }
+      
+      // If it happens to be a large integer string (wei format), convert it
+      // This is a fallback in case our listing queries weren't updated properly
+      if (value.length > 18) {
+        console.log("  Converting large number (wei) to METIS:", value);
+        return ethers.formatEther(value);
+      }
+      
+      // Otherwise, parse it to a number to handle formatting
+      return parseFloat(value).toString();
     }
     
-    // For regular string or number values, ensure we have a string
-    const valueStr = value.toString();
-    
-    // If it's already a decimal value, just return it formatted
-    if (valueStr.includes('.') || parseFloat(valueStr) < 1e15) {
-      return parseFloat(valueStr).toString();
-    }
-    
-    // Otherwise assume it's in wei and convert to METIS
-    return ethers.formatEther(valueStr);
+    // For number values, just convert to string
+    return value.toString();
   } catch (error) {
     console.error("Error formatting crypto value:", error, "Value:", value);
     return "0";
@@ -78,6 +90,9 @@ export function NFTCard({ listing, className = "" }: NFTCardProps) {
   const router = useRouter();
   const { addTransaction } = useTransaction();
   const { toast } = useToast();
+  
+  // Add the useMarketplaceWallet hook at the component level
+  const { executeDirectTransaction } = useMarketplaceWallet();
   
   const cardRef = useRef<HTMLDivElement>(null);
   
@@ -104,14 +119,8 @@ export function NFTCard({ listing, className = "" }: NFTCardProps) {
   const hasAuctionEnded = useMemo(() => {
     if (!isAuction || !endTimestamp) return false;
     
-    // If using the utility function
-    if (typeof isAuctionEnded === 'function') {
-      return isAuctionEnded(endTimestamp);
-    }
-    
-    // Fallback: Calculate manually
-    const now = Math.floor(Date.now() / 1000);
-    return endTimestamp < now;
+    // Use the auction helper function
+    return isAuctionEnded(endTimestamp);
   }, [isAuction, endTimestamp]);
   
   const currentBid = isAuction ? formatCryptoValue((listing as any).currentBid) : pricePerToken;
@@ -182,8 +191,23 @@ export function NFTCard({ listing, className = "" }: NFTCardProps) {
       return displayPrice;
     }
     
-    // For direct listings, just show the price with proper formatting
-    return `${parseFloat(pricePerToken).toFixed(6)} METIS`;
+    // For direct listings, show the price with proper formatting
+    // Round to 6 decimals for display but keep trailing zeros only if needed
+    const priceValue = parseFloat(pricePerToken);
+    let displayPrice;
+    
+    if (priceValue < 0.000001) {
+      // For extremely small values, use scientific notation
+      displayPrice = priceValue.toExponential(2);
+    } else if (priceValue < 0.01) {
+      // For small values up to 0.01, show up to 6 decimal places
+      displayPrice = priceValue.toFixed(6).replace(/\.?0+$/, '');
+    } else {
+      // For normal values, show up to 4 decimal places
+      displayPrice = priceValue.toFixed(4).replace(/\.?0+$/, '');
+    }
+    
+    return `${displayPrice} METIS`;
   }, [isAuction, pricePerToken, currentBid, minimumBidAmount, buyoutPrice]);
   
   // Format NFT name, adding fallback
@@ -236,18 +260,59 @@ export function NFTCard({ listing, className = "" }: NFTCardProps) {
       // Add transaction notification
       const txId = addTransaction("loading", `Buying NFT #${tokenId}...`);
       
-      // Call marketplace function based on listing type
-      const result = await buyWithMetis(listingId, wallet);
+      // Create a client instance
+      const localClient = createThirdwebClient({
+        clientId: THIRDWEB_CLIENT_ID || ""
+      });
       
-      if (result.success) {
-        addTransaction("success", `Successfully purchased NFT #${tokenId}`, result.transactionHash);
-        // Redirect to profile page
-        router.push("/profile");
-      } else {
-        addTransaction("error", `Failed to purchase NFT #${tokenId}`, result.transactionHash);
-      }
+      // Get marketplace contract
+      const marketplaceContract = getContract({
+        client: localClient,
+        chain: metisChain,
+        address: MARKETPLACE_ADDRESS as `0x${string}`
+      });
+      
+      // Prepare the transaction directly using ThirdWeb's buyFromListing
+      const transaction = buyFromListing({
+        contract: marketplaceContract,
+        listingId: BigInt(listingId),
+        quantity: 1n,
+        recipient: account.address
+      });
+      
+      // Show pending toast
+      toast.info(
+        "Transaction initiated",
+        "Please confirm the transaction in your wallet"
+      );
+      
+      // Execute the transaction directly using our hook (which we got at the component level)
+      const receipt = await executeDirectTransaction(
+        transaction,
+        {
+          description: `Buying NFT #${tokenId} for ${formattedPrice}`,
+          onSuccess: (result) => {
+            // Update transaction status
+            addTransaction("success", `Successfully purchased NFT #${tokenId}`, result.transactionHash);
+            
+            // Show success message
+            toast.success("Purchase successful! Your NFT will be available in your wallet soon.");
+            
+            // Redirect to profile page after 2 seconds
+            setTimeout(() => {
+              router.push("/profile");
+            }, 2000);
+          }
+        }
+      );
+      
+      // If we get here, the transaction was successful
+      console.log("Purchase receipt:", receipt);
     } catch (error) {
       console.error('Buy transaction failed:', error);
+      // Handle errors - the toast is already shown by executeDirectTransaction
+      // Just update the transaction notification
+      addTransaction("error", `Failed to purchase NFT #${tokenId}`);
       toast.error(error instanceof Error ? error.message : "Failed to process transaction. Please try again.");
     } finally {
       setIsBuying(false);

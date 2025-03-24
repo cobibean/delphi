@@ -27,4 +27,73 @@ All documentation for this project should be kept in this directory. When adding
 ## References
 
 - [Thirdweb V5 Documentation](../thirdweb_typescript_docs/)
-- [Thirdweb Marketplace Template](../reference/thirdweb-marketplace-template/) 
+- [Thirdweb Marketplace Template](../reference/thirdweb-marketplace-template/)
+
+# ThirdWeb Marketplace Standardization Guide
+
+This folder contains guides for standardizing our marketplace functions to use ThirdWeb directly, eliminating unnecessary wrapper functions like `buyWithMetis` and `buyFromDirectListing`.
+
+## Documents in this Folder
+
+1. **standardizing-marketplace-functions.md**  
+   A comprehensive guide outlining the approach to standardize our marketplace functions, with detailed examples for each function type (direct listings, auctions, etc.).
+
+2. **standardizing-marketplace-example.md**  
+   A concrete example of refactoring the `NFTDetailView.tsx` component, showing both the current implementation and the refactored version using ThirdWeb directly.
+
+## Key Benefits of This Standardization
+
+1. **Improved maintainability** - Easier to update when ThirdWeb changes
+2. **Reduced code complexity** - Fewer abstraction layers 
+3. **Consistent patterns** - Direct ThirdWeb calls throughout the app
+4. **Better type safety** - Using ThirdWeb's TypeScript definitions
+5. **Easier debugging** - Clear code path to the library
+
+## Implementation Approach
+
+The standardization follows this approach:
+
+1. Replace custom wrapper functions with direct ThirdWeb function calls
+2. Use `useActiveAccount()` consistently for transactions
+3. Maintain the same transaction tracking and UI behavior
+4. Apply consistent error handling patterns
+
+## Getting Started
+
+1. Read the standardizing-marketplace-functions.md document first to understand the overall approach
+2. Review the standardizing-marketplace-example.md to see a concrete example
+3. Follow the migration checklist in the main document
+4. Start with low-risk components and test thoroughly
+
+## Example Implementation
+
+```typescript
+// Before: Using custom wrapper function
+const handleBuy = async () => {
+  const result = await buyWithMetis(listingId, wallet);
+  // ...handle result
+};
+
+// After: Using ThirdWeb directly
+const handleBuy = async () => {
+  const marketplaceContract = getContract({
+    client,
+    chain: metisChain,
+    address: MARKETPLACE_ADDRESS,
+  });
+  
+  const transaction = buyFromListing({
+    contract: marketplaceContract,
+    listingId: BigInt(listingId),
+    quantity: 1n,
+    recipient: account.address as `0x${string}`
+  });
+  
+  const tx = await sendTransaction({
+    transaction,
+    account
+  });
+  
+  // ...wait for receipt and handle result
+};
+``` 

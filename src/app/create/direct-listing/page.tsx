@@ -1,23 +1,29 @@
 "use client";
 
+import { useToast } from "@/components/feedback";
 import { metisChain } from "@/config/chain";
 import { client } from "@/config/client";
 import { MARKETPLACE_ADDRESS, NATIVE_TOKEN_ADDRESS } from "@/constants/contracts";
-import { useTransaction } from "@/providers/TransactionProvider";
-import { ethers } from "ethers";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getContract, isAddress, readContract, sendTransaction, waitForReceipt } from "thirdweb";
+import { getContract, isAddress, readContract, sendAndConfirmTransaction } from "thirdweb";
 import { isApprovedForAll, setApprovalForAll } from "thirdweb/extensions/erc721";
-import { useActiveAccount, useActiveWallet } from "thirdweb/react";
+import { createListing } from "thirdweb/extensions/marketplace";
+import { useActiveAccount } from "thirdweb/react";
+
+// Add window ethereum type
+declare global {
+  interface Window {
+    ethereum: any;
+  }
+}
 
 export default function DirectListingPage() {
   const router = useRouter();
   const account = useActiveAccount();
-  const wallet = useActiveWallet();
-  const { addTransaction } = useTransaction();
+  const { toast } = useToast();
   
   const [assetContract, setAssetContract] = useState("");
   const [tokenId, setTokenId] = useState("");
@@ -38,15 +44,6 @@ export default function DirectListingPage() {
       client,
       chain: metisChain,
       address: address as `0x${string}`,
-    });
-  };
-  
-  // Helper function to create a marketplace contract
-  const getMarketplaceContract = async () => {
-    return getContract({
-      client,
-      chain: metisChain,
-      address: MARKETPLACE_ADDRESS,
     });
   };
   
@@ -165,7 +162,7 @@ export default function DirectListingPage() {
   
   // Approve NFT for marketplace
   const approveNFT = async () => {
-    if (!wallet || !assetContract || !tokenId) return;
+    if (!account || !assetContract || !tokenId) return;
     
     try {
       setIsApproving(true);
@@ -174,109 +171,46 @@ export default function DirectListingPage() {
       
       console.log("Approving NFT for marketplace...");
       
-      // Get the NFT contract with ThirdWeb
+      // Get NFT contract
       const nftContract = await getERC721Contract(assetContract);
       
-      // Create the approval transaction
-      const tx = setApprovalForAll({
+      // Create approval transaction
+      const transaction = setApprovalForAll({
         contract: nftContract,
-        operator: MARKETPLACE_ADDRESS,
-        approved: true,
+        operator: MARKETPLACE_ADDRESS as `0x${string}`,
+        approved: true
       });
+
+      // Show toast notification
+      toast.info("Approval Initiated", "Please confirm the transaction in your wallet.");
       
-      // Add transaction to the transaction provider (before sending)
-      addTransaction(
-        "loading",
-        `Approve NFT #${tokenId} for marketplace`,
-        "Preparing transaction..."
-      );
-      
-      // Get the account from the wallet
-      const account = wallet.getAccount();
-      if (!account) {
-        throw new Error("No connected account found");
+      try {
+        // Send the transaction using sendAndConfirmTransaction directly
+        const receipt = await sendAndConfirmTransaction({
+          transaction,
+          account,
+        });
+        
+        console.log("Approval successful:", receipt);
+        toast.success("Approval Successful", "Your NFT is now approved for the marketplace");
+        setIsApproved(true);
+      } catch (error: any) {
+        console.error("Error approving NFT:", error);
+        toast.error("Approval Failed", error.message || "Unknown error");
+        setError("Error approving NFT: " + (error.message || "Unknown error"));
+      } finally {
+        setIsApproving(false);
       }
-      
-      // Send the transaction using the connected account
-      const result = await sendTransaction({ 
-        transaction: tx, 
-        account
-      });
-      
-      console.log("Approval transaction sent:", result.transactionHash);
-      
-      // Set waiting for confirmation state
-      setIsWaitingForConfirmation(true);
-      
-      // Update transaction status to pending while we wait for confirmation
-      addTransaction(
-        "loading",
-        `Approve NFT #${tokenId} for marketplace`,
-        `Waiting for confirmation: ${result.transactionHash}`
-      );
-      
-      // IMPORTANT: Wait for the transaction to be confirmed
-      const receipt = await waitForReceipt({
-        client,
-        chain: metisChain,
-        transactionHash: result.transactionHash,
-      });
-      
-      console.log("Approval transaction confirmed:", receipt);
-      
-      // Verify the approval again after confirmation to be sure
-      const isApprovedAfterTx = await isApprovedForAll({
-        contract: nftContract,
-        owner: account.address as `0x${string}`,
-        operator: MARKETPLACE_ADDRESS,
-      });
-      
-      if (!isApprovedAfterTx) {
-        throw new Error("Approval transaction was confirmed but approval status is still false");
-      }
-      
-      // Now that we have confirmation, update the transaction status
-      addTransaction(
-        "success",
-        `Approve NFT #${tokenId} for marketplace`,
-        result.transactionHash
-      );
-      
-      // Only set approved after confirmation
-      setIsApproved(true);
-      
-      // ADD DELAY to ensure blockchain state is updated
-      await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds
-      
-      // Double check approval one more time
-      const finalApprovalCheck = await isApprovedForAll({
-        contract: nftContract,
-        owner: account.address as `0x${string}`,
-        operator: MARKETPLACE_ADDRESS,
-      });
-      
-      console.log("Final approval status check:", finalApprovalCheck);
     } catch (err: any) {
-      console.error("Error approving NFT:", err);
-      setError("Error approving NFT for marketplace: " + (err.message || "Unknown error"));
-      
-      // Update transaction status if there was a hash
-      if (err.transactionHash) {
-        addTransaction(
-          "error",
-          `Approve NFT #${tokenId} for marketplace`,
-          err.transactionHash
-        );
-      }
-    } finally {
-      setIsWaitingForConfirmation(false);
+      console.error("Error preparing approval transaction:", err);
+      setError("Error preparing approval transaction: " + (err.message || "Unknown error"));
       setIsApproving(false);
     }
   };
   
   // Create direct listing
   const handleCreateListing = async () => {
-    if (!wallet || !assetContract || !tokenId || !price) {
+    if (!account || !assetContract || !tokenId || !price) {
       setError("Please fill in all required fields");
       return;
     }
@@ -334,114 +268,75 @@ export default function DirectListingPage() {
       const startTimestamp = Math.floor(Date.now() / 1000);
       const endTimestamp = startTimestamp + (duration * 24 * 60 * 60); // Convert days to seconds
       
-      // Get the marketplace contract with ThirdWeb
+      // Get marketplace contract
       const marketplaceContract = getContract({
         client,
         chain: metisChain,
-        address: MARKETPLACE_ADDRESS,
+        address: MARKETPLACE_ADDRESS as `0x${string}`
       });
       
-      // Add transaction to the transaction provider
-      addTransaction(
-        "loading",
-        `Create listing for NFT #${tokenId}`,
-        "Preparing transaction..."
-      );
+      // Show toast notification
+      toast.info("Listing Initiated", "Please confirm the transaction in your wallet.");
       
-      // Use ThirdWeb's direct listing function
-      const { createListing } = await import("thirdweb/extensions/marketplace");
-      
-      // Create the listing transaction
-      const listingTx = createListing({
+      // Create listing transaction using ThirdWeb's createListing
+      const transaction = createListing({
         contract: marketplaceContract,
         assetContractAddress: assetContract as `0x${string}`,
         tokenId: BigInt(tokenId),
-        pricePerToken: ethers.parseEther(price).toString(),
-        currencyContractAddress: NATIVE_TOKEN_ADDRESS, // Using native token
-        quantity: BigInt(1), // For ERC721, always 1
+        quantity: 1n,
+        pricePerToken: price,
+        currencyContractAddress: NATIVE_TOKEN_ADDRESS as `0x${string}`, // Native currency
         startTimestamp: new Date(startTimestamp * 1000),
         endTimestamp: new Date(endTimestamp * 1000),
         isReservedListing: false
       });
       
-      // Send the transaction
-      const listingResult = await sendTransaction({
-        transaction: listingTx,
-        account
-      });
-      
-      console.log("Listing transaction sent:", listingResult.transactionHash);
-      
-      // Update transaction status to pending
-      addTransaction(
-        "loading",
-        `Create listing for NFT #${tokenId}`,
-        `Waiting for confirmation: ${listingResult.transactionHash}`
-      );
-      
-      // Wait for transaction confirmation
-      const receipt = await waitForReceipt({
-        client,
-        chain: metisChain,
-        transactionHash: listingResult.transactionHash,
-      });
-      
-      console.log("Listing transaction confirmed:", receipt);
-      
-      // Mark transaction as successful
-      addTransaction(
-        "success",
-        `Listed NFT #${tokenId} for ${price} METIS`,
-        listingResult.transactionHash
-      );
-      
-      // Update UI state
-      setIsLoading(false);
-      setSuccess(true);
-      
-      // Delay redirect to give time for user to see success message
-      setTimeout(() => {
-        router.push('/features/marketplace');
-      }, 3000);
-      
-    } catch (err: any) {
-      console.error("Error creating listing:", err);
-      
-      // For debugging, log complete error details
-      if (err.transaction) console.error("Error transaction:", err.transaction);
-      if (err.receipt) console.error("Error receipt:", err.receipt);
-      if (err.reason) console.error("Error reason:", err.reason);
-      
-      // Extract error message
-      let errorMessage = "Failed to create listing: ";
-      
-      if (err.message && err.message.includes("execution reverted")) {
-        if (err.message.includes("not owner or approved tokens")) {
-          errorMessage += "You don't own this NFT or haven't approved it for the marketplace.";
-        } else {
-          // Try to extract revert reason
-          const revertMatch = err.message.match(/reason string '([^']+)'/);
-          if (revertMatch && revertMatch[1]) {
-            errorMessage += revertMatch[1];
+      try {
+        // Send transaction using sendAndConfirmTransaction directly
+        const receipt = await sendAndConfirmTransaction({
+          transaction,
+          account,
+        });
+        
+        console.log("Listing created successfully:", receipt);
+        toast.success("Listing Created", `Your NFT #${tokenId} has been listed for ${price} METIS`);
+        
+        // Update UI state
+        setIsLoading(false);
+        setSuccess(true);
+        
+        // Delay redirect to give time for user to see success message
+        setTimeout(() => {
+          router.push('/features/marketplace');
+        }, 3000);
+      } catch (error: any) {
+        // Extract error message
+        let errorMessage = "Failed to create listing: ";
+        
+        if (error.message && error.message.includes("execution reverted")) {
+          if (error.message.includes("not owner or approved tokens")) {
+            errorMessage += "You don't own this NFT or haven't approved it for the marketplace.";
           } else {
-            errorMessage += "Transaction reverted by the contract";
+            // Try to extract revert reason
+            const revertMatch = error.message.match(/reason string '([^']+)'/);
+            if (revertMatch && revertMatch[1]) {
+              errorMessage += revertMatch[1];
+            } else {
+              errorMessage += "Transaction reverted by the contract";
+            }
           }
+        } else {
+          errorMessage += (error.message || "Unknown error");
         }
-      } else {
-        errorMessage += (err.message || "Unknown error");
+        
+        console.error("Error creating listing:", error);
+        toast.error("Listing Failed", errorMessage);
+        setError(errorMessage);
+        setIsLoading(false);
       }
-      
-      setError(errorMessage);
-      
-      // Update transaction status if there was a hash
-      if (err.transactionHash) {
-        addTransaction(
-          "error",
-          `Create listing for NFT #${tokenId}`,
-          err.transactionHash
-        );
-      }
-      
+    } catch (err: any) {
+      console.error("Error preparing listing transaction:", err);
+      setError("Error preparing listing transaction: " + (err.message || "Unknown error"));
       setIsLoading(false);
     }
   };
@@ -621,8 +516,22 @@ export default function DirectListingPage() {
                       className="w-full bg-oracle-black-void border border-oracle-orange/30 rounded-lg p-3 text-oracle-white focus:border-oracle-orange focus:outline-none transition-colors"
                       placeholder="0.1"
                       value={price}
-                      onChange={(e) => setPrice(e.target.value)}
+                      onChange={(e) => {
+                        // Only allow numbers and a single decimal point
+                        const val = e.target.value;
+                        if (val === '' || /^(\d+\.?\d*|\.\d+)$/.test(val)) {
+                          // Validate the value is not too large (prevent astronomical prices)
+                          if (parseFloat(val || '0') <= 100000) {
+                            setPrice(val);
+                          } else {
+                            setError("Price cannot exceed 100,000 METIS");
+                          }
+                        }
+                      }}
                     />
+                    <p className="text-oracle-white/50 text-sm mt-1">
+                      Enter a reasonable price (max 100,000 METIS)
+                    </p>
                   </div>
                   
                   {/* Duration */}

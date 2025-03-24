@@ -1,0 +1,464 @@
+/**
+ * Marketplace Direct Listing Operations
+ * 
+ * This file provides standardized functions for direct listing operations,
+ * extracted and refactored from the monolithic marketplace-v5.ts file.
+ */
+
+import { getNFTMetadata, isOwnerOf } from "@/app/features/nft/services/nft-services";
+import { WalletAccount } from "@/app/features/wallet/types";
+import { toThirdwebAccount } from "@/app/features/wallet/utils";
+import { MARKETPLACE_ADDRESS } from "@/constants/contracts";
+import { ethers } from "ethers";
+import { getContract, sendTransaction, waitForReceipt } from "thirdweb";
+import {
+    buyFromListing,
+    cancelListing as cancelListingThirdweb,
+    createListing,
+    getAllValidListings,
+    getListing as getThirdwebListing
+} from "thirdweb/extensions/marketplace";
+import { client, IListingWithNFT, MarketplaceTransactionResult, metisChain } from "./types";
+
+/**
+ * Get all active direct listings from the marketplace
+ * @returns Array of listings with NFT metadata
+ */
+export const getAllListings = async (): Promise<IListingWithNFT[]> => {
+  try {
+    console.log("Getting marketplace contract at", MARKETPLACE_ADDRESS);
+    
+    // Get the marketplace contract
+    const marketplaceContract = getContract({
+      client,
+      chain: metisChain,
+      address: MARKETPLACE_ADDRESS,
+    });
+    
+    // Get all valid listings using the marketplace extension
+    const listings = await getAllValidListings({
+      contract: marketplaceContract
+    });
+    
+    console.log(`Found ${listings.length} direct listings`);
+    
+    // Convert listings to our interface format
+    const enhancedListings = await Promise.all(
+      listings.map(async (listing) => {
+        try {
+          return await getListing(listing.id.toString());
+        } catch (error) {
+          console.error(`Error enhancing listing ${listing.id}:`, error);
+          return null;
+        }
+      })
+    );
+    
+    // Filter out null listings
+    const validListings = enhancedListings.filter(listing => listing !== null) as IListingWithNFT[];
+    
+    console.log(`Found ${validListings.length} valid direct listings`);
+    return validListings;
+    
+  } catch (error) {
+    console.error("Error fetching listings:", error);
+    return [];
+  }
+};
+
+/**
+ * Get a specific listing by ID with NFT metadata
+ * @param listingId The ID of the listing to retrieve
+ * @returns Listing information with NFT metadata
+ */
+export const getListing = async (listingId: string): Promise<IListingWithNFT | null> => {
+  try {
+    // Get the marketplace contract
+    const marketplaceContract = getContract({
+      client,
+      chain: metisChain,
+      address: MARKETPLACE_ADDRESS,
+    });
+    
+    // Get all valid listings to find the one we want
+    const allListings = await getAllValidListings({
+      contract: marketplaceContract
+    });
+    
+    // Find the listing with the matching ID
+    const listing = allListings.find(l => l.id.toString() === listingId);
+    
+    if (!listing) {
+      console.error(`Listing ${listingId} not found`);
+      return null;
+    }
+    
+    // Get NFT metadata using our standardized service
+    const nftMetadata = await getNFTMetadata(
+      listing.assetContractAddress,
+      listing.asset.id.toString()
+    );
+    
+    // Parse listing data to match our interface
+    const parsedListing: IListingWithNFT = {
+      listingId: listing.id.toString(),
+      tokenId: listing.asset.id.toString(),
+      quantity: listing.quantity.toString(),
+      pricePerToken: listing.currencyValuePerToken.displayValue,
+      assetContract: listing.assetContractAddress,
+      startTimestamp: Number(listing.startTimeInSeconds || 0),
+      endTimestamp: Number(listing.endTimeInSeconds || 0),
+      status: 1, // Assuming active
+      currency: listing.currencyContractAddress,
+      tokenType: 0, // Assuming ERC721
+      reserved: false,
+      listingCreator: listing.creatorAddress,
+      
+      // Use the metadata from our NFT service
+      metadata: {
+        image: nftMetadata.image,
+        name: nftMetadata.name,
+        description: nftMetadata.description || "",
+        attributes: nftMetadata.attributes || []
+      },
+      
+      // Use collection information from our NFT service
+      collectionName: nftMetadata.collectionName,
+      contractName: nftMetadata.collectionName,
+      contractSymbol: nftMetadata.collectionSymbol,
+      sellerAddress: listing.creatorAddress
+    };
+    
+    return parsedListing;
+    
+  } catch (error) {
+    console.error(`Error fetching listing ${listingId}:`, error);
+    return null;
+  }
+};
+
+/**
+ * Get a direct listing by NFT contract address and token ID
+ * @param contractAddress The NFT contract address
+ * @param tokenId The NFT token ID
+ * @returns The direct listing data if found, null otherwise
+ */
+export async function getDirectListing(contractAddress: string, tokenId: string): Promise<IListingWithNFT | null> {
+  try {
+    // Get the marketplace contract
+    const marketplaceContract = getContract({
+      client,
+      chain: metisChain,
+      address: MARKETPLACE_ADDRESS,
+    });
+    
+    // Get all valid listings
+    const allListings = await getAllValidListings({
+      contract: marketplaceContract
+    });
+    
+    // Find a listing matching the NFT
+    const matchingListing = allListings.find(listing => 
+      listing.assetContractAddress.toLowerCase() === contractAddress.toLowerCase() && 
+      listing.asset.id.toString() === tokenId.toString()
+    );
+    
+    if (matchingListing) {
+      return getListing(matchingListing.id.toString());
+    }
+    
+    console.log(`No direct listing found for NFT ${contractAddress}/${tokenId}`);
+    return null;
+  } catch (error) {
+    console.error("Error fetching direct listing:", error);
+    return null;
+  }
+};
+
+/**
+ * Buy an NFT with METIS (native token)
+ * 
+ * This is one of the high-priority functions for standardization.
+ * It has been refactored to work with our standardized wallet handling.
+ * 
+ * @param params Parameters for the purchase
+ * @param account The wallet account to use
+ * @returns Transaction result with hash, success status, and receipt
+ */
+export async function buyWithMetis(
+  params: { listingId: string },
+  account: WalletAccount
+): Promise<MarketplaceTransactionResult> {
+  // Validate account
+  if (!account || !account.address) {
+    throw new Error("Valid wallet account is required");
+  }
+  
+  try {
+    console.log("Buying listing with ID:", params.listingId);
+    
+    // Get the marketplace contract
+    const marketplaceContract = getContract({
+      client,
+      chain: metisChain,
+      address: MARKETPLACE_ADDRESS
+    });
+    
+    // Get the listing to purchase
+    const listing = await getThirdwebListing({
+      contract: marketplaceContract,
+      listingId: BigInt(params.listingId),
+    });
+    
+    if (!listing) {
+      throw new Error(`No listing found with ID ${params.listingId}`);
+    }
+    
+    console.log("Found listing:", listing);
+    
+    // Check that it's a direct listing
+    if (listing.type !== "direct-listing") {
+      throw new Error("Cannot buy an auction listing - use placeBid instead");
+    }
+    
+    // Create the buy transaction
+    const transaction = buyFromListing({
+      contract: marketplaceContract,
+      listingId: listing.id,
+      quantity: listing.quantity,
+      recipient: account.address,
+    });
+    
+    // Convert our wallet account to ThirdWeb compatible account
+    const thirdwebAccount = toThirdwebAccount(account);
+    
+    // Send the transaction
+    const receipt = await sendTransaction({
+      transaction,
+      account: thirdwebAccount,
+    });
+    
+    console.log("Transaction sent:", receipt);
+    
+    // Wait for transaction confirmation
+    const confirmedReceipt = await waitForReceipt({
+      client,
+      chain: metisChain,
+      transactionHash: receipt.transactionHash,
+    });
+    
+    console.log("Transaction confirmed:", confirmedReceipt);
+    
+    return {
+      transactionHash: receipt.transactionHash,
+      success: true,
+      receipt: confirmedReceipt
+    };
+  } catch (error: any) {
+    console.error("Error buying listing:", error);
+    return {
+      transactionHash: error?.transactionHash || "",
+      success: false,
+      error: error?.message || "Failed to buy listing"
+    };
+  }
+}
+
+/**
+ * Buy NFT from a direct listing
+ * Alias for buyWithMetis with clearer naming
+ */
+export async function buyFromDirectListing(
+  params: { listingId: string },
+  account: WalletAccount
+): Promise<MarketplaceTransactionResult> {
+  return buyWithMetis(params, account);
+}
+
+/**
+ * Create a direct listing for an NFT
+ * @param params Parameters for the listing creation
+ * @param account The wallet account to use
+ * @returns Transaction result with hash, success status, and receipt
+ */
+export async function createDirectListing(
+  params: {
+    tokenContract: string;
+    tokenId: string;
+    pricePerToken: string;
+    quantity?: number;
+    startTime?: number;
+    endTime?: number;
+    currencyAddress?: string;
+  },
+  account: WalletAccount
+): Promise<MarketplaceTransactionResult> {
+  try {
+    const { 
+      tokenContract, 
+      tokenId, 
+      pricePerToken, 
+      quantity = 1,
+      startTime,
+      endTime,
+      currencyAddress
+    } = params;
+    
+    // Validate parameters
+    if (!account || !account.address) {
+      throw new Error("Valid wallet account is required");
+    }
+    
+    if (!tokenContract || !tokenId || !pricePerToken) {
+      throw new Error("Missing required parameters");
+    }
+    
+    // Verify that the caller owns the NFT
+    const isOwner = await isOwnerOf(
+      tokenContract,
+      tokenId,
+      account.address
+    );
+    
+    if (!isOwner) {
+      throw new Error("You do not own this NFT");
+    }
+    
+    // Get the marketplace contract
+    const marketplaceContract = getContract({
+      client,
+      chain: metisChain,
+      address: MARKETPLACE_ADDRESS,
+    });
+    
+    // Set default times if not provided
+    const now = Math.floor(Date.now() / 1000);
+    const listingStartTime = startTime || now;
+    const listingEndTime = endTime || now + 30 * 24 * 60 * 60; // Default 30 days
+    
+    // Use the native token (METIS) as the default currency
+    const currencyContractAddress = currencyAddress || ethers.ZeroAddress;
+    
+    // Convert price to string format (ThirdWeb handles the conversion)
+    const price = pricePerToken;
+    
+    // Create the listing using ThirdWeb's createListing function
+    const transaction = createListing({
+      contract: marketplaceContract,
+      assetContractAddress: tokenContract as `0x${string}`,
+      tokenId: BigInt(tokenId),
+      pricePerToken: price,
+      currencyContractAddress: currencyContractAddress as `0x${string}`,
+      quantity: BigInt(quantity),
+      startTimestamp: new Date(listingStartTime * 1000),
+      endTimestamp: new Date(listingEndTime * 1000),
+      isReservedListing: false
+    });
+    
+    // Send the transaction
+    const tx = await sendTransaction({
+      transaction,
+      account: toThirdwebAccount(account)
+    });
+    
+    console.log("Create listing transaction sent:", tx.transactionHash);
+    
+    // Wait for the transaction receipt
+    const receipt = await waitForReceipt(tx);
+    
+    console.log("Create listing transaction confirmed:", receipt);
+    
+    return {
+      transactionHash: receipt.transactionHash,
+      success: true,
+      receipt
+    };
+  } catch (error: any) {
+    console.error("Error creating direct listing:", error);
+    return {
+      transactionHash: error.transactionHash || "",
+      success: false,
+      error: error.message || "Failed to create listing"
+    };
+  }
+}
+
+/**
+ * Cancel a direct listing
+ * @param params Listing ID to cancel
+ * @param account Wallet account performing the cancellation
+ * @returns Transaction result
+ */
+export async function cancelListing(
+  params: { listingId: string },
+  account: WalletAccount
+): Promise<MarketplaceTransactionResult> {
+  try {
+    const { listingId } = params;
+    
+    // Validate required parameters
+    if (!account || !account.address) {
+      throw new Error("Valid wallet account is required");
+    }
+    
+    if (!listingId) {
+      throw new Error("Listing ID is required");
+    }
+    
+    // Get the listing to verify ownership
+    const listing = await getListing(listingId);
+    if (!listing) {
+      throw new Error(`Listing ${listingId} not found`);
+    }
+    
+    // Verify that the caller is the listing creator
+    if (listing.listingCreator.toLowerCase() !== account.address.toLowerCase()) {
+      // Use isOwnerOf for additional verification
+      const isOwner = await isOwnerOf(
+        listing.assetContract,
+        listing.tokenId,
+        account.address
+      );
+      
+      if (!isOwner) {
+        throw new Error("You do not have permission to cancel this listing");
+      }
+    }
+    
+    // Get the marketplace contract
+    const marketplaceContract = getContract({
+      client,
+      chain: metisChain,
+      address: MARKETPLACE_ADDRESS,
+    });
+    
+    // Create the cancellation transaction using ThirdWeb's cancelListing function
+    const transaction = cancelListingThirdweb({
+      contract: marketplaceContract,
+      listingId: BigInt(listingId)
+    });
+    
+    // Send the transaction
+    const tx = await sendTransaction({
+      transaction,
+      account: toThirdwebAccount(account)
+    });
+    
+    // Wait for the transaction receipt
+    const receipt = await waitForReceipt(tx);
+    
+    return {
+      transactionHash: receipt.transactionHash,
+      success: true, // If we reach here, the transaction was successful
+      receipt
+    };
+  } catch (error: any) {
+    console.error(`Error cancelling listing ${params.listingId}:`, error);
+    
+    return {
+      transactionHash: error.transactionHash || "",
+      success: false,
+      error: error.message || "Failed to cancel listing"
+    };
+  }
+} 

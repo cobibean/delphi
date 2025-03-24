@@ -1,9 +1,9 @@
 "use client";
-import React, { useState } from "react";
-import { IListingWithNFT } from "@/interfaces/interfaces";
+import { useMarketplaceWallet } from "@/app/features/marketplace/hooks/useMarketplaceWallet";
 import { useToast } from "@/components/feedback/Toast/useToast";
-import { useActiveAccount, useActiveWallet } from "thirdweb/react";
-import { buyWithMetis } from "@/app/features/marketplace/services/marketplace-v5";
+import { IListingWithNFT } from "@/interfaces/interfaces";
+import { useState } from "react";
+import { useActiveAccount } from "thirdweb/react";
 
 interface FeaturedCardProps {
   listing: IListingWithNFT;
@@ -16,7 +16,6 @@ export default function FeaturedCard({ listing, className, onAcquire }: Featured
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const account = useActiveAccount();
-  const wallet = useActiveWallet();
 
   const handleAcquire = async () => {
     // If the onAcquire prop is provided, use that (for custom handling)
@@ -45,7 +44,7 @@ export default function FeaturedCard({ listing, className, onAcquire }: Featured
     // Otherwise, handle the acquisition directly here
     try {
       // Check if user is connected
-      if (!account || !wallet) {
+      if (!account) {
         toast.custom({
           title: "Wallet Required",
           description: "Please connect your wallet to acquire this NFT.",
@@ -56,8 +55,11 @@ export default function FeaturedCard({ listing, className, onAcquire }: Featured
 
       setIsLoading(true);
 
-      // Use buyWithMetis function
-      const result = await buyWithMetis(listingId, wallet);
+      // Use the useMarketplaceWallet hook to handle wallet interactions
+      const { executeMarketplaceFunction } = useMarketplaceWallet();
+      
+      // Execute the buyWithMetis function through the hook
+      const result = await executeMarketplaceFunction("buyWithMetis", { listingId });
 
       if (result.success) {
         toast.custom({
@@ -135,4 +137,4 @@ export default function FeaturedCard({ listing, className, onAcquire }: Featured
       </div>
     </div>
   );
-} 
+}

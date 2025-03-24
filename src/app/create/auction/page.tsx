@@ -1,5 +1,7 @@
 "use client";
 
+import { useMarketplaceWallet } from "@/app/features/marketplace/hooks/useMarketplaceWallet";
+import { useToast } from "@/components/feedback";
 import { metisChain } from "@/config/chain";
 import { client } from "@/config/client";
 import { MARKETPLACE_ADDRESS, NATIVE_TOKEN_ADDRESS } from "@/constants/contracts";
@@ -19,6 +21,8 @@ export default function AuctionPage() {
   const account = useActiveAccount();
   const wallet = useActiveWallet();
   const { addTransaction } = useTransaction();
+  const { toast } = useToast();
+  const { executeDirectTransaction } = useMarketplaceWallet();
   
   const [assetContract, setAssetContract] = useState("");
   const [tokenId, setTokenId] = useState("");
@@ -32,6 +36,7 @@ export default function AuctionPage() {
   const [isApproved, setIsApproved] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
   const [isWaitingForConfirmation, setIsWaitingForConfirmation] = useState(false);
+  const [success, setSuccess] = useState(false);
   
   // Helper function to create an ERC721 contract
   const getERC721Contract = async (address: string) => {
@@ -256,7 +261,7 @@ export default function AuctionPage() {
   
   // Create auction
   const handleCreateAuction = async () => {
-    if (!wallet || !assetContract || !tokenId || !minimumBid) {
+    if (!account || !assetContract || !tokenId || !minimumBid) {
       setError("Please fill in all required fields");
       return;
     }
@@ -275,28 +280,12 @@ export default function AuctionPage() {
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + duration);
       
-      // Transaction description for notifications
-      const txDescription = `Create auction for NFT #${tokenId}`;
-      
-      // Add transaction to the transaction provider
-      addTransaction(
-        "loading",
-        txDescription,
-        "Preparing transaction..."
-      );
-      
       // Get the marketplace contract
-      const marketplaceContract = await getContract({
+      const marketplaceContract = getContract({
         client,
         chain: metisChain,
-        address: MARKETPLACE_ADDRESS,
+        address: MARKETPLACE_ADDRESS as `0x${string}`,
       });
-      
-      // Get the account
-      const account = wallet.getAccount();
-      if (!account) {
-        throw new Error("No account found");
-      }
       
       // Log auction parameters for debugging
       console.log("Creating auction with parameters:", {
@@ -308,121 +297,80 @@ export default function AuctionPage() {
         endDate
       });
       
+      // Show toast notification
+      toast.info("Auction Creation Initiated", "Please confirm the transaction in your wallet.");
+      
       // Prepare the transaction using ThirdWeb's createAuction
+      // ThirdWeb expects bigint values for buyoutBidAmount and minimumBidAmount
+      // But our local types might expect string - we'll handle this mismatch
+      const minimumBidAmountBigInt = ethers.parseEther(minimumBid);
+
+      // Prepare buyout amount - either use the provided value or a very high value
+      const buyoutBidAmountBigInt = buyoutPrice && buyoutPrice !== ""
+        ? ethers.parseEther(buyoutPrice)
+        : ethers.parseEther("1000000"); // Very high default value that effectively means "no buyout"
+
+      // Prepare a transaction with cast to string to satisfy typings
+      // Note: ThirdWeb internally will convert these back to bigint
       const transaction = createAuction({
         contract: marketplaceContract,
-        assetContractAddress: assetContract,
+        assetContractAddress: assetContract as `0x${string}`,
         tokenId: BigInt(tokenId),
-        quantity: BigInt(1),
-        currencyContractAddress: NATIVE_TOKEN_ADDRESS,
-        minimumBidAmount: ethers.parseEther(minimumBid).toString(),
-        buyoutBidAmount: buyoutPrice && buyoutPrice !== "" ? ethers.parseEther(buyoutPrice).toString() : ethers.parseEther("0").toString(),
+        quantity: 1n,
+        currencyContractAddress: NATIVE_TOKEN_ADDRESS as `0x${string}`,
+        minimumBidAmount: minimumBidAmountBigInt.toString() as any, // Type cast to satisfy both systems
+        buyoutBidAmount: buyoutBidAmountBigInt.toString() as any, // Type cast to satisfy both systems
         timeBufferInSeconds: 300, // 5 minutes
         bidBufferBps: 500, // 5%
         startTimestamp: startDate,
         endTimestamp: endDate
       });
       
-      // Send the transaction
-      const result = await sendTransaction({
+      // Use executeDirectTransaction instead of sendAndConfirmTransaction
+      const receipt = await executeDirectTransaction(
         transaction,
-        account
-      });
-      
-      // Wait for the transaction to be confirmed
-      const receipt = await waitForReceipt(result);
-      
-      console.log("Auction transaction sent:", result);
-      console.log("Receipt:", receipt);
-      
-      // Update transaction status
-      addTransaction(
-        "success",
-        txDescription,
-        result.transactionHash
+        {
+          description: `Creating auction for NFT #${tokenId}`,
+          onSuccess: (result: any) => {
+            console.log("Auction created successfully:", result);
+            toast.success("Auction Created", `Your NFT #${tokenId} is now up for auction`);
+            
+            // Update UI state
+            setIsLoading(false);
+            setSuccess(true);
+            
+            // Navigate to marketplace page after delay
+            setTimeout(() => {
+              router.push("/features/marketplace");
+            }, 3000);
+          },
+          onError: (error: any) => {
+            console.error("Error in auction creation:", error);
+            setIsLoading(false);
+          }
+        }
       );
       
-      // Navigate to marketplace page
-      router.push("/features/marketplace");
+      if (!receipt) {
+        // Transaction failed or was rejected
+        setIsLoading(false);
+      }
     } catch (err: any) {
       console.error("Error creating auction:", err);
       
-      // Enhanced error logging
-      console.error("Error type:", typeof err);
-      console.error("Error code:", err.code);
-      
-      // Detailed error information
-      if (err.data) console.error("Error data:", err.data);
-      if (err.transaction) console.error("Error transaction:", err.transaction);
-      if (err.receipt) console.error("Error receipt:", err.receipt);
-      
-      // Debug - print MarketplaceABI if available to check for createAuction
-      try {
-        import("@/constants/MarketplaceABI").then(module => {
-          const MarketplaceABI = module.default;
-          console.log("MarketplaceABI contains", MarketplaceABI.length, "items");
-          
-          // Check for the createAuction function
-          const hasCreateAuction = MarketplaceABI.some((item: any) => 
-            item.name === "createAuction" && item.type === "function"
-          );
-          
-          console.log("ABI contains createAuction function:", hasCreateAuction);
-          
-          if (hasCreateAuction) {
-            const auctionAbi = MarketplaceABI.find((item: any) => 
-              item.name === "createAuction" && item.type === "function"
-            );
-            if (auctionAbi?.inputs) {
-              console.log("createAuction inputs:", auctionAbi.inputs);
-            }
-          }
-        }).catch(e => {
-          console.error("Failed to load MarketplaceABI for debugging", e);
-        });
-      } catch (abiError) {
-        console.error("Error checking ABI:", abiError);
-      }
-      
-      // More specific error message based on error type
-      let errorMessage = "Error creating auction: ";
+      // Extract error message
+      let errorMessage = "Failed to create auction: ";
       
       if (err.code === "ACTION_REJECTED") {
-        errorMessage += "Transaction was rejected";
-      } else if (err.message?.includes("insufficient funds")) {
-        errorMessage += "Insufficient funds for transaction";
-      } else if (err.message?.includes("execution reverted")) {
-        errorMessage += "Contract execution reverted";
-        // Try to extract revert reason
-        const revertMatch = err.message.match(/reason string '([^']+)'/);
-        if (revertMatch && revertMatch[1]) {
-          errorMessage += ` - ${revertMatch[1]}`;
-          console.error("Revert reason:", revertMatch[1]);
-        }
-      } else if (err.message?.includes("not found") || err.message?.includes("no method named")) {
-        errorMessage += "Contract method not found - check contract ABI compatibility";
+        errorMessage += "Transaction was rejected by the user";
+      } else if (err.message) {
+        errorMessage += err.message;
       } else {
-        errorMessage += err.message || "Unknown error";
+        errorMessage += "Unknown error";
       }
       
+      toast.error("Auction Creation Failed", errorMessage);
       setError(errorMessage);
-      
-      // Update transaction status if there was a hash
-      const errorTxDescription = `Create auction for NFT #${tokenId}`;
-      if (err.transactionHash) {
-        addTransaction(
-          "error",
-          errorTxDescription,
-          err.transactionHash
-        );
-      } else {
-        addTransaction(
-          "error",
-          errorTxDescription,
-          errorMessage
-        );
-      }
-    } finally {
       setIsLoading(false);
     }
   };
@@ -602,8 +550,22 @@ export default function AuctionPage() {
                       className="w-full bg-oracle-black-void border border-oracle-orange/30 rounded-lg p-3 text-oracle-white focus:border-oracle-orange focus:outline-none transition-colors"
                       placeholder="0.1"
                       value={minimumBid}
-                      onChange={(e) => setMinimumBid(e.target.value)}
+                      onChange={(e) => {
+                        // Only allow numbers and a single decimal point
+                        const val = e.target.value;
+                        if (val === '' || /^(\d+\.?\d*|\.\d+)$/.test(val)) {
+                          // Validate the value is not too large (prevent astronomical prices)
+                          if (parseFloat(val || '0') <= 100000) {
+                            setMinimumBid(val);
+                          } else {
+                            setError("Minimum bid cannot exceed 100,000 METIS");
+                          }
+                        }
+                      }}
                     />
+                    <p className="text-oracle-white/50 text-sm mt-1">
+                      Enter a reasonable price (max 100,000 METIS)
+                    </p>
                   </div>
                   
                   {/* Buyout Price */}
@@ -614,10 +576,21 @@ export default function AuctionPage() {
                       className="w-full bg-oracle-black-void border border-oracle-orange/30 rounded-lg p-3 text-oracle-white focus:border-oracle-orange focus:outline-none transition-colors"
                       placeholder="1.0"
                       value={buyoutPrice}
-                      onChange={(e) => setBuyoutPrice(e.target.value)}
+                      onChange={(e) => {
+                        // Only allow numbers and a single decimal point
+                        const val = e.target.value;
+                        if (val === '' || /^(\d+\.?\d*|\.\d+)$/.test(val)) {
+                          // Validate the value is not too large (prevent astronomical prices)
+                          if (val === '' || parseFloat(val) <= 100000) {
+                            setBuyoutPrice(val);
+                          } else {
+                            setError("Buyout price cannot exceed 100,000 METIS");
+                          }
+                        }
+                      }}
                     />
                     <p className="text-oracle-white/50 text-sm mt-1">
-                      Leave empty for no buyout option
+                      Leave empty for no buyout option (max 100,000 METIS)
                     </p>
                   </div>
                   

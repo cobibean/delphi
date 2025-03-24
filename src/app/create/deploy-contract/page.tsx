@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiSettings, FiDollarSign, FiPackage, FiUpload, FiCheck } from 'react-icons/fi';
-import { deployNFTContract } from '@/app/features/marketplace/services/marketplace-v5';
-import { useActiveAccount } from 'thirdweb/react';
+import React, { useState } from 'react';
+import { FiCheck, FiDollarSign, FiPackage, FiSettings, FiUpload } from 'react-icons/fi';
+// Import from new modular structure
+import { deployNFTContract } from '@/app/features/marketplace/services/contracts';
 import { useTransaction } from '@/providers/TransactionProvider';
+import { useActiveAccount } from 'thirdweb/react';
 
 // Define types
 interface DeploymentConfig {

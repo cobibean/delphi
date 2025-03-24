@@ -1,7 +1,11 @@
 "use client";
 
-import { buyoutAuction, buyWithMetis, getAuctionBidHistory, placeBid } from "@/app/features/marketplace/services/marketplace-v5";
+import { metisChain } from "@/app/config/chain";
+import { client } from "@/app/config/client";
+import { useMarketplaceWallet } from "@/app/features/marketplace/hooks/useMarketplaceWallet";
+import { getAuctionBidHistory } from "@/app/features/marketplace/services";
 import { useToast } from '@/components/feedback/Toast/useToast';
+import { MARKETPLACE_ADDRESS, THIRDWEB_CLIENT_ID } from "@/constants/contracts";
 import { TransactionStatus } from "@/features/marketplace/components/TransactionStatus";
 import { NFTCard } from "@/features/nft/components";
 import { IListingWithNFT } from "@/interfaces/interfaces";
@@ -12,6 +16,8 @@ import { motion, useAnimation } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
+import { createThirdwebClient, getContract } from "thirdweb";
+import { buyFromListing, buyoutAuction } from "thirdweb/extensions/marketplace";
 import { useActiveAccount, useActiveWallet } from 'thirdweb/react';
 import AuctionActions from './AuctionActions';
 import { NFTAttributes } from './NFTAttributes';
@@ -54,40 +60,65 @@ const formatIPFSUrl = (url: string): string => {
 };
 
 // Helper for formatting crypto values
-const formatCryptoValue = (value: string | number | undefined): string => {
+const formatCryptoValue = (value: string | number | bigint | undefined): string => {
   if (!value) return "0";
   
   try {
-    // Log the incoming value for debugging
-    console.log("Formatting value:", value, "Type:", typeof value);
+    // Simple logging for transparency
+    console.log("NFTDetailView processing price value:", value, typeof value);
     
-    // If the value is a hex string, assume it's in wei
-    if (typeof value === 'string' && value.startsWith('0x')) {
-      return ethers.formatEther(value);
-    }
-    
-    // If it's a very large number string, assume it's in wei
-    if (typeof value === 'string' && !value.includes('.') && value.length > 15) {
-      return ethers.formatEther(value);
-    }
-    
-    // If it's already a decimal string, just return it
-    if (typeof value === 'string' && value.includes('.')) {
-      return value;
-    }
-    
-    // If it's a number or a numeric string that's not obviously wei, check magnitude
-    const numValue = typeof value === 'string' ? parseFloat(value) : value;
-    if (numValue > 1e15) {
-      // Likely wei
+    // Handle BigInt values
+    if (typeof value === 'bigint') {
+      console.log("  Converting BigInt to METIS");
       return ethers.formatEther(value.toString());
     }
     
-    // For other cases, return as is
-    return numValue.toString();
+    // Handle string values
+    if (typeof value === 'string') {
+      // If it's already a properly formatted decimal, return it directly
+      if (value.includes('.')) {
+        return value;
+      }
+      
+      // If it happens to be a large integer string (wei format), convert it
+      // This is a fallback in case our listing queries weren't updated properly
+      if (value.length > 18) {
+        console.log("  Converting large number (wei) to METIS:", value);
+        return ethers.formatEther(value);
+      }
+      
+      // Otherwise, parse it to a number for formatting
+      return parseFloat(value).toString();
+    }
+    
+    // For number values, just convert to string
+    return value.toString();
   } catch (error) {
     console.error("Error formatting crypto value:", error, "Value:", value);
     return "0";
+  }
+};
+
+// Helper for formatting display price with appropriate decimals
+const formatDisplayPrice = (price: string): string => {
+  if (!price) return "0";
+  
+  try {
+    const priceValue = parseFloat(price);
+    
+    if (priceValue < 0.000001) {
+      // For extremely small values, use scientific notation
+      return priceValue.toExponential(2);
+    } else if (priceValue < 0.01) {
+      // For small values up to 0.01, show up to 6 decimal places
+      return priceValue.toFixed(6).replace(/\.?0+$/, '');
+    } else {
+      // For normal values, show up to 4 decimal places
+      return priceValue.toFixed(4).replace(/\.?0+$/, '');
+    }
+  } catch (error) {
+    console.error("Error formatting display price:", error);
+    return price;
   }
 };
 
@@ -98,11 +129,18 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
   // Format prices properly using ethers
   const pricePerToken = formatCryptoValue(listing.pricePerToken);
   
+  // Format display prices with appropriate decimals
+  const displayPrice = formatDisplayPrice(pricePerToken);
+  
   // Check if this is an auction
   const isAuction = (listing as any).type === "auction";
   const minimumBidAmount = isAuction ? formatCryptoValue((listing as any).minimumBidAmount) : "0";
   const buyoutPrice = isAuction ? formatCryptoValue((listing as any).buyoutPrice) : "";
   const currentBid = isAuction ? formatCryptoValue((listing as any).currentBid) : pricePerToken;
+  
+  const displayBuyoutPrice = isAuction ? formatDisplayPrice(buyoutPrice) : "";
+  const displayCurrentBid = isAuction ? formatDisplayPrice(currentBid) : displayPrice;
+  const displayMinBidAmount = isAuction ? formatDisplayPrice(minimumBidAmount) : "0";
   
   const [isMounted, setIsMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -124,6 +162,14 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
   const [bidHistory, setBidHistory] = useState<any[]>([]);
   const [loadingBidHistory, setLoadingBidHistory] = useState(false);
   
+  const { 
+    executeMarketplaceFunction, 
+    isConnected: isWalletConnected, 
+    account: marketplaceAccount,
+    executeDirectTransaction
+  } = useMarketplaceWallet();
+  
+  // Keep these for backward compatibility during migration
   const wallet = useActiveWallet();
   const account = useActiveAccount();
   
@@ -264,14 +310,12 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
   
   /**
    * Handle buying with native METIS
-   * @param assetContract The NFT contract address
-   * @param tokenId The NFT token ID  
-   * @param pricePerToken The price per token in METIS
-   * @param wallet The user's active wallet
+   * Updated to use the executeDirectTransaction method directly
    */
   const handleBuyWithMetis = async () => {
     try {
-      if (!wallet) {
+      // Check if user is connected
+      if (!account) {
         toast.error("Please connect your wallet to make this purchase");
         return;
       }
@@ -288,64 +332,71 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
         transactionHash: "",
         listingId, 
         tokenId, 
-        price: pricePerToken 
+        price: displayPrice
       }, "buy_with_metis");
+
+      // Use the imported client or create a new one if needed
+      const localClient = client || createThirdwebClient({ 
+        clientId: THIRDWEB_CLIENT_ID 
+      });
       
-      // Add a transaction notification
-      const txId = addTransaction("loading", `Buying NFT #${tokenId} for ${pricePerToken} METIS...`);
+      // Get marketplace contract
+      const marketplaceContract = getContract({
+        client: localClient,
+        chain: metisChain,
+        address: MARKETPLACE_ADDRESS as `0x${string}`
+      });
       
-      // Get the buyer's address
-      const buyerAddress = account?.address;
+      // Prepare the transaction directly using ThirdWeb's buyFromListing
+      const transaction = isAuction && buyoutPrice 
+        ? buyoutAuction({
+            contract: marketplaceContract,
+            auctionId: BigInt(listingId)
+          })
+        : buyFromListing({
+            contract: marketplaceContract,
+            listingId: BigInt(listingId),
+            quantity: 1n,
+            // The current connected account becomes the recipient automatically
+            recipient: account.address
+          });
       
-      if (!buyerAddress) {
-        throw new Error("Wallet address not found");
-      }
-      
-      // Execute the purchase using appropriate function based on listing type
-      let result;
-      
-      if (isAuction && buyoutPrice) {
-        // For auctions with buyout price, use buyoutAuction
-        result = await buyoutAuction(listingId, wallet);
-      } else {
-        // For direct listings, use buyWithMetis
-        result = await buyWithMetis(listingId, wallet);
-      }
-      
-      // Store the transaction hash
-      setTxHash(result.transactionHash);
-      
-      // Store the receipt data
-      setReceiptData(result.receipt);
-      
-      // Update the transaction status
-      addTransaction(
-        "success",
-        `Successfully purchased NFT #${tokenId} for ${isAuction ? buyoutPrice : pricePerToken} METIS`,
-        result.transactionHash
+      // Show pending toast
+      toast.info(
+        "Transaction initiated",
+        "Please confirm the transaction in your wallet"
       );
       
-      // Show success message
-      toast.success("Purchase successful! Your NFT will be available in your wallet soon.");
+      // Execute the transaction directly using our hook
+      const receipt = await executeDirectTransaction(
+        transaction,
+        {
+          description: `Buying NFT #${tokenId} for ${isAuction ? displayBuyoutPrice : displayPrice} METIS`,
+          onSuccess: (result) => {
+            // Store the transaction hash
+            if (result && result.transactionHash) {
+              setTxHash(result.transactionHash);
+            }
+            
+            // Show success message
+            toast.success("Purchase successful! Your NFT will be available in your wallet soon.");
+            
+            // Redirect to profile page after 2 seconds
+            setTimeout(() => {
+              router.push("/profile");
+            }, 2000);
+          }
+        }
+      );
       
-      // Redirect to profile page after 2 seconds
-      setTimeout(() => {
-        router.push("/profile");
-      }, 2000);
+      // If we get here, the transaction was successful
+      console.log("Purchase receipt:", receipt);
       
     } catch (error: any) {
       console.error("Purchase failed:", error);
-      
-      // Add failed transaction to history
-      addTransaction(
-        "error",
-        `Failed to purchase NFT #${tokenId}: ${error.message || "Unknown error"}`,
-        txHash || ""
-      );
-      
-      // Show error message
+      // Error handling is already done in executeDirectTransaction
+      // This catch is just for any errors not caught by that method
       toast.error(error.message || "Failed to complete purchase. Please try again.");
-      
     } finally {
       // End loading state
       setProcessingPayment(false);
@@ -362,7 +413,7 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
     setReceiptData(null);
   };
   
-  // Handle submitting a bid
+  // Handle submitting a bid - also update this to use executeMarketplaceFunction
   const handleBidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -405,56 +456,48 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
         bidAmount 
       }, "place_bid");
       
-      // Add a transaction notification
-      const txId = addTransaction("loading", `Placing bid of ${bidAmount} METIS on NFT #${tokenId}...`);
-      
       // Convert bid amount to wei format for the contract
       const bidAmountInWei = ethers.parseEther(bidAmount).toString();
       
-      // Call the placeBid function with properly formatted bid amount
-      const result = await placeBid(listingId, bidAmountInWei, wallet);
+      // Execute the bid using the standardized marketplace function
+      const result = await executeMarketplaceFunction(
+        "placeBid", 
+        { 
+          auctionId: listingId, 
+          bidAmount: bidAmountInWei 
+        },
+        {
+          description: `Placing bid of ${bidAmount} METIS on NFT #${tokenId}`,
+          onSuccess: async (txResult) => {
+            // Close the bid form
+            setShowBidForm(false);
+            
+            // Update bid history
+            await fetchBidHistory();
+            
+            // Show success message and reset form
+            setBidAmount('');
+            
+            // Store transaction hash if available
+            if (txResult && txResult.transactionHash) {
+              setTxHash(txResult.transactionHash);
+            }
+          }
+        }
+      );
       
       console.log("Bid result:", result);
       
-      // Update transaction state
-      if (result.transactionHash) {
-        setTxHash(result.transactionHash);
-      }
-      
-      // Update the transaction notification
-      if (result.success) {
-        addTransaction("success", `Successfully placed bid of ${bidAmount} METIS on NFT #${tokenId}!`, result.transactionHash);
-        
-        // Close the bid form
-        setShowBidForm(false);
-        
-        // Update bid history
-        await fetchBidHistory();
-        
-        // Show success message and reset form
-        setBidAmount('');
-      } else {
-        addTransaction("error", `Failed to place bid on NFT #${tokenId}`, result.transactionHash);
-      }
     } catch (error: any) {
       console.error("Error placing bid:", error);
-      
-      // Show error message
-      toast.error(error.message || "Failed to place bid");
-      
-      // Add error transaction
-      addTransaction("error", `Error: ${error.message || "Transaction failed"}`);
+      // Error handling is already done in executeMarketplaceFunction
+      // This catch is just for any errors not caught by that method
     } finally {
       setIsBidding(false);
     }
   };
   
-  // Format wallet address for display in bid history
-  const formatWalletAddress = (address: string) => {
-    return address ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : "Unknown";
-  };
-  
-  // Handle buying out auction
+  // Handle buying out auction - also update this to use executeMarketplaceFunction
   const handleBuyout = async () => {
     try {
       if (!wallet) {
@@ -479,41 +522,46 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
         transactionHash: "",
         listingId, 
         tokenId, 
-        buyoutAmount: buyoutPrice 
+        buyoutAmount: displayBuyoutPrice
       }, "buyout_auction");
       
-      // Add a transaction notification
-      const txId = addTransaction("loading", `Buying out auction for NFT #${tokenId} at ${buyoutPrice} METIS...`);
+      // Execute the buyout using the standardized marketplace function
+      const result = await executeMarketplaceFunction(
+        "buyoutAuction", 
+        { auctionId: listingId },
+        {
+          description: `Buying out auction for NFT #${tokenId} at ${displayBuyoutPrice} METIS`,
+          onSuccess: (txResult) => {
+            // Store the transaction hash and receipt
+            if (txResult && txResult.transactionHash) {
+              setTxHash(txResult.transactionHash);
+            }
+            if (txResult && txResult.receipt) {
+              setReceiptData(txResult.receipt);
+            }
+            
+            // Redirect to profile page after successful purchase
+            setTimeout(() => {
+              router.push("/profile");
+            }, 2000);
+          }
+        }
+      );
       
-      // Call the buyoutAuction function
-      const result = await buyoutAuction(listingId, wallet);
+      console.log("Buyout result:", result);
       
-      // Update transaction state
-      setTxHash(result.transactionHash);
-      setReceiptData(result.receipt);
-      
-      // Update the transaction notification
-      if (result.success) {
-        addTransaction("success", `Successfully bought out auction for NFT #${tokenId}!`, result.transactionHash);
-        
-        // Redirect to profile page after successful purchase
-        setTimeout(() => {
-          router.push("/profile");
-        }, 2000);
-      } else {
-        addTransaction("error", `Failed to buy out auction for NFT #${tokenId}`, result.transactionHash);
-      }
     } catch (error: any) {
       console.error("Error buying out auction:", error);
-      
-      // Show error message
-      toast.error(error.message || "Failed to buy out auction");
-      
-      // Add error transaction
-      addTransaction("error", `Error: ${error.message || "Transaction failed"}`);
+      // Error handling is already done in executeMarketplaceFunction
+      // This catch is just for any errors not caught by that method
     } finally {
       setIsBuyingOut(false);
     }
+  };
+
+  // Format wallet address for display in bid history
+  const formatWalletAddress = (address: string) => {
+    return address ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : "Unknown";
   };
 
   // Simple placeholder during SSR
@@ -645,12 +693,12 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <p className="text-sinister-scroll text-sm">Current Bid</p>
-                      <p className="text-oracle-white text-2xl font-mono">{currentBid} METIS</p>
+                      <p className="text-oracle-white text-2xl font-mono">{displayCurrentBid} METIS</p>
                     </div>
-                    {buyoutPrice && (
+                    {displayBuyoutPrice && (
                       <div>
                         <p className="text-sinister-scroll text-sm">Buy Now Price</p>
-                        <p className="text-oracle-white text-2xl font-mono">{buyoutPrice} METIS</p>
+                        <p className="text-oracle-white text-2xl font-mono">{displayBuyoutPrice} METIS</p>
                       </div>
                     )}
                   </div>
@@ -659,9 +707,9 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
                   <AuctionActions 
                     auctionId={listingId}
                     tokenId={tokenId}
-                    minimumBidAmount={minimumBidAmount}
-                    currentBid={currentBid}
-                    buyoutPrice={buyoutPrice}
+                    minimumBidAmount={displayMinBidAmount}
+                    currentBid={displayCurrentBid}
+                    buyoutPrice={displayBuyoutPrice}
                     endTimestamp={(listing as any).endTimeInSeconds || 0}
                     creatorAddress={(listing as any).creatorAddress || sellerAddress || ''}
                   />
@@ -669,7 +717,7 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
               ) : (
                 <div>
                   <h3 className="text-oracle-orange text-lg mb-2">NFT Price</h3>
-                  <p className="text-oracle-white text-3xl font-mono mb-6">{pricePerToken} METIS</p>
+                  <p className="text-oracle-white text-3xl font-mono mb-6">{displayPrice} METIS</p>
                   
                   <button 
                     onClick={handleBuyClick}
@@ -769,7 +817,7 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
                 
                 <div className="mb-6">
                   <p className="text-oracle-white mb-2">Complete your purchase of <span className="font-bold">{metadata?.name || `NFT #${tokenId}`}</span></p>
-                  <p className="text-oracle-white/70 text-sm mb-4">Price: <span className="text-oracle-orange font-mono">{pricePerToken} METIS</span></p>
+                  <p className="text-oracle-white/70 text-sm mb-4">Price: <span className="text-oracle-orange font-mono">{displayPrice} METIS</span></p>
                   
                   <div className="space-y-3">
                     <button 
@@ -825,8 +873,8 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
                 
                 <div className="mb-6">
                   <p className="text-oracle-white mb-2">Bidding on <span className="font-bold">{metadata?.name || `NFT #${tokenId}`}</span></p>
-                  <p className="text-oracle-white/70 text-sm mb-4">Current Bid: <span className="text-oracle-orange font-mono">{currentBid} METIS</span></p>
-                  <p className="text-oracle-white/70 text-sm mb-4">Minimum Bid: <span className="text-oracle-orange font-mono">{Math.max(parseFloat(minimumBidAmount), parseFloat(currentBid) * 1.05).toFixed(4)} METIS</span></p>
+                  <p className="text-oracle-white/70 text-sm mb-4">Current Bid: <span className="text-oracle-orange font-mono">{displayCurrentBid} METIS</span></p>
+                  <p className="text-oracle-white/70 text-sm mb-4">Minimum Bid: <span className="text-oracle-orange font-mono">{Math.max(parseFloat(displayMinBidAmount), parseFloat(displayCurrentBid) * 1.05).toFixed(4)} METIS</span></p>
                   
                   <form onSubmit={handleBidSubmit}>
                     <div className="mb-4">
@@ -837,7 +885,7 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
                         className="w-full bg-oracle-black/50 border border-oracle-orange/30 rounded-md px-4 py-2 text-oracle-white focus:outline-none focus:ring-2 focus:ring-oracle-orange/50 focus:border-transparent"
                         placeholder="Enter bid amount"
                         step="0.0001"
-                        min={Math.max(parseFloat(minimumBidAmount), parseFloat(currentBid) * 1.05).toFixed(4)}
+                        min={Math.max(parseFloat(displayMinBidAmount), parseFloat(displayCurrentBid) * 1.05).toFixed(4)}
                         value={bidAmount}
                         onChange={(e) => setBidAmount(e.target.value)}
                         required

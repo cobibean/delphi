@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { getAllListings } from "@/features/marketplace/services/marketplace-v5";
-import { IListingWithNFT } from "@/interfaces/interfaces";
-import { NFTMarketplaceDashboard } from "@/features/marketplace/components";
 import LoadingIndicator from "@/components/feedback/LoadingIndicator";
+import { NFTMarketplaceDashboard } from "@/features/marketplace/components";
+import { getAllListings } from "@/features/marketplace/services";
+import { IListingWithNFT } from "@/interfaces/interfaces";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 // Define interface for market stats
 interface MarketStats {

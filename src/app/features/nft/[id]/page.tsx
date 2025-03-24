@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { getListing, getAuction, getAllListings } from "@/app/features/marketplace/services/marketplace-v5";
-import NFTDetailView from "@/app/features/nft/components/NFTDetailView";
 import LoadingIndicator from "@/app/components/feedback/LoadingIndicator";
-import Link from "next/link";
+import { getAllListings, getAuction, getListing } from "@/app/features/marketplace/services";
+import NFTDetailView from "@/app/features/nft/components/NFTDetailView";
 import { IListingWithNFT } from "@/app/interfaces/interfaces";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function NFTDetailPage() {
   const params = useParams();

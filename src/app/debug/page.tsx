@@ -1,6 +1,6 @@
 "use client";
 
-import { getAllListings } from "@/app/features/marketplace/services/marketplace-v5";
+import { getAllListings } from "@/app/features/marketplace/services";
 import TestToast from "@/components/feedback/test/TestToast";
 import { MARKETPLACE_ADDRESS } from "@/constants/contracts";
 import { IListingWithNFT } from "@/interfaces/interfaces";

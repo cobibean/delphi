@@ -1,0 +1,9 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Never use placeholder content in the code. 
+
+- Never use placeholders or dummy content throught any of our codebase. 

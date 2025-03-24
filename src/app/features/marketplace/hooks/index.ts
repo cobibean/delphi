@@ -4,4 +4,5 @@
 // export * from './useTrending'; 
 
 // Export all marketplace-related hooks
-export * from './useMarketplaceMint'; 
+export * from './useMarketplaceMint';
+export * from './useMarketplaceWallet';

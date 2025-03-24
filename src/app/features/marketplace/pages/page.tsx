@@ -4,7 +4,7 @@
 
 import LoadingIndicator from "@/components/feedback/LoadingIndicator";
 import { NFTMarketplaceDashboard } from "@/features/marketplace/components";
-import { getAllListings } from "@/features/marketplace/services/marketplace-v5";
+import { getAllListings } from "@/features/marketplace/services";
 import { HomepageMintCard } from "@/features/nft/mintzone/components";
 import { IListingWithNFT } from "@/interfaces/interfaces";
 import Link from "next/link";

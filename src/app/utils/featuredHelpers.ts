@@ -1,4 +1,4 @@
-import { getAllListings } from "@/app/features/marketplace/services/marketplace-v5";
+import { getAllListings } from "@/app/features/marketplace/services";
 import { IListingWithNFT } from "@/interfaces/interfaces";
 
 // Featured NFT collection addresses

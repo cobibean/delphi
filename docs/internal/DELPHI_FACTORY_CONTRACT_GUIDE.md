@@ -184,33 +184,6 @@ function setPlatformFee(uint256 newFeeBps, address newRecipient) external onlyOw
 }
 ```
 
-## Integration with HashLips
-
-The factory contract works with HashLips-generated art by:
-
-1. Accepting the generated metadata and images through IPFS
-2. Using the IPFS CID as the baseURI for the Drop contract
-3. Supporting lazy minting for efficient deployment
-
-```solidity
-function setCollectionURI(
-    uint256 collectionId,
-    string calldata baseURI,
-    uint256 amount
-) external {
-    require(msg.sender == collections[collectionId].creator, "Not creator");
-    
-    // Get Drop contract instance
-    IDrop drop = IDrop(collections[collectionId].contractAddress);
-    
-    // Lazy mint the collection
-    drop.lazyMint(
-        amount,
-        baseURI,
-        "0x" // No encrypted base URI
-    );
-}
-```
 
 ## Security Considerations
 

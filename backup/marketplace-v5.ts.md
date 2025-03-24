@@ -1,13 +1,13 @@
 import { metisChain } from "@/app/config/chain";
 import { client } from "@/app/config/client";
 import { INFTAttribute, INFTMetadata } from "@/app/interfaces/interfaces";
-import { MARKETPLACE_ADDRESS, NATIVE_TOKEN_ADDRESS } from "@/constants/contracts";
+import { CONTRACT_ADDRESS } from "@/constants/contracts";
 import { ethers } from "ethers";
-import { getContract, getContractEvents, sendTransaction, waitForReceipt } from "thirdweb";
+import { getContract, getContractEvents, NATIVE_TOKEN_ADDRESS, prepareContractCall, sendTransaction, waitForReceipt } from "thirdweb";
 import { getContractMetadata } from "thirdweb/extensions/common";
 import { allowance, approve } from "thirdweb/extensions/erc20";
 import { getNFT } from "thirdweb/extensions/erc721";
-import { bidInAuction as bidInAuctionThirdweb, buyFromListing, buyoutAuction as buyoutAuctionThirdweb, collectAuctionPayout, getAllValidAuctions, getAllValidListings, getWinningBid, isNewWinningBid, newBidEvent } from "thirdweb/extensions/marketplace";
+import { bidInAuction as bidInAuctionThirdweb, buyFromListing, buyoutAuction as buyoutAuctionThirdweb, getAllValidAuctions, getAllValidListings, getWinningBid, isNewWinningBid, newBidEvent } from "thirdweb/extensions/marketplace";
 import { toEther } from "thirdweb/utils";
 
 // Fix for wallet provider access
@@ -18,7 +18,7 @@ declare global {
 }
 
 // Log the marketplace contract address for debugging
-console.log(`Marketplace Contract: ${MARKETPLACE_ADDRESS}`);
+console.log(`Marketplace Contract: ${CONTRACT_ADDRESS.MARKETPLACE_V5}`);
 
 // Enhanced error logging utility for contract interactions
 const logContractError = (error: any, operation: string) => {
@@ -147,13 +147,13 @@ export interface IListingWithNFT extends IDirectListing {
  */
 export const getAllListings = async (): Promise<IListingWithNFT[]> => {
   try {
-    console.log("Getting marketplace contract at", MARKETPLACE_ADDRESS);
+    console.log("Getting marketplace contract at", CONTRACT_ADDRESS.MARKETPLACE_V5);
     
     // Get the marketplace contract
     const marketplaceContract = getContract({
       client,
       chain: metisChain,
-      address: MARKETPLACE_ADDRESS,
+      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
     });
     
     // Get all valid listings using the marketplace extension
@@ -219,7 +219,7 @@ export const getListing = async (listingId: string): Promise<IListingWithNFT | n
     const marketplaceContract = getContract({
       client,
       chain: metisChain,
-      address: MARKETPLACE_ADDRESS,
+      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
     });
     
     // Get all valid listings to find the one we want
@@ -326,7 +326,7 @@ export const getAuction = async (auctionIdOrContractAddress: string, tokenId?: s
     const marketplaceContract = getContract({
       client,
       chain: metisChain,
-      address: MARKETPLACE_ADDRESS,
+      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
     });
     
     // Get all valid auctions to find the one we want
@@ -451,7 +451,7 @@ export const getAuctionBidHistory = async (auctionId: string): Promise<any[]> =>
     const marketplaceContract = getContract({
       client,
       chain: metisChain,
-      address: MARKETPLACE_ADDRESS,
+      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
     });
     
     // Get bid events
@@ -495,137 +495,22 @@ export const getAuctionBidHistory = async (auctionId: string): Promise<any[]> =>
  */
 export async function buyWithMetis(
   listingId: string, 
-  wallet: any
+  account: any
 ): Promise<{transactionHash: string, listingId: string, success: boolean, receipt: any}> {
   try {
-    // Enhanced debugging - dump more wallet details
-    console.log("==================== WALLET DEBUG START ====================");
-    console.log("Wallet type:", typeof wallet);
-    console.log("Wallet instanceof Object:", wallet instanceof Object);
-    console.log("Wallet is null or undefined:", wallet === null || wallet === undefined);
-    
-    if (wallet) {
-      // List all properties on the wallet object
-      console.log("Wallet properties:", Object.getOwnPropertyNames(wallet).sort());
-      
-      // Check for common properties
-      console.log("Has address property:", 'address' in wallet);
-      console.log("Has account property:", 'account' in wallet);
-      console.log("Has getAccount method:", typeof wallet.getAccount === 'function');
-      console.log("Has connect method:", typeof wallet.connect === 'function');
-      
-      // Try to safely log specific properties
-      if ('address' in wallet) console.log("wallet.address:", wallet.address);
-      if ('account' in wallet) console.log("wallet.account:", wallet.account);
-      
-      // If account exists, log its properties
-      if (wallet.account) {
-        console.log("Account properties:", Object.getOwnPropertyNames(wallet.account).sort());
-        if ('address' in wallet.account) console.log("wallet.account.address:", wallet.account.address);
-      }
-      
-      // If it's a function, log that
-      if (typeof wallet === 'function') {
-        console.log("Wallet is a function");
-      }
-      
-      // Check prototype chain
-      let proto = Object.getPrototypeOf(wallet);
-      let protoChain = [];
-      while (proto && proto !== Object.prototype) {
-        protoChain.push(proto.constructor ? proto.constructor.name : 'unknown');
-        proto = Object.getPrototypeOf(proto);
-      }
-      console.log("Prototype chain:", protoChain);
-      
-      // If wallet has a getAccount method, try calling it
-      if (typeof wallet.getAccount === 'function') {
-        try {
-          const account = wallet.getAccount();
-          console.log("Result of wallet.getAccount():", account);
-          if (account) {
-            console.log("Account properties:", Object.getOwnPropertyNames(account).sort());
-            if (account.address) console.log("account.address from getAccount():", account.address);
-          }
-        } catch (e) {
-          console.error("Error calling wallet.getAccount():", e);
-        }
-      }
-      
-      // Dump the whole wallet object as JSON
-      try {
-        const safeWallet = {...wallet};
-        console.log("Wallet JSON:", JSON.stringify(safeWallet, (key, value) => {
-          // Skip functions and circular references
-          if (typeof value === 'function') return '[Function]';
-          return value;
-        }, 2));
-      } catch (e) {
-        console.error("Error stringifying wallet:", e);
-      }
-    }
-    console.log("==================== WALLET DEBUG END ====================");
-    
-    // Extract the recipient address from the wallet, with multiple fallbacks
-    let recipientAddress: string | undefined;
-    let accountObject: any = null;
-    
-    // Try to get a valid account object according to ThirdWeb V5 documentation
-    
-    // Method 1: Check if wallet is already a valid account (has address and signMessage)
-    if (wallet && wallet.address && typeof wallet.signMessage === 'function') {
-      recipientAddress = wallet.address;
-      accountObject = wallet;
-      console.log("Wallet is already a valid account with address and signMessage");
-    }
-    // Method 2: Check if wallet has getAccount method
-    else if (wallet && typeof wallet.getAccount === 'function') {
-      try {
-        const account = wallet.getAccount();
-        if (account && account.address) {
-          recipientAddress = account.address;
-          accountObject = account;
-          console.log("Using account from wallet.getAccount() with address:", recipientAddress);
-        }
-      } catch (e) {
-        console.warn("Error getting account via getAccount():", e);
-      }
-    }
-    // Method 3: Check if wallet has account property
-    else if (wallet && wallet.account && wallet.account.address) {
-      recipientAddress = wallet.account.address;
-      accountObject = wallet.account;
-      console.log("Using wallet.account with address:", recipientAddress);
-    }
-    // Method 4: Check if wallet itself has an address
-    else if (wallet && wallet.address) {
-      recipientAddress = wallet.address;
-      
-      // Create a basic account object with the required properties
-      accountObject = {
-        address: wallet.address,
-        // Add minimal methods required for an account
-        signMessage: wallet.signMessage || ((params: any) => Promise.reject("Not implemented")),
-        signTransaction: wallet.signTransaction || ((params: any) => Promise.reject("Not implemented")),
-        sendTransaction: wallet.sendTransaction || ((params: any) => Promise.reject("Not implemented")),
-      };
-      
-      console.log("Created basic account with address:", recipientAddress);
+    // Basic validation
+    if (!account || !account.address) {
+      throw new Error("No valid account provided");
     }
     
-    // If we still don't have a valid account object and address
-    if (!recipientAddress || !accountObject) {
-      console.error("Could not determine recipient address or create a valid account object");
-      console.error("Wallet type:", typeof wallet);
-      console.error("Wallet properties:", Object.keys(wallet || {}));
-      throw new Error("Could not determine recipient address from wallet");
-    }
+    const recipientAddress = account.address;
+    console.log("Using account with address:", recipientAddress);
     
     // Get the marketplace contract
     const marketplaceContract = getContract({
       client,
       chain: metisChain,
-      address: MARKETPLACE_ADDRESS,
+      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
     });
     
     // Get all valid listings to find the one we want
@@ -648,34 +533,17 @@ export async function buyWithMetis(
       recipient: recipientAddress as `0x${string}`,
     });
     
-    // IMPORTANT: For debugging, log what we're passing to sendTransaction
-    console.log("Sending transaction with:")
-    console.log("- Transaction:", transaction);
-    console.log("- Account type:", typeof accountObject);
-    console.log("- Account address:", accountObject.address);
-    
-    // Use the accountObject we created or extracted
+    // Send the transaction with the account directly
     const receipt = await sendTransaction({
       transaction,
-      account: accountObject,
+      account,
     });
-    
-    console.log("Transaction sent:", receipt);
-    
-    // Wait for transaction confirmation
-    const confirmedReceipt = await waitForReceipt({
-      client,
-      chain: metisChain,
-      transactionHash: receipt.transactionHash,
-    });
-    
-    console.log("Transaction confirmed:", confirmedReceipt);
     
     return {
       transactionHash: receipt.transactionHash,
       listingId,
       success: true,
-      receipt: confirmedReceipt
+      receipt: receipt
     };
   } catch (error: any) {
     console.error("Error buying NFT:", error);
@@ -687,12 +555,12 @@ export async function buyWithMetis(
  * Place a bid on an auction
  * @param auctionId The ID of the auction
  * @param bidAmount The bid amount (can be in ETH format or wei format)
- * @param wallet The user's wallet
+ * @param account The user's account
  */
 export async function placeBid(
   auctionId: string,
   bidAmount: string,
-  wallet: any
+  account: any
 ): Promise<{ transactionHash?: string, success: boolean, error?: string }> {
   try {
     // Determine if bidAmount is already in wei format
@@ -703,8 +571,24 @@ export async function placeBid(
     
     console.log(`Placing bid for auction ${auctionId} with amount ${bidAmountInEth} METIS`);
     
+    // Get the marketplace contract
+    const marketplaceContract = await getContract({
+      client,
+      chain: metisChain,
+      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+    });
+    
+    // Use account directly - no need to extract it
+    if (!account || !account.address) {
+      throw new Error("No connected account found");
+    }
+    
     // Check if this bid would be a winning bid - use ETH format for the check
-    const wouldBeWinningBid = await checkIfNewWinningBid(auctionId, bidAmountInEth);
+    const wouldBeWinningBid = await isNewWinningBid({
+      contract: marketplaceContract,
+      auctionId: BigInt(auctionId),
+      bidAmount: ethers.parseEther(bidAmountInEth)
+    });
     
     if (!wouldBeWinningBid) {
       return {
@@ -713,27 +597,10 @@ export async function placeBid(
       };
     }
     
-    // Get the marketplace contract
-    const marketplaceContract = await getContract({
-      client,
-      chain: metisChain,
-      address: MARKETPLACE_ADDRESS,
-    });
-    
-    // Extract account from wallet
-    let account = wallet;
-    if (wallet && typeof wallet.getAccount === 'function') {
-      account = wallet.getAccount();
-    }
-    
-    if (!account) {
-      throw new Error("No connected account found");
-    }
-    
     // Log bid details
     console.log("Bidding with amount:", bidAmountInEth, "METIS");
     console.log("Auction ID:", auctionId);
-    console.log("Contract address:", MARKETPLACE_ADDRESS);
+    console.log("Contract address:", CONTRACT_ADDRESS.MARKETPLACE_V5);
     
     // Ensure bidAmount is in wei format for the contract call
     const bidAmountInWei = isWeiFormat ? bidAmount : ethers.parseEther(bidAmount).toString();
@@ -783,7 +650,7 @@ export async function placeBid(
  */
 export async function buyoutAuction(
   auctionId: string,
-  wallet: any
+  account: any
 ): Promise<{ transactionHash: string, success: boolean, receipt: any }> {
   try {
     console.log("Buying out auction with ID:", auctionId);
@@ -792,8 +659,13 @@ export async function buyoutAuction(
     const marketplaceContract = await getContract({
       client,
       chain: metisChain,
-      address: MARKETPLACE_ADDRESS,
+      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
     });
+    
+    // Use account directly
+    if (!account || !account.address) {
+      throw new Error("No connected account found");
+    }
     
     // First we need to get the auction details to determine the currency and price
     const allAuctions = await getAllValidAuctions({
@@ -807,14 +679,8 @@ export async function buyoutAuction(
       throw new Error(`Auction ${auctionId} not found`);
     }
     
-    // Get the account from wallet
-    const account = wallet.getAccount();
-    if (!account) {
-      throw new Error("No connected account found");
-    }
-    
     // For non-native token buyouts, we need to check allowance and approve if needed
-    if (auction.currencyContractAddress !== NATIVE_TOKEN_ADDRESS) {
+    if (auction.currencyContractAddress !== "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE") {
       console.log(`Non-native token auction: ${auction.currencyContractAddress}`);
       
       // Get the ERC20 token contract
@@ -828,7 +694,7 @@ export async function buyoutAuction(
       const currentAllowance = await allowance({
         contract: tokenContract,
         owner: account.address,
-        spender: MARKETPLACE_ADDRESS,
+        spender: CONTRACT_ADDRESS.MARKETPLACE_V5,
       });
       
       console.log(`Current allowance: ${currentAllowance.toString()}, Buyout price: ${auction.buyoutBidAmount.toString()}`);
@@ -840,7 +706,7 @@ export async function buyoutAuction(
         // Create approval transaction
         const approveTx = approve({
           contract: tokenContract,
-          spender: MARKETPLACE_ADDRESS,
+          spender: CONTRACT_ADDRESS.MARKETPLACE_V5,
           amount: auction.buyoutBidAmount.toString()
         });
         
@@ -900,80 +766,102 @@ export async function buyoutAuction(
 /**
  * Create a direct listing
  * 
- * @param tokenContract The address of the NFT contract
+ * @param assetContract The address of the NFT contract
  * @param tokenId The ID of the NFT to list
  * @param pricePerToken The price per token in ETH
  * @param quantity The quantity to list
  * @param startTime The start time of the listing (optional)
  * @param endTime The end time of the listing (optional)
+ * @param account The account to use for the transaction
  * @returns Transaction details
  */
 export const createDirectListing = async (
-  tokenContract: string,
+  assetContract: string,
   tokenId: string,
   pricePerToken: string,
   quantity: number = 1,
+  account: any,
   startTime?: number,
   endTime?: number
 ) => {
   try {
-    console.log(`Creating listing for token ${tokenId} at ${pricePerToken} ETH`);
+    console.log(`Creating listing for token ${tokenId} at ${pricePerToken} METIS`);
     
-    // Check if browser wallet is available
-    if (!window.ethereum) {
-      throw new Error("No Ethereum wallet found. Please install MetaMask or another wallet.");
-    }
-    
-    // Get the provider and signer using ethers directly
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    
-    // Import the ABI and create contract instance with ethers
-    const abi = (await import("@/app/constants/MarketplaceABI")).default;
-    const contract = new ethers.Contract(
-      MARKETPLACE_ADDRESS,
-      abi,
-      signer
-    );
-    
-    // Set default times if not provided
-    const now = Math.floor(Date.now() / 1000);
-    const listingStartTime = startTime || now;
-    const listingEndTime = endTime || now + 30 * 24 * 60 * 60; // Default 30 days
+    // Get the marketplace contract
+    const marketplaceContract = await getContract({
+      client,
+      chain: metisChain,
+      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
+    });
+
+    // METIS native token address - this is the standard across EVM chains
+    const nativeTokenAddress = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
     
     // Convert price to wei
-    const priceInWei = ethers.parseEther(pricePerToken);
-    
-    // Configure the listing parameters according to the ABI structure
-    const listingParams = {
-      assetContract: tokenContract,
-      tokenId: tokenId,
-      quantity: quantity,
-      currency: NATIVE_TOKEN_ADDRESS, // Using native METIS token
+    const priceInWei = ethers.parseEther(pricePerToken).toString();
+    console.log("Price in wei:", priceInWei);
+
+    // Set timestamps
+    const startTimestamp = startTime || Math.floor(Date.now() / 1000);
+    const endTimestamp = endTime || startTimestamp + (30 * 24 * 60 * 60);
+
+    // Debug info
+    console.log("Debug info:", {
+      account: account.address,
+      assetContract,
+      tokenId,
+      quantity,
+      currency: nativeTokenAddress,
       pricePerToken: priceInWei,
-      startTimestamp: listingStartTime,
-      endTimestamp: listingEndTime,
-      reserved: false,
+      startTimestamp,
+      endTimestamp
+    });
+
+    // Prepare the listing parameters
+    const listingParams = {
+      assetContract: assetContract as `0x${string}`,
+      tokenId: BigInt(tokenId),
+      quantity: BigInt(quantity),
+      currency: nativeTokenAddress as `0x${string}`, // Use standard EVM native token address
+      pricePerToken: BigInt(priceInWei),
+      startTimestamp: BigInt(startTimestamp),
+      endTimestamp: BigInt(endTimestamp),
+      reserved: false
     };
-    
-    console.log("Creating listing with params:", listingParams);
-    
-    // Create the listing
-    const tx = await contract.createListing(listingParams);
-    console.log("Transaction submitted:", tx.hash);
-    
-    // Wait for transaction to be mined
-    const receipt = await tx.wait();
-    console.log("Transaction confirmed:", receipt);
-    
+
+    console.log("Creating listing with parameters:", listingParams);
+
+    // Prepare the transaction using prepareContractCall
+    const transaction = prepareContractCall({
+      contract: marketplaceContract,
+      method: "function createListing((address assetContract, uint256 tokenId, uint256 quantity, address currency, uint256 pricePerToken, uint128 startTimestamp, uint128 endTimestamp, bool reserved) _params) returns (uint256 listingId)",
+      params: [listingParams],
+    });
+
+    // Send the transaction
+    const result = await sendTransaction({ 
+      transaction, 
+      account 
+    });
+
+    console.log("Listing transaction sent:", result.transactionHash);
+
+    // Wait for confirmation
+    const receipt = await waitForReceipt({
+      client,
+      chain: metisChain,
+      transactionHash: result.transactionHash,
+    });
+
+    console.log("Listing transaction confirmed:", receipt);
+
     return {
-      transactionHash: tx.hash,
       success: true,
-      receipt: receipt
+      transactionHash: result.transactionHash,
+      receipt
     };
   } catch (error) {
     console.error("Error creating listing:", error);
-    logContractError(error, "creating direct listing");
     throw error;
   }
 };
@@ -997,10 +885,13 @@ export const cancelListing = async (listingId: string) => {
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     
+    // Fix: Use Interface instead of direct ABI for the contract
+    const abiInterface = new ethers.Interface((await import("@/app/constants/MarketplaceABI")).default[0]);
+    
     // Get the contract directly with the signer
     const contract = new ethers.Contract(
-        MARKETPLACE_ADDRESS,
-      (await import("@/app/constants/MarketplaceABI")).default,
+      CONTRACT_ADDRESS.MARKETPLACE_V5,
+      abiInterface,
       signer
     );
     
@@ -1115,7 +1006,7 @@ export const createAuction = async (
 ): Promise<{ transactionHash: string; success: boolean; receipt: any }> => {
   try {
     console.log(`Creating auction for token ${tokenId} with minimum bid ${minimumBidAmount} ETH`);
-    console.log("Marketplace contract address:", MARKETPLACE_ADDRESS);
+    console.log("Marketplace contract address:", CONTRACT_ADDRESS.MARKETPLACE_V5);
     console.log("Token contract address:", tokenContract);
     
     // Check if browser wallet is available
@@ -1127,10 +1018,13 @@ export const createAuction = async (
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     
+    // Fix: Use Interface instead of direct ABI for the contract
+    const abiInterface = new ethers.Interface((await import("@/app/constants/MarketplaceABI")).default[0]);
+    
     // Get the contract directly with the signer
     const contract = new ethers.Contract(
-      MARKETPLACE_ADDRESS,
-      (await import("@/app/constants/MarketplaceABI")).default,
+      CONTRACT_ADDRESS.MARKETPLACE_V5,
+      abiInterface,
       signer
     );
     
@@ -1193,83 +1087,129 @@ export const createAuction = async (
   }
 };
 
-/**
- * Buy NFT from a direct listing
- * @param listingId The ID of the listing to buy from
- * @param wallet The wallet to buy with
- * @returns Transaction result object
- */
-export async function buyFromDirectListing(
+// Update the isNativeToken check to handle all possible METIS native token addresses
+const isNativeToken = (address: string): boolean => {
+  if (!address) return false;
+  
+  const knownNativeAddresses = [
+    NATIVE_TOKEN_ADDRESS.toLowerCase(),
+    "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000"
+  ];
+  
+  return knownNativeAddresses.includes(address.toLowerCase());
+};
+
+export const buyFromDirectListing = async (
   listingId: string,
-  wallet: any
-): Promise<{ success: boolean; transactionHash?: string; error?: string }> {
+  quantityOrAccount: any,
+  accountOrUndefined?: any
+) => {
   try {
     console.log(`Buying NFT from listing ${listingId}`);
+    
+    // Determine if parameters are in wrong order by checking types
+    let quantity = 1;
+    let account;
+    
+    if (typeof quantityOrAccount === 'object' && quantityOrAccount?.address) {
+      // If second param is an account object, use it
+      account = quantityOrAccount;
+      console.log("Parameter fix: using second parameter as account");
+    } else if (typeof quantityOrAccount === 'number' || typeof quantityOrAccount === 'string') {
+      // If second param is a number or string, use as quantity
+      quantity = Number(quantityOrAccount);
+      account = accountOrUndefined;
+      console.log("Using standard parameter order");
+    } else {
+      throw new Error("Invalid parameters: need listingId, quantity, and account");
+    }
+    
+    if (!account || !account.address) {
+      throw new Error("No valid account provided for purchase");
+    }
     
     // Get the marketplace contract
     const marketplaceContract = await getContract({
       client,
       chain: metisChain,
-      address: MARKETPLACE_ADDRESS,
+      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
     });
-    
-    // Extract wallet address for recipient
-    let recipientAddress: string | undefined;
-    
-    // Try to extract address from wallet
-    if (wallet && typeof wallet.getAccount === 'function') {
-      const account = wallet.getAccount();
-      if (account && account.address) {
-        recipientAddress = account.address;
-      }
-    } else if (wallet && wallet.account && wallet.account.address) {
-      recipientAddress = wallet.account.address;
-    } else if (wallet && wallet.address) {
-      recipientAddress = wallet.address;
+
+    // Get listing details to determine price
+    const listing = await getListing(listingId);
+    if (!listing) {
+      throw new Error(`Listing ${listingId} not found`);
     }
+
+    console.log("Listing price:", listing.pricePerToken);
+    console.log("Listing currency:", listing.currency);
     
-    if (!recipientAddress) {
-      throw new Error("Could not determine recipient address from wallet");
-    }
+    // ThirdWeb format matches your contract
+    const nativeTokenAddress = "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000";
     
-    // Create the transaction with recipient parameter
-    const transaction = buyFromListing({
+    // Check if the listing is using native token
+    const isNativeListing = listing.currency.toLowerCase() === nativeTokenAddress.toLowerCase();
+    console.log("Is native token listing:", isNativeListing);
+    
+    // Safe string conversions
+    const safeListingId = String(listingId);
+    const safeQuantity = String(quantity);
+    const safePricePerToken = String(listing.pricePerToken);
+    
+    // Calculate total price using safe string values
+    const totalPrice = BigInt(safePricePerToken) * BigInt(safeQuantity);
+    console.log("Total price (wei):", totalPrice.toString());
+    
+    // Prepare buy transaction with explicit type conversions
+    const transaction = prepareContractCall({
       contract: marketplaceContract,
-      listingId: BigInt(listingId),
-      quantity: 1n,
-      recipient: recipientAddress as `0x${string}` // Add recipient address
+      method: "function buyFromListing(uint256 _listingId, address _buyFor, uint256 _quantity, address _currency, uint256 _totalPrice) returns ()",
+      params: [
+        BigInt(safeListingId),
+        account.address, // Not converting to BigInt, this is an address
+        BigInt(safeQuantity),
+        listing.currency, // Not converting to BigInt, this is an address
+        totalPrice
+      ],
+      value: isNativeListing ? totalPrice : undefined, // Only send value if it's a native token listing
     });
-    
+
+    console.log("Buy transaction params:", {
+      listingId: safeListingId,
+      buyFor: account.address,
+      quantity: safeQuantity,
+      currency: listing.currency,
+      totalPrice: totalPrice.toString(),
+      value: isNativeListing ? totalPrice.toString() : "0"
+    });
+
     // Send the transaction
-    const tx = await sendTransaction({
+    const result = await sendTransaction({
       transaction,
-      account: wallet,
+      account
     });
-    
-    console.log("Buy transaction sent:", tx.transactionHash);
-    
-    // Wait for the transaction to be confirmed
+
+    console.log("Buy transaction sent:", result.transactionHash);
+
+    // Wait for confirmation
     const receipt = await waitForReceipt({
       client,
       chain: metisChain,
-      transactionHash: tx.transactionHash,
+      transactionHash: result.transactionHash,
     });
-    
+
     console.log("Buy transaction confirmed:", receipt);
-    
+
     return {
       success: true,
-      transactionHash: tx.transactionHash
+      transactionHash: result.transactionHash,
+      receipt
     };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error buying from listing:", error);
-    return {
-      success: false,
-      error: error.message || "Failed to buy from listing",
-      transactionHash: error.transactionHash
-    };
+    throw error;
   }
-}
+};
 
 /**
  * Get a direct listing by NFT contract address and token ID
@@ -1285,7 +1225,7 @@ export async function getDirectListing(contractAddress: string, tokenId: string)
     const marketplaceContract = await getContract({
       client,
       chain: metisChain,
-      address: MARKETPLACE_ADDRESS,
+      address: CONTRACT_ADDRESS.MARKETPLACE_V5,
     });
     
     // Get all active listings
@@ -1319,317 +1259,17 @@ export async function getDirectListing(contractAddress: string, tokenId: string)
     console.log(`No direct listing found for NFT ${contractAddress}/${tokenId}`);
     return null;
   } catch (error) {
-    console.error("Error fetching direct listing:", error);
+    console.error(`Error getting direct listing for NFT ${contractAddress}/${tokenId}:`, error);
     return null;
-  }
-}
-
-/**
- * Check if a bid amount would be the new winning bid for an auction
- * 
- * @param auctionId The ID of the auction
- * @param bidAmount The bid amount to check in ETH
- * @returns Boolean indicating if the bid would be the new winning bid
- */
-export async function checkIfNewWinningBid(
-  auctionId: string, 
-  bidAmount: string
-): Promise<boolean> {
-  try {
-    // Get the marketplace contract
-    const marketplaceContract = await getContract({
-      client,
-      chain: metisChain,
-      address: MARKETPLACE_ADDRESS,
-    });
-    
-    // Convert bid amount to wei as BigInt
-    const bidAmountWei = ethers.parseEther(bidAmount);
-    
-    // Log the check details
-    console.log("Checking if winning bid:", {
-      auctionId,
-      bidAmount,
-      bidAmountWei: bidAmountWei.toString()
-    });
-    
-    // Check if this would be a winning bid
-    const result = await isNewWinningBid({
-      contract: marketplaceContract,
-      auctionId: BigInt(auctionId),
-      bidAmount: bidAmountWei // Must be BigInt for isNewWinningBid
-    });
-    
-    console.log("Bid would be winning bid:", result);
-    
-    return result;
-  } catch (error) {
-    console.error("Error checking if new winning bid:", error);
-    if (error instanceof Error) {
-      console.error("Error details:", error.message, error.stack);
-    }
-    // Return false in case of error to be safe
-    return false;
-  }
-}
-
-/**
- * Get the current winning bid for an auction
- * 
- * @param auctionId The ID of the auction
- * @returns The winning bid details or null if no bids
- */
-export async function getAuctionWinningBid(auctionId: string): Promise<{
-  bidder: string;
-  bidAmount: string;
-  timestamp: number;
-} | null> {
-  try {
-    // Get the marketplace contract
-    const marketplaceContract = await getContract({
-      client,
-      chain: metisChain,
-      address: MARKETPLACE_ADDRESS,
-    });
-    
-    // Get the winning bid
-    const winningBid = await getWinningBid({
-      contract: marketplaceContract,
-      auctionId: BigInt(auctionId)
-    });
-    
-    if (!winningBid || winningBid.bidderAddress === ethers.ZeroAddress) {
-      return null;
-    }
-    
-    // Convert from wei to METIS
-    const bidAmountInMetis = toEther(winningBid.bidAmountWei);
-    
-    return {
-      bidder: winningBid.bidderAddress,
-      bidAmount: bidAmountInMetis,
-      timestamp: Date.now() // ThirdWeb doesn't return timestamp, so use current time
-    };
-  } catch (error) {
-    console.error("Error getting winning bid:", error);
-    return null;
-  }
-}
-
-/**
- * Collect NFT from a won auction (for buyers)
- * 
- * @param auctionId The ID of the auction
- * @param wallet The wallet to use for the transaction
- * @returns Transaction details
- */
-export async function collectAuctionNFT(
-  auctionId: string,
-  wallet: any
-): Promise<{ transactionHash?: string, success: boolean, error?: string }> {
-  try {
-    console.log(`Claiming NFT for auction ${auctionId}`);
-    
-    // Get the marketplace contract
-    const marketplaceContract = await getContract({
-      client,
-      chain: metisChain,
-      address: MARKETPLACE_ADDRESS,
-    });
-    
-    // Extract account from wallet
-    let account = wallet;
-    if (wallet && typeof wallet.getAccount === 'function') {
-      account = wallet.getAccount();
-    }
-    
-    if (!account) {
-      throw new Error("No connected account found");
-    }
-    
-    // For ThirdWeb SDK, we need to create a contract with ethers directly to access functions
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    const abi = (await import("@/app/constants/MarketplaceABI")).default;
-    const marketplaceEthersContract = new ethers.Contract(
-      MARKETPLACE_ADDRESS,
-      abi,
-      signer
-    );
-    
-    // Check if the collect tokens function exists
-    if (typeof marketplaceEthersContract.collectAuctionTokens !== 'function') {
-      throw new Error("collectAuctionTokens function not found on marketplace contract");
-    }
-    
-    // Create the transaction to collect the tokens
-    const tx = await marketplaceEthersContract.collectAuctionTokens(BigInt(auctionId));
-    
-    console.log("NFT claim transaction sent:", tx.hash);
-    
-    // Wait for transaction to be mined
-    const receipt = await tx.wait();
-    console.log("NFT claim transaction confirmed:", receipt);
-    
-    return {
-      transactionHash: tx.hash,
-      success: true
-    };
-  } catch (error: any) {
-    console.error("Error claiming NFT:", error);
-    return {
-      success: false,
-      error: error.message || "Failed to claim NFT",
-      transactionHash: error.transactionHash
-    };
-  }
-}
-
-/**
- * Collect payout for an auction (for sellers)
- * 
- * @param auctionId The ID of the auction
- * @param wallet The wallet to use for the transaction
- * @returns Transaction details
- */
-export async function collectAuctionPayoutForSeller(
-  auctionId: string,
-  wallet: any
-): Promise<{ transactionHash?: string, success: boolean, error?: string }> {
-  try {
-    console.log(`Collecting payout for auction ${auctionId}`);
-    
-    // Get the marketplace contract
-    const marketplaceContract = await getContract({
-      client,
-      chain: metisChain,
-      address: MARKETPLACE_ADDRESS,
-    });
-    
-    // Extract account from wallet
-    let account = wallet;
-    if (wallet && typeof wallet.getAccount === 'function') {
-      account = wallet.getAccount();
-    }
-    
-    if (!account) {
-      throw new Error("No connected account found");
-    }
-    
-    // Create the transaction to collect the payout
-    const transaction = collectAuctionPayout({
-      contract: marketplaceContract,
-      auctionId: BigInt(auctionId)
-    });
-    
-    // Send the transaction
-    const result = await sendTransaction({
-      transaction,
-      account
-    });
-    
-    console.log("Payout collection transaction sent:", result.transactionHash);
-    
-    // Wait for the transaction to be confirmed
-    const receipt = await waitForReceipt({
-      client,
-      chain: metisChain,
-      transactionHash: result.transactionHash,
-    });
-    
-    console.log("Payout collection transaction confirmed:", receipt);
-    
-    return {
-      transactionHash: result.transactionHash,
-      success: true
-    };
-  } catch (error: any) {
-    console.error("Error collecting payout:", error);
-    return {
-      success: false,
-      error: error.message || "Failed to collect payout",
-      transactionHash: error.transactionHash
-    };
   }
 }
 
 /**
  * Check if an auction has ended
- * 
- * @param endTimestamp The end timestamp of the auction
- * @returns Boolean indicating if the auction has ended
+ * @param endTimestamp The end timestamp of the auction in seconds
+ * @returns boolean indicating if the auction has ended
  */
-export function isAuctionEnded(endTimestamp: number): boolean {
+export const isAuctionEnded = (endTimestamp: number): boolean => {
   const now = Math.floor(Date.now() / 1000);
-  return now >= endTimestamp;
-}
-
-/**
- * Watch for auction closed events
- * 
- * @param callback Function to call when an auction is closed
- * @returns Function to stop watching
- */
-export function watchForAuctionClosedEvents(
-  callback: (auctionId: string) => void,
-  retryInterval: number = 60000 // Check every minute by default
-): { stop: () => void } {
-  let isRunning = true;
-  const checkedAuctions = new Set<string>();
-  
-  // Function to check for closed auctions
-  const checkForClosedAuctions = async () => {
-    try {
-      // Get the marketplace contract
-      const marketplaceContract = await getContract({
-        client,
-        chain: metisChain,
-        address: MARKETPLACE_ADDRESS,
-      });
-      
-      // In a real implementation, we would fetch all auctions and check which ones have ended
-      // This is a simplified approach that just checks a few example auctions
-      
-      // Example auction IDs to check (in a real app, you'd have a way to get all active auctions)
-      const exampleAuctionIds = ["0", "1", "2"];
-      
-      for (const auctionId of exampleAuctionIds) {
-        // Skip if we already processed this auction
-        if (checkedAuctions.has(auctionId)) continue;
-        
-        try {
-          // Get the auction by ID
-          const auction = await getAuction(auctionId);
-          
-          // Check if it exists and if it's ended
-          if (auction && auction.endTimestamp && isAuctionEnded(auction.endTimestamp)) {
-            // Add to processed set
-            checkedAuctions.add(auctionId);
-            
-            // Call the callback
-            callback(auctionId);
-          }
-        } catch (error) {
-          console.error(`Error checking auction ${auctionId}:`, error);
-        }
-      }
-    } catch (error) {
-      console.error("Error checking for closed auctions:", error);
-    }
-    
-    // Schedule next check if still running
-    if (isRunning) {
-      setTimeout(checkForClosedAuctions, retryInterval);
-    }
-  };
-  
-  // Start checking
-  checkForClosedAuctions();
-  
-  // Return a function to stop watching
-  return {
-    stop: () => {
-      isRunning = false;
-    }
-  };
-} 
+  return endTimestamp < now;
+};

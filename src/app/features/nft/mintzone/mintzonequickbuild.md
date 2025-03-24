@@ -382,6 +382,8 @@ The following components have been successfully implemented:
 - ✅ Ensured compatibility with both ERC721 and ERC1155 tokens
 - ✅ Set METIS as the default currency
 - ❌ Removed gasless transaction functionality due to integration challenges on testnet
+- ✅ Integrated HomepageMintCard component on both main homepage and marketplace pages
+- ✅ Fixed contract address mismatches by using the correct working contract
 
 ### Pending Items for Future Phases
 - Design Integration with "Cosmic Overload" theme
@@ -389,5 +391,42 @@ The following components have been successfully implemented:
 - Transaction provider integration
 - Enhanced error handling
 - Redirect after successful minting
+- Create a centralized contract address helper file
 
-The current implementation provides a functional NFT minting interface that works with the thirdweb SDK and integrates with our existing application. It follows the component-centric approach outlined in the revised migration plan while maintaining compatibility with various NFT contract types.
+### Next Steps
+
+#### Contract Helper Implementation
+We plan to create a centralized helper file to manage all NFT contracts in the application. This will:
+
+1. **Create a central contract registry**:
+   ```typescript
+   // Planned: src/app/features/nft/contracts/index.ts
+   
+   export const NFT_CONTRACTS = {
+     DELPHI_DAY_ONE: "0x8938fc030Df8780A479f393982890980A192c63f",
+     // Add other contracts as needed
+   };
+   
+   // Export additional contract metadata if needed
+   export const CONTRACT_METADATA = {
+     DELPHI_DAY_ONE: {
+       name: "Delphi Day One NFT",
+       description: "The first Delphi NFT collection",
+       // Other metadata
+     }
+   };
+   ```
+
+2. **Benefits of this approach**:
+   - Single source of truth for contract addresses
+   - Easier to update addresses across the application
+   - Prevents errors from mismatched addresses
+   - Facilitates easier testing and environment configuration
+
+3. **Implementation plan**:
+   - Create the helper file with constants for all contracts
+   - Update all existing pages to import from this file
+   - Add documentation for the contract registry
+   - Consider adding environment-specific contracts for different networks
+
+The current implementation provides a functional NFT minting interface that works correctly with the confirmed working contract address across both the main homepage and marketplace pages.

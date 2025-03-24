@@ -1,7 +1,7 @@
 "use client";
 
 import { MARKETPLACE_ADDRESS } from "@/constants/contracts";
-import { getAllListings } from "@/features/marketplace/services/marketplace-v5";
+import { getAllListings } from "@/features/marketplace/services";
 import { IListingWithNFT } from "@/interfaces/interfaces";
 import Link from "next/link";
 import { useEffect, useState } from "react";

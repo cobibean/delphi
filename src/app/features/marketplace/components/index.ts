@@ -5,7 +5,6 @@
 // export * from './TrendingTable';
 // export * from './Carousel';
 
+export * from './ListingOptionsModal';
 export { default as NFTMarketplaceDashboard } from './NFTMarketplaceDashboard';
 export * from './TransactionStatus';
-export * from './TransactionNotification';
-export * from './ListingOptionsModal'; 
