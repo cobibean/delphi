@@ -124,7 +124,32 @@ export function useMarketplaceMint() {
       console.log("Buy transaction:", buyTx);
       
       // Handle successful transaction
-      handleTransactionSuccess(buyTx);
+      // Create a compatible TransactionReceipt object from the transaction hash
+      const receipt = {
+        transactionHash: buyTx.transactionHash,
+        blockNumber: 0,
+        blockHash: "0x0" as `0x${string}`,
+        status: true,
+        from: account.address as `0x${string}`,
+        to: MARKETPLACE_ADDRESS as `0x${string}`,
+        contractAddress: MARKETPLACE_ADDRESS as `0x${string}`,
+        gasUsed: 0n,
+        effectiveGasPrice: 0n,
+        cumulativeGasUsed: 0n,
+        transactionIndex: 0,
+        logs: [{
+          address: MARKETPLACE_ADDRESS as `0x${string}`,
+          topics: ["0x0"],
+          data: "0x0",
+          logIndex: 0,
+          blockNumber: 0,
+          blockHash: "0x0" as `0x${string}`,
+          transactionIndex: 0,
+          transactionHash: buyTx.transactionHash
+        }]
+      };
+      
+      handleTransactionSuccess(receipt);
       
       return buyTx;
     } catch (error) {
