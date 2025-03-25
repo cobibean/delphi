@@ -57,7 +57,7 @@ export function TestnetGuideModal({ onClose }: TestnetGuideModalProps) {
             <div>
               <h3 className="text-xl font-heading text-quantum-entanglement mb-2">Connect Your Wallet</h3>
               <ul className="list-disc pl-5 space-y-1">
-                <li>Click the "Connect Wallet" button at the top right and select your preferred wallet (e.g., MetaMask).</li>
+                <li>Click the &quot;Connect Wallet&quot; button at the top right and select your preferred wallet (e.g., MetaMask).</li>
               </ul>
             </div>
             

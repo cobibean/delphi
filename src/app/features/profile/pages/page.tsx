@@ -119,7 +119,7 @@ export default function ProfilePage() {
               </div>
               <div className="mb-6">
                 <p className="text-oracle-white mb-4">
-                  We're working on bringing you amazing profile features.
+                  We&apos;re working on bringing you amazing profile features.
                 </p>
                 <div className="flex justify-center my-6">
                   <div className="w-24 h-24 bg-cosmic-connection rounded-full flex items-center justify-center animate-oracle-pulse overflow-hidden">

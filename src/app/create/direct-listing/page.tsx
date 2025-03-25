@@ -643,7 +643,7 @@ export default function DirectListingPage() {
               </li>
               <li className="flex items-start">
                 <span className="text-oracle-orange mr-2">•</span>
-                <span>You can cancel your listing at any time before it's purchased.</span>
+                <span>You can cancel your listing at any time before it&apos;s purchased.</span>
               </li>
             </ul>
           </div>

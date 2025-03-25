@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useState } from "react";
 import { FiImage, FiPackage } from "react-icons/fi";
 
 export default function CreateListingPage() {
@@ -177,7 +177,7 @@ export default function CreateListingPage() {
               </div>
               <div className="mb-6">
                 <p className="text-oracle-white mb-4">
-                  We're working on bringing you amazing listing creation features.
+                  We&apos;re working on bringing you amazing listing creation features.
                 </p>
                 <div className="flex justify-center my-6">
                   <div className="w-24 h-24 bg-cosmic-connection rounded-full flex items-center justify-center animate-oracle-pulse overflow-hidden">
