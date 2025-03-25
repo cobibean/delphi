@@ -1,12 +1,11 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next",
-      "config": {
-        "nodeVersion": "18.x"
-      }
-    }
-  ]
+  "env": {
+    "NEXT_PUBLIC_THIRDWEB_CLIENT_ID": "fbdbd68ce248deb4dca2130b68ab22d7",
+    "NEXT_PUBLIC_RPC_URL": "https://sepolia.metisdevops.link",
+    "NEXT_PUBLIC_IPFS_GATEWAY": "https://delphigateway.mypinata.cloud/ipfs/"
+  },
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "CI": "false"
 } 

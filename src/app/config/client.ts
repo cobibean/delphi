@@ -6,10 +6,7 @@ import { createWallet, inAppWallet } from "thirdweb/wallets";
 import { metisChain } from "./chain";
 
 // Get client ID from environment
-const clientId = process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID;
-if (!clientId) {
-  console.error("NEXT_PUBLIC_THIRDWEB_CLIENT_ID is not set in environment variables");
-}
+const clientId = process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "";
 
 // Create the wallet configuration
 export const wallets = [
@@ -37,9 +34,9 @@ export const wallets = [
   createWallet("social.gm2"),
 ];
 
-// Create a client
+// Create a client with fallback handling for SSR
 export const client = createThirdwebClient({
-  clientId: clientId || "",
+  clientId: clientId,
   // Note: secretKey is only needed for backend operations
   // secretKey: process.env.THIRDWEB_SECRET_KEY || "",
 });
