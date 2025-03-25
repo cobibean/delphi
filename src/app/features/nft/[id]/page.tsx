@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 
 export default function NFTDetailPage() {
   const params = useParams();
-  const listingId = params?.id as string;
+  const listingIdParam = params?.id as string;
   
   const [listing, setListing] = useState<IListingWithNFT | null>(null);
   const [relatedListings, setRelatedListings] = useState<IListingWithNFT[]>([]);
@@ -21,16 +21,41 @@ export default function NFTDetailPage() {
     async function fetchData() {
       try {
         setIsLoading(true);
-        // Fetch the specific listing by ID
-        console.log(`Fetching listing ID: ${listingId}`);
         
-        // Try to fetch as a direct listing first
-        let fetchedListing = await getListing(listingId);
+        // Parse the ID parameter to handle the type prefix
+        let listingId: string;
+        let isAuction = false;
         
-        // If not found as a direct listing, try as an auction
-        if (!fetchedListing) {
-          console.log(`Listing not found, trying as auction ID: ${listingId}`);
+        if (listingIdParam.startsWith('auction-')) {
+          // This is an auction listing
+          listingId = listingIdParam.replace('auction-', '');
+          isAuction = true;
+          console.log(`Fetching auction ID: ${listingId}`);
+        } else if (listingIdParam.startsWith('direct-')) {
+          // This is a direct listing
+          listingId = listingIdParam.replace('direct-', '');
+          console.log(`Fetching direct listing ID: ${listingId}`);
+        } else {
+          // Backward compatibility for old URLs without prefixes
+          listingId = listingIdParam;
+          console.log(`Fetching listing with legacy ID format: ${listingId}`);
+        }
+        
+        // Fetch the specific listing by ID based on the type
+        let fetchedListing = null;
+        
+        if (isAuction) {
+          // For auction type, skip direct listing check
           fetchedListing = await getAuction(listingId);
+        } else {
+          // Try to fetch as a direct listing first
+          fetchedListing = await getListing(listingId);
+          
+          // If not found as a direct listing and not explicitly marked as direct, try as an auction
+          if (!fetchedListing && !listingIdParam.startsWith('direct-')) {
+            console.log(`Listing not found, trying as auction ID: ${listingId}`);
+            fetchedListing = await getAuction(listingId);
+          }
         }
         
         if (!fetchedListing) {
@@ -66,10 +91,10 @@ export default function NFTDetailPage() {
       }
     }
     
-    if (listingId) {
+    if (listingIdParam) {
       fetchData();
     }
-  }, [listingId]);
+  }, [listingIdParam]);
   
   if (isLoading) {
     return (

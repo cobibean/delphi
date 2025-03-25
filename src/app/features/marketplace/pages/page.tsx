@@ -7,6 +7,7 @@ import { FEATURED_COLLECTION_ADDRESSES, filterFeaturedListings } from "@/app/uti
 import LoadingIndicator from "@/components/feedback/LoadingIndicator";
 import { NFTMarketplaceDashboard } from "@/features/marketplace/components";
 import { getAllListings } from "@/features/marketplace/services";
+import { getAllAuctions } from "@/features/marketplace/services/auctions";
 import { HomepageMintCard } from "@/features/nft/mintzone/components";
 import { IListingWithNFT } from "@/interfaces/interfaces";
 import Link from "next/link";
@@ -38,47 +39,58 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Fetch real marketplace listings
+  // Fetch real marketplace listings and auctions
   useEffect(() => {
-    async function fetchListings() {
+    async function fetchMarketplaceData() {
       try {
         setIsLoading(true);
-        console.log("Fetching real marketplace listings...");
+        console.log("Fetching marketplace data (listings and auctions)...");
         
-        // Fetch all listings for the main marketplace
-        const fetchedListings = await getAllListings();
+        // Fetch all listings and auctions concurrently for efficiency
+        const [fetchedListings, fetchedAuctions] = await Promise.all([
+          getAllListings(),
+          getAllAuctions()
+        ]);
+        
         console.log(`Fetched ${fetchedListings?.length || 0} listings from marketplace contract`);
+        console.log(`Fetched ${fetchedAuctions?.length || 0} auctions from marketplace contract`);
         
-        if (!fetchedListings || fetchedListings.length === 0) {
-          console.log("No listings were found, showing empty state");
+        // Combine listings and auctions into a single array
+        const allItems = [
+          ...(fetchedListings || []),
+          ...(fetchedAuctions || [])
+        ];
+        
+        if (allItems.length === 0) {
+          console.log("No listings or auctions were found, showing empty state");
           setListings([]);
           setFeaturedListings([]);
-          setError("No active listings found on the marketplace. Check back later for new listings.");
+          setError("No active listings or auctions found on the marketplace. Check back later for new items.");
           setIsLoading(false);
           return;
         }
         
-        // Set all listings for the main marketplace section
-        setListings(fetchedListings);
+        // Set all items for the main marketplace section
+        setListings(allItems);
         
         // Get featured listings using the helper function
         console.log("Filtering for featured collections:", FEATURED_COLLECTION_ADDRESSES);
-        const featured = filterFeaturedListings(fetchedListings);
+        const featured = filterFeaturedListings(allItems);
 
         // Add these detailed logs
-        console.log("All available contract addresses in listings:", 
-          [...new Set(fetchedListings.map(item => item.assetContract))]);
-        console.log("Featured listings by collection:", 
+        console.log("All available contract addresses in items:", 
+          [...new Set(allItems.map(item => item.assetContract))]);
+        console.log("Featured items by collection:", 
           featured.reduce((acc, item) => {
             acc[item.assetContract] = (acc[item.assetContract] || 0) + 1;
             return acc;
           }, {} as Record<string, number>));
 
-        console.log(`Found ${featured.length} listings from featured collections`);
+        console.log(`Found ${featured.length} items from featured collections`);
         
         if (featured.length > 0) {
-          // Group listings by collection address
-          const listingsByCollection = featured.reduce((groups, item) => {
+          // Group items by collection address
+          const itemsByCollection = featured.reduce((groups, item) => {
             const contract = item.assetContract;
             if (!groups[contract]) groups[contract] = [];
             groups[contract].push(item);
@@ -89,9 +101,9 @@ export default function Page() {
           let selectedFeatured: IListingWithNFT[] = [];
           
           // First pass: Take one from each collection
-          Object.values(listingsByCollection).forEach(listings => {
-            if (selectedFeatured.length < MAX_CAROUSEL_ITEMS && listings.length > 0) {
-              selectedFeatured.push(listings[0]);
+          Object.values(itemsByCollection).forEach(items => {
+            if (selectedFeatured.length < MAX_CAROUSEL_ITEMS && items.length > 0) {
+              selectedFeatured.push(items[0]);
             }
           });
           
@@ -99,9 +111,9 @@ export default function Page() {
           let remainingSlots = MAX_CAROUSEL_ITEMS - selectedFeatured.length;
           if (remainingSlots > 0) {
             let additionalItems: IListingWithNFT[] = [];
-            Object.values(listingsByCollection).forEach(listings => {
-              if (listings.length > 1) {
-                additionalItems = [...additionalItems, ...listings.slice(1)];
+            Object.values(itemsByCollection).forEach(items => {
+              if (items.length > 1) {
+                additionalItems = [...additionalItems, ...items.slice(1)];
               }
             });
             
@@ -113,17 +125,17 @@ export default function Page() {
           }
           
           setFeaturedListings(selectedFeatured);
-          console.log("Featured listings set for carousel:", selectedFeatured);
+          console.log("Featured items set for carousel:", selectedFeatured);
         } else {
-          // If no featured listings found, fall back to using regular listings
-          console.log("No featured collection listings found, using regular listings as fallback");
-          setFeaturedListings(fetchedListings.slice(0, Math.min(MAX_CAROUSEL_ITEMS, fetchedListings.length)));
+          // If no featured listings found, fall back to using regular items
+          console.log("No featured collection items found, using regular items as fallback");
+          setFeaturedListings(allItems.slice(0, Math.min(MAX_CAROUSEL_ITEMS, allItems.length)));
         }
         
         setIsLoading(false);
         setError(null); // Clear any previous errors
       } catch (err) {
-        console.error("Error fetching listings:", err);
+        console.error("Error fetching marketplace data:", err);
         setError("Failed to load marketplace data. Please try again later.");
         setListings([]);
         setFeaturedListings([]);
@@ -131,7 +143,7 @@ export default function Page() {
       }
     }
     
-    fetchListings();
+    fetchMarketplaceData();
   }, []);
   
   useEffect(() => {
@@ -152,7 +164,20 @@ export default function Page() {
     totalVolume: "156,420", // This could be calculated based on real data in the future
     totalSales: 3256, // This could be calculated based on real data in the future
     averagePrice: listings.length > 0 
-      ? (listings.reduce((sum, listing) => sum + parseFloat(listing.pricePerToken), 0) / listings.length).toFixed(2)
+      ? (listings.reduce((sum, listing) => {
+          // For auctions, use current bid or minimum bid amount
+          if ((listing as any).isAuction) {
+            const auctionListing = listing as any;
+            const price = parseFloat(
+              auctionListing.currentBid || 
+              auctionListing.minimumBidAmount || 
+              "0"
+            ); 
+            return sum + price;
+          }
+          // For direct listings, use pricePerToken
+          return sum + parseFloat(listing.pricePerToken);
+        }, 0) / listings.length).toFixed(2)
       : "0.00"
   };
   
@@ -183,8 +208,14 @@ export default function Page() {
 
   // Add a handler for the "Acquire this NFT" action
   const handleAcquireNFT = async (listing: IListingWithNFT) => {
-    // For now, just navigate to the detail page
-    window.location.href = `/nft/${listing.listingId}`;
+    // Include the listing type in the URL to correctly identify auctions vs direct listings
+    const isAuction = (listing as any).isAuction || (listing as any).type === 'auction';
+    const detailUrl = isAuction ? 
+      `/nft/auction-${listing.listingId}` : 
+      `/nft/direct-${listing.listingId}`;
+    
+    // Navigate to the detail page with the type prefix
+    window.location.href = detailUrl;
     
     // In the future, you could implement direct purchase functionality here
   };
@@ -301,7 +332,7 @@ export default function Page() {
             </div>
           </section>
           
-          {/* Main marketplace section with all listings */}
+          {/* Main marketplace section with all listings and auctions */}
           {listings.length > 0 ? (
             <NFTMarketplaceDashboard listings={listings} />
           ) : (

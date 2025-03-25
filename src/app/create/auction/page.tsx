@@ -1,17 +1,15 @@
 "use client";
 
-import { useMarketplaceWallet } from "@/app/features/marketplace/hooks/useMarketplaceWallet";
 import { useToast } from "@/components/feedback";
 import { metisChain } from "@/config/chain";
 import { client } from "@/config/client";
 import { MARKETPLACE_ADDRESS, NATIVE_TOKEN_ADDRESS } from "@/constants/contracts";
 import { useTransaction } from "@/providers/TransactionProvider";
-import { ethers } from "ethers";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getContract, isAddress, readContract, sendTransaction, waitForReceipt } from "thirdweb";
+import { getContract, isAddress, readContract, sendAndConfirmTransaction, sendTransaction, waitForReceipt } from "thirdweb";
 import { isApprovedForAll, setApprovalForAll } from "thirdweb/extensions/erc721";
 import { createAuction } from "thirdweb/extensions/marketplace";
 import { useActiveAccount, useActiveWallet } from "thirdweb/react";
@@ -22,7 +20,6 @@ export default function AuctionPage() {
   const wallet = useActiveWallet();
   const { addTransaction } = useTransaction();
   const { toast } = useToast();
-  const { executeDirectTransaction } = useMarketplaceWallet();
   
   const [assetContract, setAssetContract] = useState("");
   const [tokenId, setTokenId] = useState("");
@@ -300,77 +297,64 @@ export default function AuctionPage() {
       // Show toast notification
       toast.info("Auction Creation Initiated", "Please confirm the transaction in your wallet.");
       
-      // Prepare the transaction using ThirdWeb's createAuction
-      // ThirdWeb expects bigint values for buyoutBidAmount and minimumBidAmount
-      // But our local types might expect string - we'll handle this mismatch
-      const minimumBidAmountBigInt = ethers.parseEther(minimumBid);
+      // Let ThirdWeb handle the price conversion directly, just like in direct-listings
+      // No need for explicit conversion, which can cause issues with astronomical prices
 
-      // Prepare buyout amount - either use the provided value or a very high value
-      const buyoutBidAmountBigInt = buyoutPrice && buyoutPrice !== ""
-        ? ethers.parseEther(buyoutPrice)
-        : ethers.parseEther("1000000"); // Very high default value that effectively means "no buyout"
-
-      // Prepare a transaction with cast to string to satisfy typings
-      // Note: ThirdWeb internally will convert these back to bigint
+      // Prepare a transaction
       const transaction = createAuction({
         contract: marketplaceContract,
         assetContractAddress: assetContract as `0x${string}`,
         tokenId: BigInt(tokenId),
         quantity: 1n,
         currencyContractAddress: NATIVE_TOKEN_ADDRESS as `0x${string}`,
-        minimumBidAmount: minimumBidAmountBigInt.toString() as any, // Type cast to satisfy both systems
-        buyoutBidAmount: buyoutBidAmountBigInt.toString() as any, // Type cast to satisfy both systems
+        minimumBidAmount: minimumBid, // Direct pass-through without conversion
+        buyoutBidAmount: buyoutPrice || "1000000", // Direct pass-through with fallback
         timeBufferInSeconds: 300, // 5 minutes
         bidBufferBps: 500, // 5%
         startTimestamp: startDate,
         endTimestamp: endDate
       });
       
-      // Use executeDirectTransaction instead of sendAndConfirmTransaction
-      const receipt = await executeDirectTransaction(
-        transaction,
-        {
-          description: `Creating auction for NFT #${tokenId}`,
-          onSuccess: (result: any) => {
-            console.log("Auction created successfully:", result);
-            toast.success("Auction Created", `Your NFT #${tokenId} is now up for auction`);
-            
-            // Update UI state
-            setIsLoading(false);
-            setSuccess(true);
-            
-            // Navigate to marketplace page after delay
-            setTimeout(() => {
-              router.push("/features/marketplace");
-            }, 3000);
-          },
-          onError: (error: any) => {
-            console.error("Error in auction creation:", error);
-            setIsLoading(false);
-          }
-        }
-      );
-      
-      if (!receipt) {
-        // Transaction failed or was rejected
+      try {
+        // Use sendAndConfirmTransaction like the direct-listing page
+        const receipt = await sendAndConfirmTransaction({
+          transaction,
+          account,
+        });
+        
+        console.log("Auction created successfully:", receipt);
+        toast.success("Auction Created", `Your NFT #${tokenId} is now up for auction`);
+        
+        // Update UI state
         setIsLoading(false);
+        setSuccess(true);
+        
+        // Navigate to marketplace page after delay
+        setTimeout(() => {
+          router.push("/features/marketplace");
+        }, 3000);
+      } catch (error: any) {
+        // Extract error message
+        console.error("Error in auction creation:", error);
+        setIsLoading(false);
+        
+        let errorMessage = "Failed to create auction: ";
+        
+        if (error.code === "ACTION_REJECTED") {
+          errorMessage += "Transaction was rejected by the user";
+        } else if (error.message) {
+          errorMessage += error.message;
+        } else {
+          errorMessage += "Unknown error";
+        }
+        
+        toast.error("Auction Creation Failed", errorMessage);
+        setError(errorMessage);
       }
+      
     } catch (err: any) {
-      console.error("Error creating auction:", err);
-      
-      // Extract error message
-      let errorMessage = "Failed to create auction: ";
-      
-      if (err.code === "ACTION_REJECTED") {
-        errorMessage += "Transaction was rejected by the user";
-      } else if (err.message) {
-        errorMessage += err.message;
-      } else {
-        errorMessage += "Unknown error";
-      }
-      
-      toast.error("Auction Creation Failed", errorMessage);
-      setError(errorMessage);
+      console.error("Error preparing auction transaction:", err);
+      setError("Error preparing auction transaction: " + (err.message || "Unknown error"));
       setIsLoading(false);
     }
   };

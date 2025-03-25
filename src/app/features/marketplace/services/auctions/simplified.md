@@ -7,9 +7,9 @@
 
 import { isOwnerOf } from "@/app/features/nft/services/nft-services";
 import { WalletAccount } from "@/app/features/wallet/types";
-import { MARKETPLACE_ADDRESS, NATIVE_TOKEN_ADDRESS } from "@/constants/contracts";
+import { MARKETPLACE_ADDRESS } from "@/constants/contracts";
 import { ethers } from "ethers";
-import { getContract, sendAndConfirmTransaction } from "thirdweb";
+import { getContract } from "thirdweb";
 import {
   isApprovedForAll as isApprovedForAll1155,
   setApprovalForAll as setApprovalForAll1155,
@@ -29,6 +29,9 @@ import {
 } from "thirdweb/extensions/marketplace";
 import { client, MarketplaceTransactionResult, metisChain } from "../types";
 import { executeThirdwebTransaction } from "../utils";
+
+// Constants
+const NATIVE_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 /**
  * Check if a bid would be a new winning bid
@@ -198,11 +201,10 @@ export async function createAuctionSimplified(
 
 /**
  * Simplified implementation of placing a bid
- * Now accepts either a WalletAccount or a ThirdWeb Account
  */
 export async function placeBidSimplified(
   params: { auctionId: string, bidAmount: string },
-  account: any // Accept any account type with proper properties
+  account: WalletAccount
 ): Promise<MarketplaceTransactionResult> {
   if (!account || !account.address) {
     throw new Error("Valid wallet account is required");
@@ -217,92 +219,65 @@ export async function placeBidSimplified(
       address: marketplaceAddress,
     });
     
-    // Get the auction to verify it exists
-    const auction = await getAuction({
-      contract: marketplaceContract,
-      auctionId: BigInt(params.auctionId),
-    });
-    
-    if (!auction) {
-      throw new Error(`No auction found with ID ${params.auctionId}`);
-    }
-    
-    console.log(`Processing bid of ${params.bidAmount} METIS on auction ${params.auctionId}`);
-    
-    // Clean up the bid amount, ensure it's a proper string number
-    let bidAmount = params.bidAmount.trim();
-    
-    // Check if the auction has a buyout price
-    if (auction.buyoutBidAmount) {
-      const buyoutPriceInEther = ethers.formatEther(auction.buyoutBidAmount.toString());
-      const bidAmountFloat = parseFloat(bidAmount);
-      const buyoutAmountFloat = parseFloat(buyoutPriceInEther);
+    // Try to get the auction directly first
+    try {
+      const auction = await getAuction({
+        contract: marketplaceContract,
+        auctionId: BigInt(params.auctionId),
+      });
       
-      console.log(`Comparing bid amount ${bidAmountFloat} with buyout amount ${buyoutAmountFloat}`);
+      if (!auction) {
+        throw new Error(`No auction found with ID ${params.auctionId}`);
+      }
       
-      // Check if bid is too close to buyout
-      if (bidAmountFloat >= buyoutAmountFloat * 0.98) {
-        // If the bid is within 2% of the buyout, adjust it down to 90% of buyout
-        const safeAmount = (buyoutAmountFloat * 0.9).toFixed(6);
-        console.log(`Bid is too close to buyout price. Adjusting from ${bidAmount} to ${safeAmount} METIS`);
-        bidAmount = safeAmount;
+      console.log(`Processing bid of ${params.bidAmount} METIS on auction ${params.auctionId}`);
+      
+      // Check if the auction has a buyout price and if the bid exceeds it
+      if (auction.buyoutBidAmount) {
+        const buyoutPriceInEther = ethers.formatEther(auction.buyoutBidAmount.toString());
+        const bidAmount = parseFloat(params.bidAmount);
+        const buyoutAmount = parseFloat(buyoutPriceInEther);
+        
+        console.log(`Comparing bid amount ${bidAmount} with buyout amount ${buyoutAmount}`);
+        
+        // Use a small threshold (0.0000001) to handle potential floating point precision issues
+        if (bidAmount + 0.0000001 >= buyoutAmount) {
+          throw new Error("Bid amount is above or equal to the buyout amount");
+        }
       }
-    }
-    
-    // Check if this would be a winning bid first
-    const bidAmountInWei = ethers.parseUnits(bidAmount, "ether");
-    const isWinningBid = await isNewWinningBid({
-      contract: marketplaceContract,
-      auctionId: BigInt(params.auctionId),
-      bidAmount: bidAmountInWei
-    });
-    
-    if (!isWinningBid) {
-      throw new Error("Bid amount is too low to become the new winning bid");
-    }
-    
-    console.log(`Placing bid with amount: ${bidAmount} METIS`);
-    
-    // Create bid transaction - IMPORTANT FIX: Pass just the string amount, not the wei value
-    // Let ThirdWeb handle the conversion internally as it expects
-    const transaction = bidInAuction({
-      contract: marketplaceContract,
-      auctionId: BigInt(params.auctionId),
-      bidAmount: bidAmount // Pass the human-readable string amount, not wei
-    });
-    
-    // Check if we have a ThirdWeb Account (with sendTransaction method)
-    if (account.sendTransaction && typeof account.sendTransaction === 'function') {
-      // The account already has ThirdWeb methods, use it directly with sendAndConfirmTransaction
-      try {
-        console.log("Using native ThirdWeb account for transaction");
-        
-        const receipt = await sendAndConfirmTransaction({
-          transaction,
-          account: account,
-        });
-        
-        console.log("Bid placed successfully:", receipt.transactionHash);
-        
-        return {
-          transactionHash: receipt.transactionHash,
-          success: true,
-          receipt
-        };
-      } catch (directError: any) {
-        console.error("Error using direct ThirdWeb account:", directError);
-        throw directError;
+      
+      // Convert the bid amount to wei format first
+      const bidAmountInWei = ethers.parseUnits(params.bidAmount, "ether");
+      
+      // Check if this bid would be valid
+      const isWinningBid = await isNewWinningBid({
+        contract: marketplaceContract,
+        auctionId: BigInt(params.auctionId),
+        bidAmount: bidAmountInWei.toString() as any // Convert BigInt to string with 'as any' for type compatibility
+      });
+      
+      if (!isWinningBid) {
+        throw new Error("Bid amount is too low to become the new winning bid");
       }
-    } else {
-      // Use our adapter to convert WalletAccount to ThirdWeb Account
-      console.log("Using wallet account adapter for transaction");
+      
+      // Create bid transaction
+      const transaction = bidInAuction({
+        contract: marketplaceContract,
+        auctionId: BigInt(params.auctionId),
+        bidAmount: bidAmountInWei.toString() as any // Convert BigInt to string with 'as any' for type compatibility
+      });
+      
+      // Send and confirm transaction using our adapter
       const result = await executeThirdwebTransaction(transaction, account);
       
       console.log("Bid placed successfully:", result.transactionHash);
       return result;
+    } catch (auctionError: any) {
+      console.error("Failed to get auction directly:", auctionError);
+      throw new Error(`Error finding auction: ${auctionError.message}`);
     }
   } catch (error: any) {
-    console.error("Error placing bid on auction:", error);
+    console.error("Error placing bid:", error);
     return {
       transactionHash: error.transactionHash || "",
       success: false,
@@ -313,11 +288,10 @@ export async function placeBidSimplified(
 
 /**
  * Simplified implementation of buying out an auction
- * Now accepts either a WalletAccount or a ThirdWeb Account
  */
 export async function buyoutAuctionSimplified(
   params: { auctionId: string },
-  account: any // Accept any account type with proper properties
+  account: WalletAccount
 ): Promise<MarketplaceTransactionResult> {
   if (!account || !account.address) {
     throw new Error("Valid wallet account is required");
@@ -347,46 +321,17 @@ export async function buyoutAuctionSimplified(
       throw new Error("This auction does not have a buyout price");
     }
     
-    console.log(`Processing buyout for auction ${params.auctionId}`);
-    
-    // Create buyout transaction - use the direct function call
-    // Just pass the basic parameters and avoid any unnecessary processing
+    // Create buyout transaction
     const transaction = buyoutAuctionThirdweb({
       contract: marketplaceContract,
       auctionId: BigInt(params.auctionId)
     });
     
-    // Check if we have a ThirdWeb Account (with sendTransaction method)
-    if (account.sendTransaction && typeof account.sendTransaction === 'function') {
-      // The account already has ThirdWeb methods, use it directly with sendAndConfirmTransaction
-      try {
-        console.log("Using native ThirdWeb account for transaction");
-        
-        const receipt = await sendAndConfirmTransaction({
-          transaction,
-          account: account,
-        });
-        
-        console.log("Auction bought out successfully:", receipt.transactionHash);
-        
-        return {
-          transactionHash: receipt.transactionHash,
-          success: true,
-          receipt
-        };
-      } catch (directError: any) {
-        console.error("Error using direct ThirdWeb account:", directError);
-        throw directError;
-      }
-    } else {
-      // Use our adapter to convert WalletAccount to ThirdWeb Account
-      console.log("Using wallet account adapter for transaction");
-      // Send and confirm transaction using our adapter
-      const result = await executeThirdwebTransaction(transaction, account);
-      
-      console.log("Auction bought out successfully:", result.transactionHash);
-      return result;
-    }
+    // Send and confirm transaction using our adapter
+    const result = await executeThirdwebTransaction(transaction, account);
+    
+    console.log("Auction bought out successfully:", result.transactionHash);
+    return result;
   } catch (error: any) {
     console.error("Error buying out auction:", error);
     return {

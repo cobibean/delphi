@@ -79,12 +79,11 @@ export function useMarketplaceWallet() {
       );
       
       // Execute the marketplace transaction
-      // Now we can pass thirdwebAccount directly because executeMarketplaceTransaction
-      // has been updated to accept any account type with an address
+      // This uses the underlying prepareTransactions.ts logic which handles business logic
       const result = await executeMarketplaceTransaction(
         functionName,
         params,
-        thirdwebAccount // Use the ThirdWeb account directly
+        walletAccount // We pass our minimal account here - actual transaction will use ThirdWeb account
       );
       
       // Check if the transaction was successful

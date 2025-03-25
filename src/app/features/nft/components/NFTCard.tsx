@@ -352,7 +352,7 @@ export function NFTCard({ listing, className = "" }: NFTCardProps) {
   
   return (
     <Link
-      href={`/nft/${listing.listingId}`}
+      href={`/nft/${isAuction ? 'auction-' : 'direct-'}${listing.listingId}`}
       className={`block relative ${className}`}
     >
       <motion.div

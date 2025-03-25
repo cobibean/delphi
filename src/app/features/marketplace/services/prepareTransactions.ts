@@ -58,13 +58,20 @@ export async function prepareMarketplaceTransaction(
  * Execute a marketplace transaction and return the result
  * This is an alternative to preparing the transaction, useful for complex operations
  * that might require multiple steps or have special handling
+ * 
+ * Now accepts either a WalletAccount or ThirdWeb Account object for flexibility
  */
 export async function executeMarketplaceTransaction(
   functionName: string,
   params: any,
-  account: WalletAccount,
+  account: any, // Accept any account type (WalletAccount or ThirdWeb Account)
   metadata?: Partial<TransactionState>
 ): Promise<any> {
+  // Ensure we have a valid account with an address
+  if (!account || !account.address) {
+    throw new Error("Valid account with address is required");
+  }
+  
   // Directly call the implementation functions instead of preparing transactions
   switch (functionName) {
     case 'buyWithMetis':

@@ -88,13 +88,17 @@ export async function createAuction(
     // Use the native token (METIS) as the default currency
     const currencyContractAddress = currencyAddress || ethers.ZeroAddress;
     
+    // Convert price values to wei format
+    const minimumBidAmountWei = ethers.parseUnits(minimumBidAmount, "ether");
+    const buyoutAmountWei = buyoutAmount ? ethers.parseUnits(buyoutAmount, "ether") : undefined;
+    
     // Create the auction using ThirdWeb's createAuction function
     const transaction = createAuctionThirdweb({
       contract: marketplaceContract,
       assetContractAddress: tokenContract as `0x${string}`,
       tokenId: BigInt(tokenId),
-      minimumBidAmount: minimumBidAmount.toString() as any, // Type cast to satisfy ThirdWeb
-      buyoutBidAmount: buyoutAmount ? buyoutAmount.toString() as any : undefined, // Optional buyout price
+      minimumBidAmount: minimumBidAmountWei.toString() as any, // Convert to string with type cast
+      buyoutBidAmount: buyoutAmountWei ? buyoutAmountWei.toString() as any : undefined,
       currencyContractAddress: currencyContractAddress as `0x${string}`,
       quantity: BigInt(quantity),
       startTimestamp: new Date(auctionStartTime * 1000),

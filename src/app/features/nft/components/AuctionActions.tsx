@@ -182,6 +182,16 @@ export default function AuctionActions({
         return;
       }
       
+      // Check if bid exceeds buyout price
+      if (buyoutPrice && parseFloat(buyoutPrice) > 0) {
+        const buyoutPriceFloat = parseFloat(buyoutPrice);
+        // Add a small buffer (0.5%) to avoid edge cases where validations might fail
+        if (bidAmountFloat > buyoutPriceFloat * 0.995) {
+          toast.error(`Your bid is too close to the buyout price. Please use the buyout option instead, or lower your bid to at most ${(buyoutPriceFloat * 0.99).toFixed(4)} METIS.`);
+          return;
+        }
+      }
+      
       // Start loading state
       setIsBidding(true);
       

@@ -441,6 +441,12 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
         return;
       }
       
+      // Check if bid exceeds buyout price
+      if (buyoutPrice && parseFloat(buyoutPrice) > 0 && bidAmountFloat >= parseFloat(buyoutPrice)) {
+        toast.error(`Bid amount cannot be equal to or higher than the buyout price (${displayBuyoutPrice} METIS). Use the buyout option instead.`);
+        return;
+      }
+      
       // Start loading state
       setIsBidding(true);
       
@@ -456,15 +462,12 @@ export default function NFTDetailView({ listing, relatedListings = [] }: NFTDeta
         bidAmount 
       }, "place_bid");
       
-      // Convert bid amount to wei format for the contract
-      const bidAmountInWei = ethers.parseEther(bidAmount).toString();
-      
       // Execute the bid using the standardized marketplace function
       const result = await executeMarketplaceFunction(
         "placeBid", 
         { 
           auctionId: listingId, 
-          bidAmount: bidAmountInWei 
+          bidAmount: bidAmount // Pass the amount directly, let the services handle conversion
         },
         {
           description: `Placing bid of ${bidAmount} METIS on NFT #${tokenId}`,

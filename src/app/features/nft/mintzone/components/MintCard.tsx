@@ -1,15 +1,16 @@
 "use client";
 
-import { Button } from "@/app/components/ui/Button";
-import { client } from "@/app/config/client";
+import { client, client as thirdwebClient, wallets } from "@/app/config/client";
 import { useState } from "react";
 import type { ThirdwebContract } from "thirdweb";
 import {
-    ClaimButton,
-    MediaRenderer,
-    NFTMedia,
-    NFTProvider,
-    useActiveAccount,
+  ClaimButton,
+  ConnectButton,
+  darkTheme,
+  MediaRenderer,
+  NFTMedia,
+  NFTProvider,
+  useActiveAccount
 } from "thirdweb/react";
 import { QuantitySelector } from "./QuantitySelector";
 
@@ -210,13 +211,20 @@ export function MintCard({
             Mint {quantity} NFT{quantity > 1 ? "s" : ""}
           </ClaimButton>
         ) : (
-          <Button
-            className="w-full"
-            variant="primary"
-            onClick={() => console.log("Connect wallet prompt")}
-          >
-            Connect Wallet to Mint
-          </Button>
+          <div className="w-full">
+            <ConnectButton
+              client={thirdwebClient}
+              wallets={wallets}
+              theme={darkTheme({
+                colors: { accentText: "hsl(31, 88%, 44%)" },
+              })}
+              connectButton={{ label: "Connect Wallet to Mint" }}
+              connectModal={{
+                size: "compact",
+                showThirdwebBranding: false,
+              }}
+            />
+          </div>
         )}
       </div>
     </div>

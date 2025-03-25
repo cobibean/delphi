@@ -5,11 +5,10 @@
  */
 
 import { WalletAccount } from "@/app/features/wallet/types";
-import { toThirdwebAccount } from "@/app/features/wallet/utils";
 import { ethers } from "ethers";
-import { sendTransaction, waitForReceipt } from "thirdweb";
-import { bidInAuction as bidInAuctionThirdweb, isNewWinningBid } from "thirdweb/extensions/marketplace";
-import { client, MarketplaceTransactionResult, metisChain } from "../types";
+import { bidInAuction as bidInAuctionThirdweb, getAuction, isNewWinningBid } from "thirdweb/extensions/marketplace";
+import { MarketplaceTransactionResult } from "../types";
+import { executeThirdwebTransaction } from "../utils";
 import { getMarketplaceContract } from "./helpers";
 
 /**
@@ -23,36 +22,25 @@ export async function checkIfNewWinningBid(
   bidAmount: string
 ): Promise<boolean> {
   try {
-    // Get the marketplace contract
+    console.log(`Checking if bid amount ${bidAmount} would be winning for auction ${auctionId}`);
+    
+    // Get marketplace contract
     const marketplaceContract = getMarketplaceContract();
     
-    // Convert bid amount to wei as BigInt
-    const bidAmountWei = ethers.parseEther(bidAmount);
-    
-    // Log the check details
-    console.log("Checking if winning bid:", {
-      auctionId,
-      bidAmount,
-      bidAmountWei: bidAmountWei.toString()
-    });
+    // Convert the bid amount to wei format first
+    const bidAmountInWei = ethers.parseUnits(bidAmount, "ether");
     
     // Check if this would be a winning bid
     const result = await isNewWinningBid({
       contract: marketplaceContract,
       auctionId: BigInt(auctionId),
-      bidAmount: bidAmountWei // Must be BigInt for isNewWinningBid
+      bidAmount: bidAmountInWei.toString() as any // Convert to string with type cast
     });
     
-    console.log("Bid would be winning bid:", result);
-    
     return result;
-  } catch (error) {
-    console.error("Error checking if new winning bid:", error);
-    if (error instanceof Error) {
-      console.error("Error details:", error.message, error.stack);
-    }
-    // Return false in case of error to be safe
-    return false;
+  } catch (error: any) {
+    console.error("Error checking if bid would be winning:", error);
+    throw new Error(`Failed to check bid status: ${error.message}`);
   }
 }
 
@@ -67,90 +55,97 @@ export async function checkIfNewWinningBid(
  * @returns Transaction result with hash, success status, and receipt
  */
 export async function placeBid(
-  params: { auctionId: string; bidAmount: string },
+  { auctionId, bidAmount }: { 
+    auctionId: string; 
+    bidAmount: string;
+  },
   account: WalletAccount
 ): Promise<MarketplaceTransactionResult> {
   try {
-    const { auctionId, bidAmount } = params;
+    console.log(`Placing bid on auction ${auctionId} with amount: ${bidAmount}`);
     
-    // Validate required parameters
-    if (!account.address) {
-      throw new Error("Wallet address not found");
+    if (!account || !account.address) {
+      throw new Error("Valid wallet account is required");
     }
-    
-    if (!auctionId) {
-      throw new Error("Auction ID is required");
-    }
-    
-    if (!bidAmount) {
-      throw new Error("Bid amount is required");
-    }
-    
-    // Determine if bidAmount is already in wei format
-    const isWeiFormat = bidAmount.length > 18 || bidAmount.startsWith('0x');
-    
-    // Convert to ETH format for logging and checking
-    const bidAmountInEth = isWeiFormat ? ethers.formatEther(bidAmount) : bidAmount;
-    
-    console.log(`Placing bid for auction ${auctionId} with amount ${bidAmountInEth} METIS`);
-    
-    // Check if this bid would be a winning bid - use ETH format for the check
-    const wouldBeWinningBid = await checkIfNewWinningBid(auctionId, bidAmountInEth);
-    
-    if (!wouldBeWinningBid) {
-      return {
-        transactionHash: "",
-        success: false,
-        error: "Bid amount is not high enough to become the winning bid"
-      };
-    }
-    
-    // Get the marketplace contract
+
+    // Get marketplace contract
     const marketplaceContract = getMarketplaceContract();
-    
-    // Log bid details
-    console.log("Bidding with amount:", bidAmountInEth, "METIS");
-    console.log("Auction ID:", auctionId);
-    
-    // Ensure bidAmount is in wei format for the contract call
-    const bidAmountInWei = isWeiFormat 
-      ? BigInt(bidAmount) 
-      : ethers.parseEther(bidAmount);
-    
-    // Create the transaction
-    const transaction = bidInAuctionThirdweb({
-      contract: marketplaceContract,
-      auctionId: BigInt(auctionId),
-      bidAmount: bidAmountInWei.toString() as any // Type cast to satisfy both systems
-    });
-    
-    console.log("Transaction created:", transaction);
-    
-    // Send the transaction
-    const tx = await sendTransaction({
-      transaction,
-      account: toThirdwebAccount(account)
-    });
-    
-    console.log("Bid transaction sent:", tx.transactionHash);
-    
-    // Wait for the transaction to be confirmed
-    const receipt = await waitForReceipt({
-      client,
-      chain: metisChain,
-      transactionHash: tx.transactionHash,
-    });
-    
-    console.log("Bid transaction confirmed:", receipt);
-    
-    return {
-      transactionHash: tx.transactionHash,
-      success: true,
-      receipt
-    };
-    
+
+    try {
+      // Get auction to verify it exists
+      const auction = await getAuction({
+        contract: marketplaceContract,
+        auctionId: BigInt(auctionId),
+      });
+      
+      if (!auction) {
+        throw new Error(`No auction found with ID ${auctionId}`);
+      }
+      
+      // Check if the auction has a buyout price and if the bid exceeds it
+      if (auction.buyoutBidAmount) {
+        const buyoutPriceInEther = ethers.formatEther(auction.buyoutBidAmount.toString());
+        const bidAmountValue = parseFloat(bidAmount);
+        const buyoutAmount = parseFloat(buyoutPriceInEther);
+        
+        console.log(`Comparing bid amount ${bidAmountValue} with buyout amount ${buyoutAmount}`);
+        
+        // Use a small threshold (0.0000001) to handle potential floating point precision issues
+        // Also make the error message match exactly what the ThirdWeb SDK returns
+        if (bidAmountValue + 0.0000001 >= buyoutAmount) {
+          throw new Error("Bid amount is above the buyout amount");
+        }
+      }
+
+      // Convert the bid amount to wei format
+      let bidAmountInWei = ethers.parseUnits(bidAmount, "ether");
+
+      // Check if this would be a winning bid
+      const isWinningBid = await isNewWinningBid({
+        contract: marketplaceContract,
+        auctionId: BigInt(auctionId),
+        bidAmount: bidAmountInWei.toString() as any // Convert to string with type cast
+      });
+      
+      if (!isWinningBid) {
+        throw new Error("Bid amount is too low to become the new winning bid");
+      }
+
+      // Get buyout amount to ensure our bid doesn't exceed it
+      // The ThirdWeb SDK has an internal validation that the bid can't exceed buyout
+      // But its BigInt comparison can sometimes fail due to rounding, so we handle it manually
+      if (auction.buyoutBidAmount) {
+        const buyoutPrice = auction.buyoutBidAmount;
+        const buyoutPriceNum = parseFloat(ethers.formatEther(buyoutPrice.toString()));
+        const bidAmountNum = parseFloat(bidAmount);
+          
+        // Subtract a tiny amount from the buyout price to ensure we don't hit the ThirdWeb validation
+        if (bidAmountNum >= buyoutPriceNum - 0.000001) {
+          const adjustedBidAmount = (buyoutPriceNum - 0.001).toFixed(6);
+          console.log(`Adjusting bid from ${bidAmount} to ${adjustedBidAmount} to avoid buyout limit`);
+          bidAmount = adjustedBidAmount;
+          // Recalculate the wei amount
+          bidAmountInWei = ethers.parseUnits(bidAmount, "ether");
+        }
+      }
+
+      // Create the transaction
+      const transaction = bidInAuctionThirdweb({
+        contract: marketplaceContract,
+        auctionId: BigInt(auctionId),
+        bidAmount: bidAmountInWei.toString() as any // Convert to string with type cast
+      });
+      
+      // Send and confirm transaction
+      const txResult = await executeThirdwebTransaction(transaction, account);
+      console.log("Bid placed successfully:", txResult.transactionHash);
+      return txResult;
+    } catch (auctionError: any) {
+      console.error("Error placing bid on auction:", auctionError);
+      throw new Error(`Error placing bid: ${auctionError.message}`);
+    }
   } catch (error: any) {
-    console.error("Error placing bid:", error);
+    console.error("Error in placeBid:", error);
     return {
       transactionHash: error.transactionHash || "",
       success: false,

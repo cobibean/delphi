@@ -40,3 +40,5 @@ next-env.d.ts
 /Users/cobibean/DEV/delphi/tests
 /Users/cobibean/DEV/delphi/docs/internal
 /Internal-Deploy
+
+vercel.json
