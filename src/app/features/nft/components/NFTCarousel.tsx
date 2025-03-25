@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import { useToast } from '@/components/feedback/Toast/useToast';
+import { metisChain } from "@/config/chain";
+import { client } from "@/config/client";
 import { motion } from "framer-motion";
-import { useActiveAccount } from "thirdweb/react";
+import React, { useEffect, useState } from 'react';
 import { getContract } from "thirdweb/contract";
 import { getOwnedNFTs } from "thirdweb/extensions/erc721";
-import { getNFT } from "thirdweb/extensions/erc1155";
-import { client } from "@/config/client";
-import { metisChain } from "@/config/chain";
-import { useToast } from '@/components/feedback/Toast/useToast';
+import { useActiveAccount } from "thirdweb/react";
 
 interface NFTCarouselProps {
   onSelectNFT: (contractAddress: string, tokenId: string, name: string, image: string) => void;
@@ -96,13 +95,17 @@ export function NFTCarousel({ onSelectNFT, contractAddress }: NFTCarouselProps) 
           setCollections([contractAddress]);
           setSelectedCollection(contractAddress);
         } else {
-          // For demo purposes, we'll simulate fetching from multiple collections
-          // In a real app, you would need to know which contracts to query
-          const demoCollections = Object.keys(collectionNames);
+          // Instead, use actual collection addresses:
+          // If contractAddress is provided, use only that one
+          const collections = contractAddress ? [contractAddress] : [
+            // Add your actual collection contract addresses here
+            "0x8938fc030Df8780A479f393982890980A192c63f", // Your mint contract
+            // Add other legitimate collection contracts
+          ];
           
           let allNFTs: NFT[] = [];
           
-          for (const collectionAddress of demoCollections) {
+          for (const collectionAddress of collections) {
             try {
               const contract = getContract({
                 client,
@@ -132,7 +135,7 @@ export function NFTCarousel({ onSelectNFT, contractAddress }: NFTCarouselProps) 
           }
           
           setNfts(allNFTs);
-          setCollections(demoCollections);
+          setCollections(collections);
         }
       } catch (err) {
         console.error("Error fetching NFTs:", err);
@@ -190,8 +193,39 @@ export function NFTCarousel({ onSelectNFT, contractAddress }: NFTCarouselProps) 
   };
 
   // Update error handling in image loading
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, nft: NFT) => {
+    console.error("Error loading NFT image:", nft.metadata.image);
+    
     const target = e.target as HTMLImageElement;
+    const currentUrl = target.src;
+    
+    // Try alternative IPFS gateways
+    if (nft.metadata.image && nft.metadata.image.includes('ipfs')) {
+      let cid = '';
+      
+      // Extract CID from IPFS URL
+      if (nft.metadata.image.startsWith('ipfs://')) {
+        cid = nft.metadata.image.substring(7);
+      } else if (currentUrl.includes('/ipfs/')) {
+        cid = currentUrl.split('/ipfs/')[1].split('/')[0];
+      }
+      
+      if (cid) {
+        // If current URL uses ipfs.io, try cloudflare
+        if (currentUrl.includes('ipfs.io')) {
+          target.src = `https://cloudflare-ipfs.com/ipfs/${cid}`;
+          return;
+        }
+        
+        // If current URL uses cloudflare, try pinata
+        if (currentUrl.includes('cloudflare-ipfs.com')) {
+          target.src = `https://gateway.pinata.cloud/ipfs/${cid}`;
+          return;
+        }
+      }
+    }
+    
+    // If all else fails, use placeholder
     toast.warning("Failed to load NFT image, using placeholder");
     target.src = "https://via.placeholder.com/200?text=No+Image";
   };
@@ -303,7 +337,8 @@ export function NFTCarousel({ onSelectNFT, contractAddress }: NFTCarouselProps) 
                     src={formatIPFSUrl(nft.metadata.image)}
                     alt={nft.metadata.name || `NFT #${nft.id.toString()}`}
                     className="w-full h-full object-cover"
-                    onError={handleImageError}
+                    onError={(e) => handleImageError(e, nft)}
+                    onLoad={() => console.log("NFT image loaded successfully:", nft.metadata.image)}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-sinister-black/30">

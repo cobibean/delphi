@@ -1,12 +1,12 @@
 "use client";
 
-import React from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
-import { type ToastProps, toastStyles, toastAnimations } from "./types";
+import React from "react";
+import { toastAnimations, type ToastProps, toastStyles } from "./types";
 
 const Toast: React.FC<ToastProps> = ({ 
-  id, 
+  id: _id, 
   title, 
   description, 
   variant = "info", 

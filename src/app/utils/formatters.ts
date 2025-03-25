@@ -7,7 +7,7 @@ const shortenAddress = (address: string): string => {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 };
 
-const formatCurrency = (price: number, currency: string = "METIS"): string => {
+const formatCurrency = (price: number, currency = "METIS"): string => {
   return `${price.toFixed(2)} ${currency}`;
 };
 

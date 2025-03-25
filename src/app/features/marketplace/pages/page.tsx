@@ -2,6 +2,8 @@
 
 "use client";
 
+import FeaturedCard from "@/app/features/marketplace/components/FeaturedSection/FeaturedCard";
+import { FEATURED_COLLECTION_ADDRESSES, filterFeaturedListings } from "@/app/utils/featuredHelpers";
 import LoadingIndicator from "@/components/feedback/LoadingIndicator";
 import { NFTMarketplaceDashboard } from "@/features/marketplace/components";
 import { getAllListings } from "@/features/marketplace/services";
@@ -21,6 +23,14 @@ interface MarketStats {
   averagePrice: string;
 }
 
+// Add this constant at the top of your file (outside the component)
+const PLACEHOLDER_IMAGE = `data:image/svg+xml;base64,${btoa(
+  '<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#1a1a1a"/><text x="50%" y="50%" font-family="sans-serif" font-size="24" text-anchor="middle" fill="#666">Image Unavailable</text></svg>'
+)}`;
+
+// Add this constant near the top of your file
+const MAX_CAROUSEL_ITEMS = 5; // Increased from 3 to 5
+
 export default function Page() {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [listings, setListings] = useState<IListingWithNFT[]>([]);
@@ -34,6 +44,8 @@ export default function Page() {
       try {
         setIsLoading(true);
         console.log("Fetching real marketplace listings...");
+        
+        // Fetch all listings for the main marketplace
         const fetchedListings = await getAllListings();
         console.log(`Fetched ${fetchedListings?.length || 0} listings from marketplace contract`);
         
@@ -46,10 +58,67 @@ export default function Page() {
           return;
         }
         
+        // Set all listings for the main marketplace section
         setListings(fetchedListings);
         
-        // Select the first 3 listings as featured (or all if less than 3)
-        setFeaturedListings(fetchedListings.slice(0, Math.min(3, fetchedListings.length)));
+        // Get featured listings using the helper function
+        console.log("Filtering for featured collections:", FEATURED_COLLECTION_ADDRESSES);
+        const featured = filterFeaturedListings(fetchedListings);
+
+        // Add these detailed logs
+        console.log("All available contract addresses in listings:", 
+          [...new Set(fetchedListings.map(item => item.assetContract))]);
+        console.log("Featured listings by collection:", 
+          featured.reduce((acc, item) => {
+            acc[item.assetContract] = (acc[item.assetContract] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>));
+
+        console.log(`Found ${featured.length} listings from featured collections`);
+        
+        if (featured.length > 0) {
+          // Group listings by collection address
+          const listingsByCollection = featured.reduce((groups, item) => {
+            const contract = item.assetContract;
+            if (!groups[contract]) groups[contract] = [];
+            groups[contract].push(item);
+            return groups;
+          }, {} as Record<string, IListingWithNFT[]>);
+          
+          // Take one from each collection first, then fill remaining slots
+          let selectedFeatured: IListingWithNFT[] = [];
+          
+          // First pass: Take one from each collection
+          Object.values(listingsByCollection).forEach(listings => {
+            if (selectedFeatured.length < MAX_CAROUSEL_ITEMS && listings.length > 0) {
+              selectedFeatured.push(listings[0]);
+            }
+          });
+          
+          // Second pass: Fill remaining slots with additional items
+          let remainingSlots = MAX_CAROUSEL_ITEMS - selectedFeatured.length;
+          if (remainingSlots > 0) {
+            let additionalItems: IListingWithNFT[] = [];
+            Object.values(listingsByCollection).forEach(listings => {
+              if (listings.length > 1) {
+                additionalItems = [...additionalItems, ...listings.slice(1)];
+              }
+            });
+            
+            // Add additional items up to the remaining slot count
+            selectedFeatured = [
+              ...selectedFeatured, 
+              ...additionalItems.slice(0, remainingSlots)
+            ];
+          }
+          
+          setFeaturedListings(selectedFeatured);
+          console.log("Featured listings set for carousel:", selectedFeatured);
+        } else {
+          // If no featured listings found, fall back to using regular listings
+          console.log("No featured collection listings found, using regular listings as fallback");
+          setFeaturedListings(fetchedListings.slice(0, Math.min(MAX_CAROUSEL_ITEMS, fetchedListings.length)));
+        }
         
         setIsLoading(false);
         setError(null); // Clear any previous errors
@@ -110,7 +179,15 @@ export default function Page() {
     }, 5000);
     
     return () => clearInterval(interval);
-  }, [featuredListings.length]);
+  }, [nextSlide]);
+
+  // Add a handler for the "Acquire this NFT" action
+  const handleAcquireNFT = async (listing: IListingWithNFT) => {
+    // For now, just navigate to the detail page
+    window.location.href = `/nft/${listing.listingId}`;
+    
+    // In the future, you could implement direct purchase functionality here
+  };
 
   return (
     <main className="bg-oracle-black min-h-screen">
@@ -149,58 +226,28 @@ export default function Page() {
                 <div className="w-full lg:w-2/3">
                   {featuredListings.length > 0 && (
                     <>
-                      <h2 className="font-heading text-3xl md:text-4xl text-oracle-orange mb-8 text-center uppercase tracking-wide">
-                        Featured Creations
-                      </h2>
-                      
-                      <div className="relative max-w-full mx-auto">
-                        {/* Carousel slider */}
-                        <div className="overflow-hidden rounded-xl">
-                          <div className="flex transition-transform duration-500 ease-in-out" 
+                      <div className="relative max-w-full mx-auto h-full flex flex-col">
+                        <h2 className="font-heading text-3xl md:text-4xl text-oracle-orange mt-4 mb-6 text-center uppercase tracking-wide">
+                          Featured Creations
+                        </h2>
+                        
+                        <div className="overflow-hidden rounded-xl flex-grow flex flex-col">
+                          <div className="flex transition-transform duration-500 ease-in-out flex-grow" 
                             style={{ transform: `translateX(-${carouselIndex * 100}%)` }}>
                             {featuredListings.map((item) => (
-                              <div key={item.listingId} className="w-full flex-shrink-0 px-4">
-                                <div className="bg-ancient-wisdom rounded-xl overflow-hidden shadow-card-normal border border-oracle-orange/20 hover-lift">
-                                  <div className="aspect-[1.5/1] relative overflow-hidden">
-                                    <img 
-                                      src={item.metadata?.image || "/images/placeholder.jpg"} 
-                                      alt={item.metadata?.name || `NFT #${item.tokenId}`} 
-                                      className="w-full h-full object-cover" 
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-oracle-black/80 to-transparent"></div>
-                                    <div className="absolute bottom-0 left-0 w-full p-6">
-                                      <h3 className="font-heading text-3xl text-oracle-white mb-2">
-                                        {item.metadata?.name || `NFT #${item.tokenId}`}
-                                      </h3>
-                                      <div className="flex justify-between items-end">
-                                        <div className="flex items-center">
-                                          <span className="text-oracle-white/70 text-sm">
-                                            {item.collectionName || "Metis Collection"}
-                                          </span>
-                                        </div>
-                                        <span className="text-oracle-orange text-2xl font-bold">
-                                          {item.pricePerToken} METIS
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="p-6 flex justify-between items-center">
-                                    <Link href={`/nft/${item.listingId}`} className="btn-primary py-2 px-6">
-                                      <span className="relative z-10">View Details</span>
-                                    </Link>
-                                    <button className="btn-icon">
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                      </svg>
-                                    </button>
-                                  </div>
+                              <div key={item.listingId} className="w-full flex-shrink-0 px-4 flex items-end">
+                                <div className="bg-ancient-wisdom rounded-xl overflow-hidden shadow-card-normal border border-oracle-orange/20 w-full">
+                                  <FeaturedCard 
+                                    listing={item}
+                                    className="featured-carousel-card"
+                                    onAcquire={handleAcquireNFT}
+                                  />
                                 </div>
                               </div>
                             ))}
                           </div>
                         </div>
                         
-                        {/* Carousel controls - only show if more than one listing */}
                         {featuredListings.length > 1 && (
                           <>
                             <button 
@@ -222,7 +269,6 @@ export default function Page() {
                           </>
                         )}
                         
-                        {/* Carousel indicators */}
                         {featuredListings.length > 1 && (
                           <div className="flex justify-center mt-4">
                             {featuredListings.map((_, index) => (
@@ -241,8 +287,8 @@ export default function Page() {
                 
                 {/* Right Column: HomepageMintCard (30-35%) */}
                 <div className="w-full lg:w-1/3 mt-8 lg:mt-0">
-                  <h2 className="font-heading text-2xl md:text-3xl text-oracle-orange mb-4 text-center uppercase tracking-wide">
-                    Mint Your "Delphi Pioneer" Now
+                  <h2 className="font-heading text-2xl md:text-3xl text-oracle-orange mb-8 text-center uppercase tracking-wide">
+                    Mint Your &quot;Delphi Pioneer&quot; Now
                   </h2>
                   <div className="bg-gradient-to-br from-oracle-orange/50 via-oracle-orange/40 to-oracle-black shadow-lg shadow-oracle-turquoise/30 rounded-xl p-4 overflow-hidden border border-oracle-orange/20">
                     <HomepageMintCard 
@@ -356,7 +402,7 @@ export default function Page() {
               </div>
               <div className="mb-6">
                 <p className="text-oracle-white mb-4">
-                  We're working on bringing you amazing {activeModal.toLowerCase()} features.
+                  We&apos;re working on bringing you amazing {activeModal.toLowerCase()} features.
                 </p>
                 <div className="flex justify-center my-6">
                   <div className="w-24 h-24 bg-cosmic-connection rounded-full flex items-center justify-center animate-oracle-pulse overflow-hidden">

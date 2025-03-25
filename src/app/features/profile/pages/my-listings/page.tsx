@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useState } from "react";
 
 // Define the listing type
 interface Listing {
@@ -58,7 +58,7 @@ export default function MyListings() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-parchment/70 mb-6">You haven't created any listings yet.</p>
+            <p className="text-parchment/70 mb-6">You haven&apos;t created any listings yet.</p>
             <Link href="/create" className="btn-primary rounded-md inline-block">
               Create Listing
             </Link>

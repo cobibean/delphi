@@ -27,7 +27,7 @@ export function getMarketplaceContract() {
  * @param amount Amount in ETH
  * @returns Amount in Wei as BigInt
  */
-export function toWei(amount: string): BigInt {
+export function toWei(amount: string): bigint {
   return ethers.parseEther(amount);
 }
 

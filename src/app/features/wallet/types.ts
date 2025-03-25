@@ -64,9 +64,11 @@ export enum ListingType {
 }
 
 // Adapter interface to align our WalletAccount with ThirdWeb's Account
-export interface ThirdwebAccountAdapter extends ThirdwebAccount {
-  // Any additional methods we need to implement
-}
+export type ThirdwebAccountAdapter = ThirdwebAccount;
+// If additional methods are needed in the future, we can extend the type:
+// export interface ThirdwebAccountAdapter extends ThirdwebAccount {
+//   additionalMethod(): void;
+// }
 
 // Account Types - Extended to align with ThirdWeb V5
 export interface WalletAccount {

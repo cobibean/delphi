@@ -2,11 +2,16 @@
  * Utilities for transaction debugging and network validation
  */
 
-import { getContract } from "thirdweb";
 
 /* Interface for contract with call method - matches direct-buy.ts */
 interface Contract {
   call: (functionName: string, args: any[]) => Promise<any>;
+}
+
+// Define a type for Ethereum provider
+interface EthereumProvider {
+  isConnected?: () => boolean;
+  request?: (args: any) => Promise<any>;
 }
 
 /**
@@ -29,9 +34,9 @@ export async function validateNetworkConnection(): Promise<boolean> {
   console.log("Validating Metis network connection...");
   
   try {
-    // Check if the wallet is already connected - use proper type checking
-    // @ts-ignore - ethereum is injected by MetaMask and other wallet providers
-    if (typeof window !== 'undefined' && window.ethereum?.isConnected?.()) {
+    // Check if the wallet is already connected using a type assertion
+    const ethereum = window?.ethereum as EthereumProvider | undefined;
+    if (typeof window !== 'undefined' && ethereum?.isConnected?.()) {
       console.log("Ethereum provider is connected - assuming network is valid");
       return true;
     }

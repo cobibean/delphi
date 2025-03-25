@@ -114,7 +114,7 @@ export function formatNumber(value: number | string, decimals = 4): string {
  * @param currency Currency symbol
  * @returns Formatted price string
  */
-export function formatCurrency(price: number, currency: string = "METIS"): string {
+export function formatCurrency(price: number, currency = "METIS"): string {
   return `${price.toFixed(2)} ${currency}`;
 }
 

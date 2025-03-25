@@ -21,7 +21,7 @@ export default function StatsPage() {
             <h1 className="font-heading text-3xl text-oracle-orange mb-6 text-center">MARKETPLACE ANALYTICS</h1>
             <p className="text-oracle-white/70 text-center mb-12 max-w-3xl mx-auto">
               Detailed statistics and market analytics for Delphi NFT marketplace are being developed. 
-              Soon you'll be able to track sales, volume, trending collections, and more.
+              Soon you&apos;ll be able to track sales, volume, trending collections, and more.
             </p>
             
             {/* Sample Charts and Visualizations */}
@@ -174,7 +174,7 @@ export default function StatsPage() {
               </div>
               <div className="mb-6">
                 <p className="text-oracle-white mb-4">
-                  We're working on bringing you amazing stats and analytics features.
+                  We&apos;re working on bringing you amazing stats and analytics features.
                 </p>
                 <div className="flex justify-center my-6">
                   <div className="w-24 h-24 bg-cosmic-connection rounded-full flex items-center justify-center animate-oracle-pulse overflow-hidden">

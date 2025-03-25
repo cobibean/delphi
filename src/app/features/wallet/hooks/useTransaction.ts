@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import { useToast } from "@/components/feedback";
+import { useCallback, useState } from "react";
 
 export interface TransactionState {
   isLoading: boolean;
@@ -9,8 +9,18 @@ export interface TransactionState {
   isError: boolean;
   error: Error | null;
   hash: string | null;
-  receipt: any | null;
+  receipt: TransactionReceipt | null;
   reset: () => void;
+}
+
+// Define a TransactionReceipt interface to replace 'any'
+interface TransactionReceipt {
+  blockHash: string;
+  blockNumber: number;
+  contractAddress: string | null;
+  status?: boolean;
+  transactionHash: string;
+  transactionIndex: number;
 }
 
 /**
@@ -26,7 +36,7 @@ export function useTransaction() {
     error: null,
     hash: null,
     receipt: null,
-    reset: () => {},
+    reset: () => { /* Initialize with empty function, will be replaced */ },
   });
   
   // Reset transaction state
@@ -68,7 +78,7 @@ export function useTransaction() {
   }, [toast, reset]);
   
   // Handle transaction success
-  const handleTransactionSuccess = useCallback((receipt: any) => {
+  const handleTransactionSuccess = useCallback((receipt: TransactionReceipt) => {
     setState((prev) => ({
       ...prev,
       isLoading: false,

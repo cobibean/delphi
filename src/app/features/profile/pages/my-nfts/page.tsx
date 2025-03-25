@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useState } from "react";
 
 // Define the NFT type
 interface NFT {
@@ -98,7 +98,7 @@ export default function MyNFTs() {
               <polyline points="21 15 16 10 5 21"></polyline>
             </svg>
             <h3 className="text-xl font-anton mb-2 text-orange">No NFTs Found</h3>
-            <p className="text-parchment/70 mb-6">You don't own any NFTs yet.</p>
+            <p className="text-parchment/70 mb-6">You haven&apos;t created any NFTs yet.</p>
             <Link 
               href="/explore"
               className="btn-primary rounded-md inline-block"

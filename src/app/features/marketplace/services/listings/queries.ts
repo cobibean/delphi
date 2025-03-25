@@ -165,4 +165,4 @@ export async function getDirectListing(contractAddress: string, tokenId: string)
     console.error("Error fetching direct listing:", error);
     return null;
   }
-}; 
+}

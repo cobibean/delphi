@@ -39,7 +39,7 @@ export {
 export * from './listings';
 
 // Export contract services
-export * from './contracts';
+//export * from './contracts';
 
 // Export transaction preparation utilities
 export * from './prepareTransactions';

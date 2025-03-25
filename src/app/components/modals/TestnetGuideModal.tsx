@@ -66,7 +66,7 @@ export function TestnetGuideModal({ onClose }: TestnetGuideModalProps) {
               <ul className="list-disc pl-5 space-y-1">
                 <li>Go to <a href="https://chainlist.org/chain/59902" target="_blank" rel="noopener noreferrer" className="text-cosmic-combustion hover:underline">Chainlist.org</a>.</li>
                 <li>Search for Metis Sepolia.</li>
-                <li>Click "Connect" then "Add to Wallet" on the listing.</li>
+                <li>Click &quot;Connect&quot; then &quot;Add to Wallet&quot; on the listing.</li>
                 <li>Approve the prompt in your wallet to add the chain.</li>
                 <li>Switch to the Metis Sepolia Chain:
                   <ul className="list-disc pl-5 mt-1">
@@ -85,7 +85,7 @@ export function TestnetGuideModal({ onClose }: TestnetGuideModalProps) {
             </div>
             
             <div>
-              <h3 className="text-xl font-heading text-quantum-entanglement mb-2">You're Ready to Go!</h3>
+              <h3 className="text-xl font-heading text-quantum-entanglement mb-2">You&apos;re Ready to Go!</h3>
               <ul className="list-disc pl-5 space-y-1">
                 <li>You can now mint your Delphi Pioneer Alpha Pass NFT on DelphiNFT.app</li>
               </ul>

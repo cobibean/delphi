@@ -18,7 +18,6 @@ export * from './wallet/utils';
 // NFT exports
 export * from './nft/components';
 export * from './nft/hooks';
-export * from './nft/services';
 
 // Profile exports
 export * from './profile';

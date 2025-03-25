@@ -11,8 +11,7 @@ import {
   cancelListing,
   createDirectListing
 } from '@/app/features/marketplace/services/listings/index';
-import { TransactionMetadata } from '@/app/features/wallet/transactions';
-import { WalletAccount } from '@/app/features/wallet/types';
+import { TransactionState, WalletAccount } from '@/app/features/wallet/types';
 import { buyoutAuction, collectAuctionNFT, collectAuctionPayoutForSeller, createAuction, placeBid } from './auctions';
 
 /**
@@ -64,7 +63,7 @@ export async function executeMarketplaceTransaction(
   functionName: string,
   params: any,
   account: WalletAccount,
-  metadata?: Partial<TransactionMetadata>
+  metadata?: Partial<TransactionState>
 ): Promise<any> {
   // Directly call the implementation functions instead of preparing transactions
   switch (functionName) {

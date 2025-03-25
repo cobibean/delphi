@@ -7,6 +7,7 @@ import { NFTMarketplaceDashboard } from "@/features/marketplace/components";
 import { getAllListings } from "@/features/marketplace/services";
 import { HomepageMintCard } from "@/features/nft/mintzone/components";
 import { IListingWithNFT } from "@/interfaces/interfaces";
+import Image from 'next/image';
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -20,6 +21,55 @@ interface MarketStats {
   totalSales: number;
   averagePrice: string;
 }
+
+// Add this constant at the top of your file
+const PLACEHOLDER_IMAGE = `data:image/svg+xml;base64,${btoa(
+  '<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#1a1a1a"/><text x="50%" y="50%" font-family="sans-serif" font-size="24" text-anchor="middle" fill="#666">Image Unavailable</text></svg>'
+)}`;
+
+// Add this function at the top of your component
+const loadImage = (src: string, fallbackSrc: string = PLACEHOLDER_IMAGE) => {
+  console.log("Original image source:", src);
+  
+  // Use your dedicated gateway as the primary source
+  const primaryGateway = process.env.NEXT_PUBLIC_IPFS_GATEWAY || "https://delphigateway.mypinata.cloud/ipfs/";
+  
+  // Fallback gateways if the primary fails
+  const fallbackGateways = [
+    "https://ipfs.io/ipfs/",
+    "https://cloudflare-ipfs.com/ipfs/",
+    "https://gateway.pinata.cloud/ipfs/",
+    "https://ipfs.infura.io/ipfs/"
+  ];
+  
+  // Function to format IPFS URLs with different gateways
+  const formatWithGateway = (url: string, gateway: string) => {
+    if (!url) return fallbackSrc;
+    
+    // Handle IPFS URLs
+    if (url.startsWith('ipfs://')) {
+      const cid = url.replace('ipfs://', '');
+      return `${gateway}${cid}`;
+    }
+    
+    return url;
+  };
+  
+  const formattedPrimary = src ? formatWithGateway(src, primaryGateway) : fallbackSrc;
+  console.log("Formatted primary URL:", formattedPrimary);
+  
+  // Return an object with image sources to try
+  return {
+    // Primary source - try your dedicated gateway first
+    primary: formattedPrimary,
+    
+    // Alternate sources to try on error
+    fallbacks: src ? fallbackGateways.map(gateway => formatWithGateway(src, gateway)) : [],
+    
+    // Final fallback
+    placeholder: fallbackSrc
+  };
+};
 
 export default function Page() {
   const [activeModal, setActiveModal] = useState<string | null>(null);
@@ -41,8 +91,42 @@ export default function Page() {
           return;
         }
         
+        // Log raw listings data for debugging
+        console.log("All listings:", fetchedListings);
+        
+        // Verify image URLs in listings
+        fetchedListings.forEach((listing, i) => {
+          console.log(`Listing ${i} details:`);
+          console.log(` - ID: ${listing.listingId}`);
+          console.log(` - Has metadata: ${Boolean(listing.metadata)}`);
+          console.log(` - Image URL: ${listing.metadata?.image || 'None'}`);
+          
+          // Test image format
+          if (listing.metadata?.image) {
+            if (listing.metadata.image.startsWith('ipfs://')) {
+              console.log(` - Image is IPFS format`);
+            } else {
+              console.log(` - Image is standard URL format`);
+            }
+          }
+        });
+        
+        // Filter listings to ensure they have metadata and image
+        const validListings = fetchedListings.filter(
+          listing => listing && listing.metadata && listing.metadata.image
+        );
+        
+        console.log(`Found ${validListings.length} listings with valid images out of ${fetchedListings.length} total`);
+        
         setListings(fetchedListings);
-        setFeaturedListings(fetchedListings.slice(0, Math.min(3, fetchedListings.length)));
+        
+        // Only use listings with valid images for the carousel
+        if (validListings.length > 0) {
+          setFeaturedListings(validListings.slice(0, Math.min(3, validListings.length)));
+          console.log("Featured listings set:", validListings.slice(0, Math.min(3, validListings.length)));
+        } else {
+          console.log("No listings with valid images found for carousel");
+        }
         
       } catch (err) {
         console.error("Error fetching listings:", err);
@@ -101,7 +185,23 @@ export default function Page() {
     }, 5000);
     
     return () => clearInterval(interval);
-  }, [featuredListings.length]);
+  }, [featuredListings.length, nextSlide]);
+
+  // Add a console log to check if the gateway is accessible
+  console.log("IPFS Gateway:", process.env.NEXT_PUBLIC_IPFS_GATEWAY);
+
+  useEffect(() => {
+    if (featuredListings.length > 0) {
+      console.log("Featured listings metadata:", 
+        featuredListings.map(item => ({
+          listingId: item.listingId,
+          hasMetadata: !!item.metadata,
+          imageUrl: item.metadata?.image,
+          name: item.metadata?.name
+        }))
+      );
+    }
+  }, [featuredListings]);
 
   return (
     <main className="bg-oracle-black min-h-screen">
@@ -149,45 +249,65 @@ export default function Page() {
                         <div className="overflow-hidden rounded-xl">
                           <div className="flex transition-transform duration-500 ease-in-out" 
                             style={{ transform: `translateX(-${carouselIndex * 100}%)` }}>
-                            {featuredListings.map((item) => (
-                              <div key={item.listingId} className="w-full flex-shrink-0 px-4">
-                                <div className="bg-ancient-wisdom rounded-xl overflow-hidden shadow-card-normal border border-oracle-orange/20 hover-lift">
-                                  <div className="aspect-[1.5/1] relative overflow-hidden">
-                                    <img 
-                                      src={item.metadata?.image || "/images/placeholder.jpg"} 
-                                      alt={item.metadata?.name || `NFT #${item.tokenId}`} 
-                                      className="w-full h-full object-cover" 
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-oracle-black/80 to-transparent"></div>
-                                    <div className="absolute bottom-0 left-0 w-full p-6">
-                                      <h3 className="font-heading text-3xl text-oracle-white mb-2">
-                                        {item.metadata?.name || `NFT #${item.tokenId}`}
-                                      </h3>
-                                      <div className="flex justify-between items-end">
-                                        <div className="flex items-center">
-                                          <span className="text-oracle-white/70 text-sm">
-                                            {item.collectionName || "Metis Collection"}
+                            {featuredListings.map((item) => {
+                              return (
+                                <div key={item.listingId} className="w-full flex-shrink-0 px-4">
+                                  <div className="bg-ancient-wisdom rounded-xl overflow-hidden shadow-card-normal border border-oracle-orange/20 hover-lift">
+                                    <div className="aspect-[1.5/1] relative overflow-hidden">
+                                      <Image 
+                                        src={item.metadata?.image
+                                          ? (item.metadata.image.startsWith('ipfs://')
+                                            ? `https://delphigateway.mypinata.cloud/ipfs/${item.metadata.image.replace('ipfs://', '')}`
+                                            : item.metadata.image)
+                                          : PLACEHOLDER_IMAGE
+                                        }
+                                        alt={item.metadata?.name || `NFT #${item.tokenId}`} 
+                                        className="w-full h-full object-cover"
+                                        width={500}
+                                        height={300}
+                                        onLoad={() => console.log(`Loaded image for ${item.listingId}`)} 
+                                        onError={(e) => {
+                                          console.log(`Error loading image for ${item.listingId}, trying fallback`);
+                                          // Simple fallback to a public gateway
+                                          const img = e.target as HTMLImageElement;
+                                          if (item.metadata?.image?.startsWith('ipfs://')) {
+                                            img.src = `https://ipfs.io/ipfs/${item.metadata.image.replace('ipfs://', '')}`;
+                                          } else {
+                                            img.src = PLACEHOLDER_IMAGE;
+                                          }
+                                        }}
+                                      />
+                                      <div className="absolute inset-0 bg-gradient-to-t from-oracle-black/80 to-transparent"></div>
+                                      <div className="absolute bottom-0 left-0 w-full p-6">
+                                        <h3 className="font-heading text-3xl text-oracle-white mb-2">
+                                          {item.metadata?.name || `NFT #${item.tokenId}`}
+                                        </h3>
+                                        <div className="flex justify-between items-end">
+                                          <div className="flex items-center">
+                                            <span className="text-oracle-white/70 text-sm">
+                                              {item.collectionName || "Metis Collection"}
+                                            </span>
+                                          </div>
+                                          <span className="text-oracle-orange text-2xl font-bold">
+                                            {item.pricePerToken} METIS
                                           </span>
                                         </div>
-                                        <span className="text-oracle-orange text-2xl font-bold">
-                                          {item.pricePerToken} METIS
-                                        </span>
                                       </div>
                                     </div>
-                                  </div>
-                                  <div className="p-6 flex justify-between items-center">
-                                    <Link href={`/nft/${item.listingId}`} className="btn-primary py-2 px-6">
-                                      <span className="relative z-10">View Details</span>
-                                    </Link>
-                                    <button className="btn-icon">
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                      </svg>
-                                    </button>
+                                    <div className="p-6 flex justify-between items-center">
+                                      <Link href={`/nft/${item.listingId}`} className="btn-primary py-2 px-6">
+                                        <span className="relative z-10">View Details</span>
+                                      </Link>
+                                      <button className="btn-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                        </svg>
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                         
@@ -347,7 +467,7 @@ export default function Page() {
               </div>
               <div className="mb-6">
                 <p className="text-oracle-white mb-4">
-                  We're working on bringing you amazing {activeModal.toLowerCase()} features.
+                  We&apos;re working on bringing you amazing {activeModal.toLowerCase()} features.
                 </p>
                 <div className="flex justify-center my-6">
                   <div className="w-24 h-24 bg-cosmic-connection rounded-full flex items-center justify-center animate-oracle-pulse overflow-hidden">
@@ -441,6 +561,43 @@ export default function Page() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add near the top of your render function to test a specific image */}
+      {featuredListings.length > 0 && featuredListings[0].metadata?.image && (
+        <div className="p-4 bg-gray-800 m-4 rounded">
+          <h3 className="text-white mb-2">Image Load Test</h3>
+          <p className="text-sm text-gray-400 mb-2">Original URL: {featuredListings[0].metadata.image}</p>
+          
+          <div className="grid grid-cols-2 gap-4">
+            {/* Try different gateway combinations */}
+            {[
+              process.env.NEXT_PUBLIC_IPFS_GATEWAY || "https://delphigateway.mypinata.cloud/ipfs/",
+              "https://ipfs.io/ipfs/",
+              "https://cloudflare-ipfs.com/ipfs/",
+              "https://gateway.pinata.cloud/ipfs/"
+            ].map((gateway, i) => {
+              const imgUrl = featuredListings[0].metadata?.image?.startsWith('ipfs://') 
+                ? gateway + featuredListings[0].metadata.image.replace('ipfs://', '')
+                : featuredListings[0].metadata?.image;
+                
+              return (
+                <div key={i} className="p-2 bg-gray-700 rounded">
+                  <p className="text-xs text-gray-300 mb-1">Gateway {i+1}: {gateway}</p>
+                  <Image 
+                    src={imgUrl || PLACEHOLDER_IMAGE}
+                    alt={`Test ${i+1}`} 
+                    className="w-full h-32 object-cover" 
+                    width={500}
+                    height={300}
+                    onLoad={() => console.log(`Image ${i+1} loaded successfully with ${gateway}`)}
+                    onError={() => console.log(`Image ${i+1} failed to load with ${gateway}`)}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
