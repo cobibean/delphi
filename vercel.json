@@ -6,6 +6,5 @@
   },
   "buildCommand": "npm run build",
   "installCommand": "npm install",
-  "framework": "nextjs",
-  "CI": "false"
+  "framework": "nextjs"
 } 
