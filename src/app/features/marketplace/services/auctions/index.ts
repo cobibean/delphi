@@ -16,6 +16,7 @@ export {
 // Re-export the simplified implementations as the primary API
 export {
     buyoutAuctionSimplified as buyoutAuction,
+    cancelAuctionSimplified as cancelAuction,
     checkIfNewWinningBid,
     collectAuctionNFTSimplified as collectAuctionNFT,
     collectAuctionPayoutForSellerSimplified as collectAuctionPayoutForSeller,

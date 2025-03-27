@@ -3,7 +3,7 @@
 import { metisChain } from "@/app/config/chain";
 import { useMarketplaceWallet } from "@/app/features/marketplace/hooks/useMarketplaceWallet";
 import { isAuctionEnded } from "@/app/features/marketplace/services/auctions/helpers";
-import { useToast } from '@/components/feedback/Toast/useToast';
+import { useToast } from '@/components/feedback';
 import { MARKETPLACE_ADDRESS, THIRDWEB_CLIENT_ID } from "@/constants/contracts";
 import { IListingWithNFT } from "@/interfaces/interfaces";
 import { useTransaction } from "@/providers/TransactionProvider";

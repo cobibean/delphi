@@ -12,7 +12,7 @@ import {
   createDirectListing
 } from '@/app/features/marketplace/services/listings/index';
 import { TransactionState, WalletAccount } from '@/app/features/wallet/types';
-import { buyoutAuction, collectAuctionNFT, collectAuctionPayoutForSeller, createAuction, placeBid } from './auctions';
+import { buyoutAuction, cancelAuction, collectAuctionNFT, collectAuctionPayoutForSeller, createAuction, placeBid } from './auctions';
 
 /**
  * Prepare a marketplace transaction based on the function name and parameters
@@ -137,6 +137,24 @@ export async function executeMarketplaceTransaction(
         return result;
       } catch (error) {
         console.error("Error in cancelListing:", error);
+        throw error;
+      }
+      
+    case 'cancelAuction':
+      try {
+        console.log("Executing cancelAuction with params:", params);
+        
+        // Validate parameters before calling
+        if (!params.auctionId) {
+          throw new Error("Missing required parameter: auctionId");
+        }
+        
+        // Call the simplified implementation
+        const result = await cancelAuction(params, account);
+        console.log("cancelAuction result:", result);
+        return result;
+      } catch (error) {
+        console.error("Error in cancelAuction:", error);
         throw error;
       }
       

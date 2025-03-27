@@ -1,8 +1,8 @@
 "use client";
 
-import React, { ReactNode } from "react";
+import { useToast } from "@/components/feedback";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useToast } from "@/components/feedback/Toast/useToast";
+import React, { ReactNode } from "react";
 
 // Create a dedicated QueryClient for marketplace hooks
 const marketplaceQueryClient = new QueryClient({

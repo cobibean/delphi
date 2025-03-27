@@ -1,11 +1,11 @@
 "use client";
 
-import { metisChain } from "@/app/config/chain";
 import { useTransaction } from "@/app/features/wallet/hooks/useTransaction";
 import { useWallet } from "@/app/features/wallet/hooks/useWallet";
 import { WalletAccount } from "@/app/features/wallet/types";
 import { formatError } from "@/app/features/wallet/utils";
-import { useToast } from "@/components/feedback/Toast/useToast";
+import { useToast } from "@/components/feedback";
+import { metisChain } from "@/config/chain";
 import { useState } from "react";
 import { sendAndConfirmTransaction } from "thirdweb";
 import { useActiveAccount, useActiveWallet } from "thirdweb/react";

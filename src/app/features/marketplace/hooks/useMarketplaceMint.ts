@@ -1,6 +1,6 @@
 "use client";
 
-import { useToast } from "@/components/feedback/Toast/useToast";
+import { useToast } from "@/components/feedback";
 import { metisChain } from "@/config/chain";
 import { client } from "@/config/client";
 import { MARKETPLACE_ADDRESS, WMETIS_CONTRACT_ADDRESS } from "@/constants/contracts";

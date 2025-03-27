@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useToast } from "@/app/components/feedback";
-import { useActiveAccount, useConnect, useDisconnect, useActiveWallet, useActiveWalletChain, useSwitchActiveWalletChain } from "thirdweb/react";
-import { createWallet, walletConnect } from "thirdweb/wallets";
-import { formatAddress } from "@/app/utils/formatting";
-import { createThirdwebClient } from "thirdweb";
 import { metisChain } from "@/app/config/chain";
+import { formatAddress } from "@/app/utils/formatting";
+import { useToast } from '@/components/feedback';
+import { useCallback, useState } from "react";
+import { createThirdwebClient } from "thirdweb";
+import { useActiveAccount, useActiveWallet, useActiveWalletChain, useConnect, useDisconnect, useSwitchActiveWalletChain } from "thirdweb/react";
+import { createWallet, walletConnect } from "thirdweb/wallets";
 
 // Create ThirdWeb client
 const client = createThirdwebClient({

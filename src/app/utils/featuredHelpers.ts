@@ -3,9 +3,7 @@ import { IListingWithNFT } from "@/interfaces/interfaces";
 
 // Featured NFT collection addresses
 export const FEATURED_COLLECTION_ADDRESSES = [
-  "0x8938fc030Df8780A479f393982890980A192c63f", // Collection 1 (LoFi Llamas)
-  "0x1Cb88959be69068Eb67c09310D0140434D516985",
-  "0x699b94A2a7fb939f62f3eE571EcCB67f543e1EC8", // Collection 2 (lost.souls)
+  "0x9C3dF5C49Cc236814885DcDb1263e3f77d72D358",
 ];
 
 /**

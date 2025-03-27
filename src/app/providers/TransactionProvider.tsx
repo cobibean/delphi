@@ -25,7 +25,7 @@
  * - NFT minting, marketplace listings, auctions, etc.
  */
 
-import { useToast } from '@/app/components/feedback';
+import { useToast } from '@/components/feedback';
 import { metisChain } from '@/config/chain';
 import { createContext, ReactNode, useContext, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';

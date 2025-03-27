@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import { useToast } from '@/components/feedback';
+import { useEffect } from 'react';
 import styles from './TrendingTable.module.css';
-import { useToast } from '@/components/feedback/Toast/useToast';
 
 interface TrendingTableProps {
   data?: any[];

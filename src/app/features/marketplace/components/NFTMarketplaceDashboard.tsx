@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { IListingWithNFT } from "@/interfaces/interfaces";
+import { useToast } from "@/components/feedback";
 import { NFTCard } from "@/features/nft/components";
-import { useToast } from "@/components/feedback/Toast/useToast";
+import { IListingWithNFT } from "@/interfaces/interfaces";
+import { useEffect, useState } from "react";
 
 interface NFTMarketplaceDashboardProps {
   listings: IListingWithNFT[];

@@ -4,7 +4,7 @@ import { metisChain } from "@/app/config/chain";
 import { client } from "@/app/config/client";
 import { useMarketplaceWallet } from "@/app/features/marketplace/hooks/useMarketplaceWallet";
 import { getAuctionBidHistory } from "@/app/features/marketplace/services";
-import { useToast } from '@/components/feedback/Toast/useToast';
+import { useToast } from '@/components/feedback';
 import { MARKETPLACE_ADDRESS, THIRDWEB_CLIENT_ID } from "@/constants/contracts";
 import { TransactionStatus } from "@/features/marketplace/components/TransactionStatus";
 import { NFTCard } from "@/features/nft/components";

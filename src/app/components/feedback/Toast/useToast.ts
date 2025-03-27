@@ -137,28 +137,22 @@ export const useToast = (): ToastState => {
   
   // If context is undefined, provide a fallback that uses the global state directly
   if (context === undefined) {
-    // Return a fallback using the standalone methods
+    // Return a dummy implementation that just logs warnings
+    console.warn("Toast used outside provider context - notifications suppressed");
     return {
-      toasts: globalToasts,
-      add: (toast: Omit<ToastProps, "id">) => {
-        const id = Math.random().toString(36).substring(2, 9);
-        updateGlobalToasts([...globalToasts, { ...toast, id }]);
-      },
-      remove: (id: string) => {
-        updateGlobalToasts(globalToasts.filter(toast => toast.id !== id));
-      },
-      update: (id: string, toast: Partial<ToastProps>) => {
-        updateGlobalToasts(
-          globalToasts.map(t => t.id === id ? { ...t, ...toast } : t)
-        );
-      },
-      dismiss: (id: string) => {
-        updateGlobalToasts(globalToasts.filter(toast => toast.id !== id));
-      },
-      reset: () => {
-        updateGlobalToasts([]);
-      },
-      toast: standalone
+      toasts: [],
+      add: () => { console.warn("Toast used outside provider - notification suppressed"); },
+      remove: () => { console.warn("Toast remove called outside provider"); },
+      update: () => { console.warn("Toast update called outside provider"); },
+      dismiss: () => { console.warn("Toast dismiss called outside provider"); },
+      reset: () => { console.warn("Toast reset called outside provider"); },
+      toast: {
+        success: () => { console.warn("Toast success called outside provider - notification suppressed"); },
+        error: () => { console.warn("Toast error called outside provider - notification suppressed"); },
+        info: () => { console.warn("Toast info called outside provider - notification suppressed"); },
+        warning: () => { console.warn("Toast warning called outside provider - notification suppressed"); },
+        custom: () => { console.warn("Toast custom called outside provider - notification suppressed"); }
+      }
     };
   }
   

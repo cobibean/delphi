@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { useActiveAccount } from 'thirdweb/react';
-import { getContract, prepareContractCall, sendTransaction } from 'thirdweb';
-import { useToast } from '@/components/feedback/Toast/useToast';
-import { client } from '@/config/client';
+import { useToast } from '@/components/feedback';
 import { metisChain } from '@/config/chain';
+import { client } from '@/config/client';
 import { useTransaction } from '@/providers/TransactionProvider';
+import { useState } from 'react';
+import { getContract, prepareContractCall, sendTransaction } from 'thirdweb';
+import { useActiveAccount } from 'thirdweb/react';
 
 /**
  * Hook for minting NFTs from a collection

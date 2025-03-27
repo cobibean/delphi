@@ -21,6 +21,7 @@ import {
 import {
   bidInAuction,
   buyoutAuction as buyoutAuctionThirdweb,
+  cancelAuction as cancelAuctionThirdweb,
   collectAuctionPayout as collectAuctionPayoutThirdweb,
   collectAuctionTokens as collectAuctionTokensThirdweb,
   createAuction as createAuctionThirdweb,
@@ -29,6 +30,7 @@ import {
 } from "thirdweb/extensions/marketplace";
 import { client, MarketplaceTransactionResult, metisChain } from "../types";
 import { executeThirdwebTransaction } from "../utils";
+import { getAuctionWinningBid } from "./queries";
 
 /**
  * Check if a bid would be a new winning bid
@@ -514,6 +516,68 @@ export async function collectAuctionPayoutForSellerSimplified(
       transactionHash: error.transactionHash || "",
       success: false,
       error: error.message || "Failed to collect auction payout"
+    };
+  }
+}
+
+/**
+ * Simplified implementation of canceling an auction
+ */
+export async function cancelAuctionSimplified(
+  params: { auctionId: string },
+  account: WalletAccount
+): Promise<MarketplaceTransactionResult> {
+  if (!account || !account.address) {
+    throw new Error("Valid wallet account is required");
+  }
+
+  try {
+    // Get marketplace contract
+    const marketplaceAddress = MARKETPLACE_ADDRESS as `0x${string}`;
+    const marketplaceContract = getContract({
+      client,
+      chain: metisChain,
+      address: marketplaceAddress,
+    });
+    
+    // Get the auction to verify it exists and the user is the creator
+    const auction = await getAuction({
+      contract: marketplaceContract,
+      auctionId: BigInt(params.auctionId),
+    });
+    
+    if (!auction) {
+      throw new Error(`No auction found with ID ${params.auctionId}`);
+    }
+    
+    // Check if the current user is the auction creator
+    if (auction.creatorAddress.toLowerCase() !== account.address.toLowerCase()) {
+      throw new Error("Only the auction creator can cancel this auction");
+    }
+    
+    // Check if the auction has any bids - auctions with bids cannot be canceled
+    const winningBid = await getAuctionWinningBid(params.auctionId);
+    if (winningBid) {
+      throw new Error("Cannot cancel an auction that has received bids");
+    }
+    
+    // Create cancel auction transaction
+    const transaction = cancelAuctionThirdweb({
+      contract: marketplaceContract,
+      auctionId: BigInt(params.auctionId)
+    });
+    
+    // Send and confirm transaction using our adapter
+    const result = await executeThirdwebTransaction(transaction, account);
+    
+    console.log("Auction canceled successfully:", result.transactionHash);
+    return result;
+  } catch (error: any) {
+    console.error("Error canceling auction:", error);
+    return {
+      transactionHash: error.transactionHash || "",
+      success: false,
+      error: error.message || "Failed to cancel auction"
     };
   }
 }

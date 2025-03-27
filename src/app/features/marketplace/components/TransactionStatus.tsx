@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { waitForReceipt } from "thirdweb";
-import { client } from "@/config/client";
+import { useToast } from "@/components/feedback";
 import { metisChain } from "@/config/chain";
-import { useToast } from "@/components/feedback/Toast/useToast";
+import { client } from "@/config/client";
+import { useEffect, useState } from "react";
+import { waitForReceipt } from "thirdweb";
 
 interface TransactionStatusProps {
   transactionHash?: string;

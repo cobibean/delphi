@@ -4,7 +4,7 @@ import { useMarketplaceWallet } from '@/app/features/marketplace/hooks/useMarket
 import { getAuctionWinningBid } from '@/app/features/marketplace/services';
 import { isAuctionEnded } from '@/app/features/marketplace/services/auctions/helpers';
 import { formatNumber } from '@/app/utils/format';
-import { useToast } from '@/components/feedback/Toast/useToast';
+import { useToast } from '@/components/feedback';
 import { useTransaction } from '@/providers/TransactionProvider';
 import React, { useEffect, useState } from 'react';
 import { useActiveAccount, useActiveWallet } from 'thirdweb/react';
