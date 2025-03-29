@@ -1,5 +1,6 @@
 "use client";
 
+import { IListingWithNFT as DashboardListingType } from "@/app/features/marketplace/services/types";
 import LoadingIndicator from "@/components/feedback/LoadingIndicator";
 import { NFTMarketplaceDashboard } from "@/features/marketplace/components";
 import { getAllListings } from "@/features/marketplace/services";
@@ -14,6 +15,15 @@ interface MarketStats {
   totalSales: number;
   averagePrice: string;
 }
+
+// Helper function to adapt listings to the dashboard component's expected type
+const adaptListingsForDashboard = (listings: IListingWithNFT[]): DashboardListingType[] => {
+  return listings.map(listing => ({
+    ...listing,
+    reserved: false, // Force reserved to false for compatibility
+    isAuction: (listing as any).isAuction || (listing as any).type === 'auction'
+  }));
+};
 
 export default function HomePage() {
   const [activeModal, setActiveModal] = useState<string | null>(null);
@@ -219,7 +229,7 @@ export default function HomePage() {
           
           {/* Main marketplace section with all listings */}
           {listings.length > 0 ? (
-            <NFTMarketplaceDashboard listings={listings} />
+            <NFTMarketplaceDashboard initialListings={adaptListingsForDashboard(listings)} />
           ) : (
             <div className="text-center py-16">
               <h3 className="text-2xl font-heading text-sinister-orange mb-4">NO PROPHECIES FOUND</h3>

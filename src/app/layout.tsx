@@ -90,13 +90,12 @@ export default function RootLayout({
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="icon" href="/images/logo/black-box.png" />
+        <link rel="icon" href="/facicon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/facicon.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* Add Impact, Anton, and Roboto Slab fonts for Delphi theme */}
         <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Impact&family=Roboto+Slab:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-        <title>Delphi | The Center of the World - NFT Marketplace</title>
-        <meta name="description" content="Discover and trade NFTs at Delphi - the center of the world for artists, weirdos, and degens on Metis and beyond." />
       </head>
       <body className={`${inter.variable} ${anton.variable} bg-oracle-black-void text-oracle-white oracle-texture constellation`}>
         <TransactionProvider>

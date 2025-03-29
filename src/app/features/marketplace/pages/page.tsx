@@ -10,7 +10,8 @@ import { getAllListings } from "@/features/marketplace/services";
 import { getAllAuctions } from "@/features/marketplace/services/auctions";
 import { HomepageMintCard } from "@/features/nft/mintzone/components";
 import { IListingWithNFT } from "@/interfaces/interfaces";
-import Link from "next/link";
+// Import the types from services for the dashboard component
+import { IListingWithNFT as DashboardListingType } from "@/app/features/marketplace/services/types";
 import { useEffect, useState } from "react";
 
 // Define the contract address for the mint card
@@ -31,6 +32,15 @@ const PLACEHOLDER_IMAGE = `data:image/svg+xml;base64,${btoa(
 
 // Add this constant near the top of your file
 const MAX_CAROUSEL_ITEMS = 5; // Increased from 3 to 5
+
+// Helper function to adapt listings to the dashboard component's expected type
+const adaptListingsForDashboard = (listings: IListingWithNFT[]): DashboardListingType[] => {
+  return listings.map(listing => ({
+    ...listing,
+    reserved: false, // Force reserved to false for compatibility
+    isAuction: (listing as any).isAuction || (listing as any).type === 'auction'
+  }));
+};
 
 export default function Page() {
   const [activeModal, setActiveModal] = useState<string | null>(null);
@@ -334,7 +344,7 @@ export default function Page() {
           
           {/* Main marketplace section with all listings and auctions */}
           {listings.length > 0 ? (
-            <NFTMarketplaceDashboard listings={listings} />
+            <NFTMarketplaceDashboard initialListings={adaptListingsForDashboard(listings)} />
           ) : (
             <div className="text-center py-16">
               <h3 className="text-2xl font-heading text-sinister-orange mb-4">NO PROPHECIES FOUND</h3>
@@ -374,43 +384,6 @@ export default function Page() {
                 <span>VIEW STATS</span>
               </button>
             </div>
-          </div>
-        </div>
-      </section>
-      
-      {/* 3. New Listings Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="font-heading text-2xl md:text-3xl text-oracle-orange uppercase tracking-wide">
-              New Listings
-            </h2>
-            <Link href="/explore" className="text-oracle-turquoise hover:text-oracle-orange transition-colors">
-              View All <span className="ml-1">→</span>
-            </Link>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Implementation of new listings section */}
-          </div>
-        </div>
-      </section>
-      
-      {/* 4. All Listings Section */}
-      <section className="py-16 bg-ancient-wisdom">
-        <div className="container mx-auto px-4">
-          <h2 className="font-heading text-2xl md:text-3xl text-oracle-orange mb-8 uppercase tracking-wide">
-            All Listings
-          </h2>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {/* Implementation of all listings section */}
-          </div>
-          
-          <div className="text-center mt-12">
-            <Link href="/explore" className="btn-primary">
-              <span className="relative z-10">EXPLORE ALL</span>
-            </Link>
           </div>
         </div>
       </section>
