@@ -45,17 +45,37 @@ const redirects = [
   // Create redirects - REVERSED DIRECTION
   {
     source: '/features/create',
-    destination: '/create',
+    destination: '/features/nft/create',
     permanent: true,
   },
   {
     source: '/features/create/auction',
-    destination: '/create/auction',
+    destination: '/features/nft/create/auction',
     permanent: true,
   },
   {
     source: '/features/create/direct-listing',
-    destination: '/create/direct-listing',
+    destination: '/features/nft/create/direct-listing',
+    permanent: true,
+  },
+  {
+    source: '/create',
+    destination: '/features/nft/create',
+    permanent: true,
+  },
+  {
+    source: '/create/auction',
+    destination: '/features/nft/create/auction',
+    permanent: true,
+  },
+  {
+    source: '/create/direct-listing',
+    destination: '/features/nft/create/direct-listing',
+    permanent: true,
+  },
+  {
+    source: '/create/deploy',
+    destination: '/features/nft/create/deploy',
     permanent: true,
   },
 

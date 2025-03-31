@@ -1,0 +1,3 @@
+@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
+@thirdweb-dev/contracts/=lib/contracts/contracts/
+forge-std/=lib/forge-std/src/
