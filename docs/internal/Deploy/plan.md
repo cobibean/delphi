@@ -23,6 +23,8 @@ This plan outlines the implementation of NFT creation functionality for the Delp
 
 ### 1. Contract Development (Foundry)
 
+COMPLETED ✅
+
 #### 1.1 Project Setup
 
 Set up a Foundry project with:
@@ -59,61 +61,93 @@ Create deploy scripts for:
 
 ### 2. Frontend Integration
 
+COMPLETED ✅
+
 #### 2.1 Contract Interface
 
-Implement a contract interface layer in `src/app/features/create/services/nftFactoryService.ts` with:
+Implemented a contract interface layer in `src/app/features/nft/services/nftFactoryService.ts` with:
 - `deployERC721Drop(params)` - For deploying ERC721 collections
 - `deployERC1155Drop(params)` - For deploying ERC1155 collections
 - `getDeployedCollections(address)` - To retrieve user's contracts
 - `getFactoryFee()` - To get current deployment fee
+- `getFormattedFactoryFee()` - To get formatted fee for UI display
+- `getCollectionType(address)` - To determine if a collection is ERC721 or ERC1155
+
+Also updated `src/app/constants/contracts.ts` to include:
+- `NFT_FACTORY_ADDRESS` for the deployed factory contract
 
 #### 2.2 NFT Management Interface
 
-Implement `src/app/features/create/services/nftManagementService.ts` with functions:
-- `lazyMintNFT(contractAddress, nftMetadata)` - For NFT creation
+Implemented `src/app/features/nft/services/nftManagementService.ts` with functions:
+- `lazyMintNFT(contractAddress, metadataWithSupply)` - For NFT creation
 - `setClaimConditions(contractAddress, tokenId, conditions)` - For sales configuration
 - `getContractMetadata(contractAddress)` - To retrieve collection data
+- `getTotalSupply(contractAddress, tokenId)` - To get token supply
+- `getClaimConditions(contractAddress, tokenId)` - To get active claim conditions
+
+Created documentation for all hooks, utilities, and services in `docs/hooks-and-utilities.md`.
 
 ### 3. React Components & Hooks
 
+COMPLETED ✅
+
 #### 3.1 Main Components Structure
 
-Create the main page at `src/app/create/nft-collection/page.tsx` that will:
-- Use client-side rendering with the 'use client' directive
-- Offer options for ERC721 or ERC1155 deployment
-- Import the CreateCollectionStepper component
+- Created the token standard selection page
+- Created the metadata setup pages for both ERC721 and ERC1155
+- Implemented `useNFTFactory` hook to connect UI with contract interface
+- Hook provides:
+  - `deployERC721Collection` - To deploy ERC721 contracts
+  - `deployERC1155Collection` - To deploy ERC1155 contracts
+  - `fetchDeploymentFee` - To display fee information to users
+  - State tracking for deployment process
 
 #### 3.2 Context Provider
 
-Implement `src/app/features/create/providers/CreateCollectionProvider.tsx` to manage:
+Implemented `src/app/features/nft/providers/CreateCollectionProvider.tsx` to manage:
 - Collection parameters (name, symbol, royalties, etc.)
 - Contract type selection (ERC721 vs ERC1155)
 - Deployment status tracking
 - Error handling
+- Utility methods for form validation and metadata updates
 
 #### 3.3 Stepper Component
 
-Implement `src/app/features/create/components/CreateCollectionStepper.tsx` with:
-- Steps for collection details, royalties, deployment, and confirmation
-- Navigation between steps
-- Form validation
-- Transaction status indicators
+Implemented `src/app/features/nft/components/CreateCollectionStepper.tsx` with:
+- Type selection step with detailed information on ERC721 vs ERC1155
+- Metadata step for collection details, cover image, royalties configuration
+- Confirmation step showing collection preview and deployment fee
+- Deployment step with transaction status tracking
+- Success step with navigation to collection management
+- Form validation and error handling
 
 #### 3.4 My Collections Page
 
-Create `src/app/dashboard/collections/page.tsx` to:
-- Display user's deployed collections 
-- Provide interface to manage each collection
-- Allow for lazy minting NFTs to existing collections
+Created `src/app/dashboard/collections/page.tsx` to:
+- Display a list of user's deployed collections 
+- Show collection type, metadata, and stats
+- Provide navigation to collection management
+- Handle empty states and loading states
+
+Still needed:
+- Complete integration with the Collection detail page
+- Add lazy minting functionality 
+- Fix type conversion issues with wallet addresses
 
 ### 4. Integration Points
 
+PARTIALLY COMPLETED ✅
+
 #### 4.1 Update Create Page
 
-Modify `src/app/create/page.tsx` to:
-- Add options for ERC721 and ERC1155 collection creation
-- Link to the new collection creation flows
-- Provide information about costs and features
+Modified `src/app/features/nft/create/page.tsx` to:
+- Implement the main collection creation flow
+- Use the CreateCollectionStepper component for NFT collection creation
+- Create a reusable NFTPageLayout component for consistent UI
+
+Still needed:
+- Link to the collection management dashboard
+- User onboarding and help content
 
 #### 4.2 Constants File Update
 

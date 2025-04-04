@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useToast } from "@/components/feedback";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/components/feedback";
+import { useState } from "react";
 
 interface ListingOptionsModalProps {
   onClose: () => void;
@@ -33,17 +33,24 @@ export function ListingOptionsModal({ onClose }: ListingOptionsModalProps) {
       try {
         switch (option) {
           case "direct":
-            router.push("/create/direct-listing");
+            router.push("/features/nft/create/direct-listing");
             toast.success(
               "Direct Listing Selected",
               "You're being redirected to create a direct listing."
             );
             break;
           case "auction":
-            router.push("/create/auction");
+            router.push("/features/nft/create/auction");
             toast.success(
               "Auction Listing Selected",
               "You're being redirected to create an auction listing."
+            );
+            break;
+          case "deploy":
+            router.push("/features/nft/create/deploy");
+            toast.success(
+              "NFT Creation Selected",
+              "You're being redirected to create an NFT collection."
             );
             break;
           default:
@@ -196,6 +203,54 @@ export function ListingOptionsModal({ onClose }: ListingOptionsModalProps) {
                 <div className="text-cosmic-combustion text-sm">
                   <span className="bg-cosmic-combustion/10 px-2 py-1 rounded">
                     Competitive Bidding
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Deploy NFT Collection Option */}
+            <motion.div
+              className={`relative overflow-hidden border rounded-lg transition-all cursor-pointer group ${
+                selectedOption === "deploy"
+                  ? "border-quantum-entanglement bg-quantum-entanglement/20"
+                  : "border-quantum-entanglement/30 bg-sinister-black/30 hover:bg-sinister-black/40"
+              }`}
+              onClick={() => handleOptionSelect("deploy")}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-heading text-oracle-white">
+                    Create NFT Collection
+                  </h3>
+                  {selectedOption === "deploy" && (
+                    <div className="text-quantum-entanglement">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-sinister-scroll mb-4">
+                  Deploy your own NFT collection contract and mint NFTs with your own customizable settings.
+                </p>
+
+                <div className="text-quantum-entanglement text-sm">
+                  <span className="bg-quantum-entanglement/10 px-2 py-1 rounded">
+                    Deploy Contract
                   </span>
                 </div>
               </div>

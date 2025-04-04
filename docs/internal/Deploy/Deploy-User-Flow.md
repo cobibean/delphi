@@ -4,21 +4,21 @@ This user flow outlines how creators will deploy and manage their NFT collection
 
 ---
 
-## 1. Create Modal Trigger
+## 1. Create Modal Trigger ✅
 
 - **Action:** User clicks the "Create" button from the main Delphi navigation.
 - **Modal Content:**
   - Presents a clean and minimal modal with options like:
-    - “Delphi Mint”
-    - “Upload Collection” (for batch flows later)
+    - "Delphi Mint"
+    - "Upload Collection" (for batch flows later)
     - **"Deploy Your NFT Collection"** (primary CTA)
   
 ---
 
-## 2. Token Standard Selection
+## 2. Token Standard Selection ✅
 
 - **Screen Title:** "Choose Your NFT Type"
-- **Style:** Delphi’s grid layout with animated cards for each option.
+- **Style:** Delphi's grid layout with animated cards for each option.
 
 ### ERC721
 - Bullet Points:
@@ -36,7 +36,7 @@ This user flow outlines how creators will deploy and manage their NFT collection
 
 ---
 
-## 3. Metadata & Config Setup
+## 3. Metadata & Config Setup ✅
 
 - **Screen Title:** "Set Up Your Collection"
 - **Layout:** Split-panel form layout with preview on the right.
@@ -51,7 +51,7 @@ This user flow outlines how creators will deploy and manage their NFT collection
 - Default Admin (auto-filled as connected wallet)
 - Primary Sale Recipient (optional, defaults to caller)
 
-- **UI Tips:** Tooltips next to each field using Delphi’s native tooltip style.
+- **UI Tips:** Tooltips next to each field using Delphi's native tooltip style.
 
 - **CTA:** "Next: Confirm & Deploy"
 
@@ -70,7 +70,7 @@ This user flow outlines how creators will deploy and manage their NFT collection
 
 - **CTA:** "Deploy Collection"
   - Triggers a wallet prompt for the single bundled tx
-  - Delphi’s toast system provides transaction feedback
+  - Delphi's toast system provides transaction feedback
 
 ---
 
@@ -117,5 +117,5 @@ This user flow outlines how creators will deploy and manage their NFT collection
 
 ---
 
-This end-to-end flow helps users smoothly go from idea to deployment while maintaining Delphi’s clean, confident brand experience.
+This end-to-end flow helps users smoothly go from idea to deployment while maintaining Delphi's clean, confident brand experience.
 

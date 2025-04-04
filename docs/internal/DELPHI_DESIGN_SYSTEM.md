@@ -21,6 +21,10 @@
 7. [Page Dimensions](#page-templates)
 8. [Interdimensional Iconography](#iconography)
 9. [Cosmic Implementation](#implementation-guidelines)
+10. [Accessibility Considerations](#accessibility)
+11. [Performance Optimization](#performance)
+12. [Mobile Experience](#mobile)
+13. [Component Structure](#component-structure)
 
 ---
 
@@ -38,7 +42,7 @@ Delphi isn't just the center of the world—it's the nexus of all possible world
 ### Personality
 
 - Wildly experimental without being unusable
-- Mind-bendingly psychedelic without causing seizures
+
 - Cosmically mysterious without being incomprehensible
 - Digitally aggressive without being hostile
 
@@ -103,6 +107,13 @@ Delphi isn't just the center of the world—it's the nexus of all possible world
   - For celebrating moments and attracting attention
   - Animation suggests cosmic detonation with directional energy
 
+### Toast Notification Colors
+Based on standard states with cosmic implementation:
+- **Success**: Quantum Turquoise (`#00D1C1` → `#00FFF0`)
+- **Error**: Reality Error Red (`#E53935` → `#FF0000`)
+- **Warning**: Dimensional Gold (`#FFD700` → `#FFC400`)
+- **Info**: Interdimensional Purple (`#6B46C1` → `#9B4DFF`)
+
 ### Color Accessibility
 
 Despite the dimensional chaos, all color combinations maintain a minimum contrast ratio of 4.5:1 for normal text and 3:1 for large text to ensure readability across all realities.
@@ -113,12 +124,12 @@ Despite the dimensional chaos, all color combinations maintain a minimum contras
 
 ### Font Families
 
-- **Heading Font: Impact / Anton with Reality Distortion**
+- **Heading Font: Impact / Anton / Bebas Neue with Reality Distortion**
   - Letters appear unstable, with subtle shifts in position
   - Occasional glitches where characters momentarily swap or flip
   - Letters can split into chromatic aberrations on interaction
 
-- **Body Font: Inter with Quantum Stability**
+- **Body Font: Inter / Poppins with Quantum Stability**
   - Maintains readable state while surrounded by chaos
   - Subtle breathing animation on paragraph blocks
   - Responds to cursor proximity with magnetic repulsion
@@ -202,10 +213,10 @@ Despite the dimensional chaos, all color combinations maintain a minimum contras
 <Header className="neural-net">
   <Logo className="dimensional-shift" />
   <Nav>
-    <NavItem label="Profile" comingSoon={true} warpEffect="spatial-echo" />
-    <NavItem label="Create Listing" comingSoon={true} warpEffect="quantum-flare" />
-    <NavItem label="Stats" comingSoon={true} warpEffect="time-dilation" />
-    <NavItem label="Earn" comingSoon={true} warpEffect="reality-glitch" />
+    <NavItem label="Profile" warpEffect="spatial-echo" />
+    <NavItem label="Create Listing" warpEffect="quantum-flare" />
+    <NavItem label="Stats" warpEffect="time-dilation" />
+    <NavItem label="Earn" warpEffect="reality-glitch" />
   </Nav>
   <WalletButton className="cosmic-button" />
 </Header>
@@ -223,29 +234,21 @@ Despite the dimensional chaos, all color combinations maintain a minimum contras
 - Energy field effects around the card borders
 - Animated backgrounds that react to user interaction
 
+**Actual Implementation**
 ```jsx
-<HypercardNFT 
-  dimensionEffect="reality-warp"
-  energyField="orange-quantum"
-  glitchIntensity={0.7}
->
-  <CardImage 
-    src={nft.image} 
-    distortionEffect="liquid-reality" 
-    parallaxDepth={2}
-  />
-  <CardContent dimensionalLayer={3}>
-    <CardTitle glitchOnHover={true}>{nft.title}</CardTitle>
-    <CardPrice pulsate={true}>{nft.price} ETH</CardPrice>
-    <CardCreator portalEffect={true}>
+<div className="card">
+  <div className="card-image">
+    <img src={nft.image} alt={nft.title} />
+  </div>
+  <div className="card-content">
+    <h3 className="card-title">{nft.title}</h3>
+    <div className="card-price">{nft.price} ETH</div>
+    <div className="card-creator">
       <Avatar src={nft.creator.avatar} />
       <span>{nft.creator.name}</span>
-    </CardCreator>
-  </CardContent>
-  
-  <EnergyField type="cosmic-radiation" />
-  <DimensionalEcho delay={0.3} />
-</HypercardNFT>
+    </div>
+  </div>
+</div>
 ```
 
 ### Buttons
@@ -259,13 +262,15 @@ Despite the dimensional chaos, all color combinations maintain a minimum contras
 - Click: Implosion effect with rippling aftermath
 - Occasional quantum duplication on hover (ghost button appears offset)
 
+**Actual Implementation**
 ```jsx
 <Button 
-  variant="hyper-primary" 
-  energyField="cosmic-flare"
-  dimensionRift={true}
+  variant="primary" 
+  size="md" 
+  animation="cosmic"
+  withShine={true}
 >
-  Connect to the Multiverse
+  Connect Wallet
 </Button>
 ```
 
@@ -277,12 +282,14 @@ Despite the dimensional chaos, all color combinations maintain a minimum contras
 - Hover: Dimensional echo effect + energy build-up
 - Click: Reality fracture animation
 
+**Actual Implementation**
 ```jsx
 <Button 
-  variant="hyper-secondary"
-  realityBend={true}
+  variant="secondary"
+  size="md"
+  animation="pulse"
 >
-  View Dimensions
+  View Details
 </Button>
 ```
 
@@ -296,19 +303,49 @@ Despite the dimensional chaos, all color combinations maintain a minimum contras
 - Close button: Black hole implosion effect
 - Content: Appears to float within a 3D space
 
+**Actual Implementation**
 ```jsx
-<Modal 
-  variant="quantum-portal" 
-  dimensionalDepth={3}
-  feature="Profile"
+<div
+  className="fixed inset-0 bg-oracle-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+  onClick={onClose}
 >
-  <ModalTitle glitchEffect={true}>Dimensional Breach</ModalTitle>
-  <ModalContent floatingEffect={true}>
-    <p>We're weaving reality to bring you interdimensional profile features.</p>
-    <CosmicAnimation particleDensity={0.7} />
-  </ModalContent>
-  <CloseButton implosionEffect={true} />
-</Modal>
+  <motion.div
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0, scale: 0.9 }}
+    transition={{ duration: 0.2 }}
+    className="bg-ancient-wisdom border border-oracle-orange/20 rounded-xl w-full max-w-md shadow-card-hover overflow-hidden max-h-[90vh] my-4"
+    onClick={(e) => e.stopPropagation()}
+  >
+    <div className="p-6 overflow-y-auto max-h-[calc(90vh-2rem)]">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="font-heading text-2xl text-oracle-orange">
+          Modal Title
+        </h2>
+        <button
+          onClick={onClose}
+          className="text-oracle-white/70 hover:text-oracle-orange"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+      {/* Modal content */}
+    </div>
+  </motion.div>
+</div>
 ```
 
 ### Forms
@@ -321,18 +358,32 @@ Despite the dimensional chaos, all color combinations maintain a minimum contras
 - Validation states with quantum certainty indicators
 - Submit buttons that create dimensional rifts
 
+### Feedback System
+
+#### Toast Notifications
+
+- Entry: Dimensional rift opening effect (300ms)
+- Exit: Reality collapse effect (200ms)
+- Background: Status-specific gradient (Success, Error, Warning, Info)
+- Border: Energy containment field
+- Content: Message with optional description
+
+**Actual Implementation**
 ```jsx
-<WormholeForm dimensionalLayer={2}>
-  <FormField orbitalEffect={true}>
-    <Label>NFT Designation</Label>
-    <Input 
-      placeholder="Name your creation" 
-      rippleEffect={true}
-      dimensionalState="stable"
-    />
-    {error && <ErrorMessage quantumState="unstable">{error}</ErrorMessage>}
-  </FormField>
-</WormholeForm>
+// Usage example
+const { toast } = useToast();
+
+// For success messages
+toast.success("Operation successful", "Optional description");
+
+// For errors
+toast.error("Something went wrong", "Error details");
+
+// For warnings
+toast.warning("Warning message", "Warning details");
+
+// For information
+toast.info("Information message", "Information details");
 ```
 
 ### Stats and Data Display
@@ -344,18 +395,6 @@ Despite the dimensional chaos, all color combinations maintain a minimum contras
 - Charts with fluid, reality-bending animations
 - Data points that emit energy based on values
 - Timeline visualizations that bend space around them
-
-```jsx
-<HyperspaceStat
-  dimensionalDepth={2}
-  energyOutput={0.8}
->
-  <StatIcon icon="marketplace" pulseEffect={true} />
-  <StatNumber countEffect={true}>{totalListings}</StatNumber>
-  <StatLabel orbitalEffect={true}>Active Listings</StatLabel>
-  <TrendGraph fluidAnimation={true} data={listingTrend} />
-</HyperspaceStat>
-```
 
 ---
 
@@ -413,53 +452,6 @@ Despite the dimensional chaos, all color combinations maintain a minimum contras
 }
 ```
 
-#### Dimensional Rift
-```css
-@keyframes dimensionalRift {
-  0% { clip-path: circle(0% at center); transform: scale(0.8); filter: brightness(2) blur(10px); }
-  30% { clip-path: circle(50% at center); transform: scale(1.1); filter: brightness(1.5) blur(5px); }
-  70% { clip-path: circle(70% at center); transform: scale(0.95); filter: brightness(1.2) blur(2px); }
-  100% { clip-path: circle(125% at center); transform: scale(1); filter: brightness(1) blur(0); }
-}
-```
-
-#### Energy Field
-```css
-@keyframes energyField {
-  0% { border-color: rgba(255, 95, 31, 0.7); }
-  25% { border-color: rgba(0, 209, 193, 0.7); }
-  50% { border-color: rgba(107, 70, 193, 0.7); }
-  75% { border-color: rgba(255, 215, 0, 0.7); }
-  100% { border-color: rgba(255, 95, 31, 0.7); }
-}
-```
-
----
-
-## Interdimensional Utilities
-
-### Energy Containment Fields
-
-- `.energy-field-orange`: Orange glowing border that pulsates
-- `.energy-field-turquoise`: Turquoise energy field with particle effects
-- `.energy-field-white`: White energy containment with spectral aberrations
-- `.energy-field-purple`: Purple dimensional barrier with quantum fluctuations
-
-### Reality Distortion Effects
-
-- `.reality-warp`: Elements that distort reality around them on hover
-- `.quantum-glitch`: Elements that occasionally glitch in and out of reality
-- `.dimensional-echo`: Creates afterimage effects on motion
-- `.time-dilation`: Slows down or speeds up animations based on user interaction
-
-### Dimension Layers
-
-- `.dimension-1`: Base reality layer
-- `.dimension-2`: Slight elevation with subtle shadow
-- `.dimension-3`: Noticeable elevation with energy effects
-- `.dimension-4`: Major elevation with reality distortion
-- `.dimension-5`: Seems to float completely above the interface
-
 ---
 
 ## Implementation Guidelines
@@ -473,37 +465,68 @@ module.exports = {
     extend: {
       colors: {
         oracle: {
+          // Hyper Orange
           orange: '#FF5F1F',
           'orange-hot': '#FF3000',
           'orange-solar': '#FF7A00',
+          
+          // Void Black
           black: '#121212',
-          'black-void': '#000000', 
+          'black-void': '#000000',
           'black-matter': '#1D1D1D',
+          
+          // Quantum Turquoise
           turquoise: '#00D1C1',
           'turquoise-bright': '#00FFF0',
           'turquoise-deep': '#009E92',
+          
+          // Spectral White
           white: '#F8F5F0',
+          'white-bright': '#FFFFFF',
+          'white-warm': '#F2EBE0',
+          
+          // Dimensional Gold
           gold: '#FFD700',
+          'gold-bright': '#FFC400',
+          'gold-glow': '#FFEA80',
+          
+          // Interdimensional Purple
           purple: '#6B46C1',
+          'purple-bright': '#9B4DFF',
+          'purple-deep': '#48318A',
+          
+          // Reality Error Red
           error: '#E53935',
+          'error-hot': '#FF0000',
+          'error-deep': '#C90C00',
         },
       },
+      fontFamily: {
+        heading: ['Impact', 'Anton', 'Bebas Neue', 'sans-serif'],
+        body: ['Inter', 'Poppins', 'sans-serif'],
+        accent: ['Roboto Slab', 'serif'],
+      },
       backgroundImage: {
-        'cosmic-combustion': 'linear-gradient(to right, #FF3000, #FF7A00, #FF5F1F)',
-        'quantum-entanglement': 'linear-gradient(to right, #00D1C1, #6B46C1, #00FFF0)',
+        // Delphi Design System 2.0 Gradients
+        'cosmic-combustion': 'linear-gradient(to right, #FF3000, #FF7A00)',
+        'quantum-entanglement': 'linear-gradient(to right, #00D1C1, #9B4DFF)',
         'event-horizon': 'radial-gradient(circle at center, #1D1D1D, #000000)',
         'hypernova': 'conic-gradient(from 0deg, #FF5F1F, #00D1C1, #6B46C1, #FFD700, #FF5F1F)',
       },
-      animation: {
-        'reality-distortion': 'realityDistortion 3s infinite',
-        'quantum-fluctuation': 'quantumFluctuation 2s infinite',
-        'cosmic-pulsation': 'cosmicPulsation 4s infinite',
-        'dimensional-rift': 'dimensionalRift 1s forwards',
-        'energy-field': 'energyField 5s infinite',
+      boxShadow: {
+        // Card shadows
+        'card-hover': '0 12px 24px rgba(0, 0, 0, 0.15)',
+        'card-normal': '0 4px 12px rgba(0, 0, 0, 0.1)',
+        'dark': '0 4px 20px rgba(0, 0, 0, 0.5)',
       },
-      keyframes: {
-        // Add all the keyframes defined above
-      }
+      animation: {
+        // Space animations
+        'cosmic-flow': 'cosmicFlow 3s ease infinite',
+        'flicker': 'flicker 1.5s infinite',
+        'oracle-pulse': 'oraclePulse 2s infinite',
+        'digital-glitch': 'digitalGlitch 0.3s ease',
+        'card-hover': 'cardHover 0.3s forwards',
+      },
     }
   }
 }
@@ -515,6 +538,61 @@ module.exports = {
 - `prefers-reduced-motion`: Respect user settings by providing more stable alternatives
 - `prefers-reduced-transparency`: Reduce effects with excessive alpha blending
 - Dynamic adjustment based on device capabilities
+
+## Accessibility
+
+Despite the rich visual effects of the Cosmic Overload design system, all interfaces must remain accessible to all users:
+
+- All interactive elements should have appropriate ARIA attributes
+- Sufficient color contrast ratio of 4.5:1 for normal text and 3:1 for large text
+- Provide alternatives to motion effects for users with vestibular disorders
+- Ensure keyboard navigability for all interactive elements
+- Support screen readers with descriptive text alternatives
+
+## Performance Optimization
+
+To ensure the cosmic experience runs smoothly across devices:
+
+- Use will-change property sparingly and only when animations are active
+- Defer non-critical animations until after initial load
+- Implement progressive enhancement for complex visual effects
+- Reduce animation complexity on lower-end devices
+- Optimize image loading with appropriate formats and sizes
+
+## Mobile Experience
+
+The cosmic experience adapts intelligently to smaller screens:
+
+- Simpler navigation patterns on mobile
+- Appropriately sized touch targets (minimum 44×44px)
+- Reduced animation complexity for better performance
+- Gesture-based interactions where appropriate
+- Stacked layouts that maintain visual hierarchy
+
+## Component Structure
+
+The project follows a domain-driven organization approach:
+
+```
+/src/app/
+├── components/              # Shared components used across multiple domains
+│   ├── ui/                  # Generic UI primitives (Button, Input, etc.)
+│   ├── layout/              # Layout components (Container, Grid, etc.)
+│   ├── feedback/            # Feedback components (Toast, Alert, etc.)
+│   └── modals/              # Generic modal components
+├── features/                # Domain-specific features
+│   ├── marketplace/         # Marketplace feature
+│   │   ├── components/      # Marketplace-specific components
+│   │   ├── hooks/           # Marketplace-specific hooks
+│   │   └── services/        # Marketplace-specific services
+│   ├── nft/                 # NFT feature
+│   │   ├── components/      # NFT-specific components
+│   │   └── hooks/           # NFT-specific hooks
+│   ├── wallet/              # Wallet feature
+│   │   └── components/      # Wallet-specific components
+│   └── profile/             # Profile feature
+│       └── components/      # Profile-specific components
+```
 
 ---
 

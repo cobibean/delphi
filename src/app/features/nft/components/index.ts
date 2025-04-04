@@ -8,6 +8,7 @@
 
 // Export all NFT domain components
 export * from './AuctionActions';
+export { default as CreateCollectionStepper } from './CreateCollectionStepper';
 export * from './NFTAttributes';
 export * from './NFTCard';
 export * from './NFTCarousel';

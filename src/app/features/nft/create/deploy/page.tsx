@@ -1,250 +1,124 @@
 'use client';
 
-import { useTransaction } from '@/providers/TransactionProvider';
+import { Button } from '@/app/components/ui/Button';
+import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
-import { FiCheck, FiDollarSign, FiPackage, FiSettings, FiUpload } from 'react-icons/fi';
-import { useActiveAccount } from 'thirdweb/react';
+import { useState } from 'react';
+import { FiChevronRight, FiPackage } from 'react-icons/fi';
 
-// Contract type card component
-const ContractTypeCard = ({ 
+// Token Standard Card component
+const TokenStandardCard = ({ 
   type, 
   title, 
   description, 
-  icon, 
+  points,
   selected, 
   onSelect 
 }: { 
-  type: string; 
+  type: 'ERC721' | 'ERC1155'; 
   title: string; 
-  description: string; 
-  icon: React.ReactNode; 
+  description: string;
+  points: string[];
   selected: boolean; 
-  onSelect: (type: string) => void; 
+  onSelect: () => void; 
 }) => {
   return (
-    <div 
-      className={`border-2 rounded-xl p-4 cursor-pointer transition-colors ${
+    <motion.div 
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      className={`border-2 rounded-xl p-6 cursor-pointer transition-all ${
         selected 
-          ? 'border-primary bg-primary bg-opacity-10' 
-          : 'border-gray-700 hover:border-gray-500'
+          ? 'border-cosmic-combustion bg-sinister-black/40' 
+          : 'border-oracle-orange/20 bg-sinister-black/20 hover:border-oracle-orange/40'
       }`}
-      onClick={() => onSelect(type)}
+      onClick={onSelect}
     >
-      <div className="flex items-center mb-2">
-        <div className={`mr-3 ${selected ? 'text-primary' : 'text-gray-400'}`}>
-          {icon}
+      <div className="flex items-center mb-4">
+        <div className={`p-3 rounded-lg mr-4 ${selected ? 'bg-cosmic-combustion/20' : 'bg-cosmic-combustion/10'}`}>
+          <FiPackage className={`${selected ? 'text-cosmic-combustion' : 'text-oracle-orange'}`} size={24} />
         </div>
-        <h3 className="font-medium">{title}</h3>
-        {selected && (
-          <div className="ml-auto text-primary">
-            <FiCheck />
-          </div>
-        )}
+        <div>
+          <h3 className={`font-heading text-xl ${selected ? 'text-cosmic-combustion' : 'text-oracle-white'}`}>{title}</h3>
+          <p className="text-sm text-oracle-white/60">{description}</p>
+        </div>
       </div>
-      <p className="text-sm text-gray-400">{description}</p>
-    </div>
+      
+      <div className="mt-4 space-y-2">
+        <ul className="space-y-2">
+          {points.map((point, index) => (
+            <li key={index} className="flex items-start">
+              <span className={`mr-2 mt-1 text-xs ${selected ? 'text-cosmic-combustion' : 'text-oracle-orange'}`}>•</span>
+              <span className="text-sm text-oracle-white/80">{point}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </motion.div>
   );
 };
 
-// Main Contract Deployment Page (Placeholder)
-export default function DeployContractPage() {
-  const _router = useRouter();
-  const _account = useActiveAccount();
-  const { addTransaction } = useTransaction();
-  const [contractType, setContractType] = useState('nft-collection');
+export default function TokenStandardSelection() {
+  const router = useRouter();
+  const [selectedStandard, setSelectedStandard] = useState<'ERC721' | 'ERC1155'>('ERC721');
 
-  // Contract type options
-  const contractTypes = [
-    {
-      type: 'nft-collection',
-      title: 'NFT Collection (ERC721)',
-      description: 'Standard collection of unique NFTs. Best for 1/1 artworks.',
-      icon: <FiPackage size={24} />
-    },
-    {
-      type: 'nft-drop',
-      title: 'NFT Drop (ERC721)',
-      description: 'Collection with claim phases. Good for scheduled releases.',
-      icon: <FiPackage size={24} />
-    },
-    {
-      type: 'edition',
-      title: 'Edition (ERC1155)',
-      description: 'Multiple copies of each NFT. More gas efficient.',
-      icon: <FiPackage size={24} />
-    },
-    {
-      type: 'edition-drop',
-      title: 'Edition Drop (ERC1155)',
-      description: 'Multiple copies with claim phases. Best for large drops.',
-      icon: <FiPackage size={24} />
+  const handleContinue = () => {
+    if (selectedStandard === 'ERC721') {
+      router.push('/features/nft/create/deploy/ERC721/metadata');
+    } else {
+      router.push('/features/nft/create/deploy/ERC1155/metadata');
     }
-  ];
-
-  // Handle contract type selection
-  const handleContractTypeSelect = (type: string) => {
-    setContractType(type);
-  };
-
-  // Handle form submission (placeholder)
-  const handleDeployClick = () => {
-    // Display a toast or modal indicating this feature is coming soon
-    alert('Contract deployment feature coming soon!');
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Deploy NFT Contract</h1>
-      
-      {/* Coming Soon Banner */}
-      <div className="bg-gray-800 border border-primary/30 rounded-xl p-8 mb-8 text-center">
-        <h2 className="text-2xl font-semibold text-primary mb-4">Coming Soon</h2>
-        <p className="text-gray-300 max-w-2xl mx-auto mb-6">
-          Contract deployment functionality is under development and will be available soon. 
-          This page shows a preview of what&apos;s coming.
+    <div className="container mx-auto px-4 py-12 max-w-6xl">
+      <div className="text-center mb-10">
+        <h1 className="text-3xl md:text-4xl font-heading text-oracle-orange mb-4">Choose Your NFT Type</h1>
+        <p className="text-oracle-white/70 max-w-2xl mx-auto">
+          Select the token standard that best fits your NFT collection needs.
         </p>
-        <div className="inline-block bg-gray-700 text-xs text-gray-300 px-3 py-1 rounded-full">
-          Feature in Development
-        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <TokenStandardCard
+          type="ERC721"
+          title="ERC721"
+          description="Unique, one-of-one NFTs"
+          points={[
+            "Best for art, PFPs, single-edition collectibles",
+            "Each token is completely unique",
+            "Higher gas cost per mint than ERC1155",
+            "The most widely adopted NFT standard"
+          ]}
+          selected={selectedStandard === 'ERC721'}
+          onSelect={() => setSelectedStandard('ERC721')}
+        />
+        
+        <TokenStandardCard
+          type="ERC1155"
+          title="ERC1155"
+          description="Multi-edition or semi-fungible NFTs"
+          points={[
+            "Ideal for membership passes, in-game items, etc.",
+            "Create multiple copies of the same NFT efficiently",
+            "Lower gas costs for multiple mints",
+            "Great for collections with tiered rarities"
+          ]}
+          selected={selectedStandard === 'ERC1155'}
+          onSelect={() => setSelectedStandard('ERC1155')}
+        />
       </div>
       
-      {/* Feature Preview */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Collection Details */}
-        <div className="lg:col-span-2">
-          <div className="bg-gray-900 rounded-xl p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <FiSettings className="mr-2" /> Collection Details
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">
-                  Collection Name *
-                </label>
-                <input
-                  type="text"
-                  placeholder="My Awesome NFTs"
-                  className="w-full bg-gray-800 text-white rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary opacity-50"
-                  disabled
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">
-                  Symbol *
-                </label>
-                <input
-                  type="text"
-                  placeholder="NFTS"
-                  className="w-full bg-gray-800 text-white rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary opacity-50"
-                  disabled
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Short identifier for your collection (usually 3-5 characters)
-                </p>
-              </div>
-              
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-400 mb-1">
-                  Description
-                </label>
-                <textarea
-                  placeholder="Describe your collection..."
-                  rows={3}
-                  className="w-full bg-gray-800 text-white rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary opacity-50"
-                  disabled
-                ></textarea>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-gray-900 rounded-xl p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <FiDollarSign className="mr-2" /> Royalty Settings
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">
-                  Royalty Percentage
-                </label>
-                <input
-                  type="number"
-                  value={5}
-                  min="0"
-                  max="15"
-                  step="0.1"
-                  className="w-full bg-gray-800 text-white rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary opacity-50"
-                  disabled
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Percentage of secondary sales you&apos;ll receive (0-15%)
-                </p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">
-                  Royalty Recipient Address *
-                </label>
-                <input
-                  type="text"
-                  placeholder="0x..."
-                  className="w-full bg-gray-800 text-white rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary opacity-50"
-                  disabled
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Wallet address that will receive royalty payments
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Right Column - Contract Type & Deploy Button */}
-        <div className="lg:col-span-1">
-          <div className="bg-gray-900 rounded-xl p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <FiPackage className="mr-2" /> Contract Type
-            </h2>
-            
-            <div className="space-y-3">
-              {contractTypes.map((contract) => (
-                <ContractTypeCard
-                  key={contract.type}
-                  type={contract.type}
-                  title={contract.title}
-                  description={contract.description}
-                  icon={contract.icon}
-                  selected={contractType === contract.type}
-                  onSelect={handleContractTypeSelect}
-                />
-              ))}
-            </div>
-          </div>
-          
-          <div className="bg-gray-900 rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <FiUpload className="mr-2" /> Deploy
-            </h2>
-            
-            <p className="text-sm text-gray-400 mb-4">
-              Once deployed, your NFT contract will be live on the blockchain and cannot be modified.
-            </p>
-            
-            <button
-              onClick={handleDeployClick}
-              className="w-full bg-primary/70 text-white rounded-lg px-4 py-3 font-medium hover:bg-primary/60 cursor-not-allowed"
-            >
-              Deploy Contract
-            </button>
-            
-            <p className="text-xs text-gray-400 mt-2 text-center">
-              Gas fees will apply for contract deployment
-            </p>
-          </div>
-        </div>
+      <div className="flex justify-center">
+        <Button
+          variant="primary"
+          size="lg"
+          rightIcon={<FiChevronRight />}
+          onClick={handleContinue}
+          animation="pulse"
+          withShine
+        >
+          Continue
+        </Button>
       </div>
     </div>
   );
