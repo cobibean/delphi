@@ -79,6 +79,28 @@ const redirects = [
     permanent: true,
   },
 
+  // New redirects for unified NFT collection creation flow
+  {
+    source: '/nft/create/deploy/:path*',
+    destination: '/features/nft/create',
+    permanent: true,
+  },
+  {
+    source: '/features/nft/create/deploy/:path*',
+    destination: '/features/nft/create',
+    permanent: true,
+  },
+  {
+    source: '/features/nft/create/deploy/ERC721/:path*',
+    destination: '/features/nft/create',
+    permanent: true,
+  },
+  {
+    source: '/features/nft/create/deploy/ERC1155/:path*',
+    destination: '/features/nft/create',
+    permanent: true,
+  },
+
   // Stats redirects
   {
     source: '/stats',
