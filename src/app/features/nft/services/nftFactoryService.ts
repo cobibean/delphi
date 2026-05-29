@@ -1,10 +1,13 @@
 import { metisChain } from "@/app/config/chain";
 import { client } from "@/app/config/client";
 import { NFT_FACTORY_ADDRESS } from "@/app/constants/contracts";
+import { MarketplaceTransactionResult } from "@/app/features/marketplace/services/types";
+import { executeThirdwebTransaction } from "@/app/features/marketplace/services/utils";
+import { WalletAccount } from "@/app/features/wallet/types";
 import {
   getContract,
   prepareContractCall,
-  sendTransaction
+  readContract
 } from "thirdweb";
 import { formatEther } from "viem";
 
@@ -30,6 +33,63 @@ export interface ERC1155DeployParams {
   primarySaleRecipient: string;
 }
 
+// Contract ABI fragments for read operations
+const DEPLOYMENT_FEE_ABI = [
+  {
+    inputs: [],
+    name: "deploymentFee",
+    outputs: [{ type: "uint256", name: "" }],
+    stateMutability: "view",
+    type: "function"
+  }
+];
+
+const DEPLOYED_COLLECTIONS_ABI = [
+  {
+    inputs: [{ type: "address", name: "deployer" }],
+    name: "getDeployedCollections",
+    outputs: [{ type: "address[]", name: "" }],
+    stateMutability: "view",
+    type: "function"
+  }
+];
+
+const IS_FACTORY_DEPLOYED_ABI = [
+  {
+    inputs: [{ type: "address", name: "collection" }],
+    name: "isFactoryDeployed",
+    outputs: [{ type: "bool", name: "" }],
+    stateMutability: "view",
+    type: "function"
+  }
+];
+
+const SUPPORTS_INTERFACE_ABI = [
+  {
+    inputs: [{ type: "bytes4", name: "interfaceId" }],
+    name: "supportsInterface",
+    outputs: [{ type: "bool", name: "" }],
+    stateMutability: "view",
+    type: "function"
+  }
+];
+
+/**
+ * Get contract instance for factory
+ * Centralizes contract instantiation
+ */
+function getFactoryContract() {
+  if (!NFT_FACTORY_ADDRESS) {
+    throw new Error("NFT Factory address not configured");
+  }
+  
+  return getContract({
+    client,
+    chain: metisChain,
+    address: NFT_FACTORY_ADDRESS,
+  });
+}
+
 /**
  * Deploy an ERC721Drop collection
  * @param params Deployment parameters
@@ -38,8 +98,8 @@ export interface ERC1155DeployParams {
  */
 export async function deployERC721Drop(
   params: ERC721DeployParams,
-  account: any // Using any for now to bypass type checking issues
-) {
+  account: WalletAccount
+): Promise<MarketplaceTransactionResult> {
   try {
     if (!NFT_FACTORY_ADDRESS) {
       throw new Error("NFT Factory address not configured");
@@ -53,12 +113,12 @@ export async function deployERC721Drop(
     });
 
     // Get the factory fee
-    const fee = await getFactoryFee(factoryContract);
+    const fee = await getFactoryFee();
 
-    // Prepare the deployment transaction
+    // Prepare the deployment transaction using string method format
     const transaction = await prepareContractCall({
       contract: factoryContract,
-      method: "function deployERC721Drop(string name, string symbol, address defaultAdmin, address royaltyRecipient, uint16 royaltyBps, address primarySaleRecipient) external payable returns (address)",
+      method: `function deployERC721Drop(string,string,address,address,uint16,address)`,
       params: [
         params.name,
         params.symbol,
@@ -70,16 +130,17 @@ export async function deployERC721Drop(
       value: fee, // Pass the deployment fee
     });
 
-    // Send the transaction
-    const result = await sendTransaction({
-      transaction,
-      account,
-    });
+    // Use executeThirdwebTransaction instead of sendTransaction directly
+    const result = await executeThirdwebTransaction(transaction, account);
 
     return result;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to deploy ERC721Drop collection:", error);
-    throw error;
+    return {
+      transactionHash: error.transactionHash || "",
+      success: false,
+      error: error.message || "Unknown error creating ERC721 collection",
+    };
   }
 }
 
@@ -91,8 +152,8 @@ export async function deployERC721Drop(
  */
 export async function deployERC1155Drop(
   params: ERC1155DeployParams,
-  account: any // Using any for now to bypass type checking issues
-) {
+  account: WalletAccount
+): Promise<MarketplaceTransactionResult> {
   try {
     if (!NFT_FACTORY_ADDRESS) {
       throw new Error("NFT Factory address not configured");
@@ -106,12 +167,12 @@ export async function deployERC1155Drop(
     });
 
     // Get the factory fee
-    const fee = await getFactoryFee(factoryContract);
+    const fee = await getFactoryFee();
 
-    // Prepare the deployment transaction
+    // Prepare the deployment transaction using string method format
     const transaction = await prepareContractCall({
       contract: factoryContract,
-      method: "function deployERC1155Drop(string name, string symbol, address defaultAdmin, address royaltyRecipient, uint16 royaltyBps, address primarySaleRecipient) external payable returns (address)",
+      method: `function deployERC1155Drop(string,string,address,address,uint16,address)`,
       params: [
         params.name,
         params.symbol,
@@ -123,41 +184,41 @@ export async function deployERC1155Drop(
       value: fee, // Pass the deployment fee
     });
 
-    // Send the transaction
-    const result = await sendTransaction({
-      transaction,
-      account,
-    });
+    // Use executeThirdwebTransaction instead of sendTransaction directly
+    const result = await executeThirdwebTransaction(transaction, account);
 
     return result;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to deploy ERC1155Drop collection:", error);
-    throw error;
+    return {
+      transactionHash: error.transactionHash || "",
+      success: false,
+      error: error.message || "Unknown error creating ERC1155 collection",
+    };
   }
 }
 
 /**
  * Get the current fee required to deploy a collection
- * @param factoryContract Optional factory contract instance (for reuse)
  * @returns Fee in native token (METIS) as a BigInt
  */
-export async function getFactoryFee(factoryContract?: any) {
+export async function getFactoryFee() {
   try {
     if (!NFT_FACTORY_ADDRESS) {
       throw new Error("NFT Factory address not configured");
     }
 
-    // Get or create factory contract instance
-    const contract = factoryContract || getContract({
+    // Use readContract from thirdweb SDK for view functions
+    const feeResult = await readContract({
       client,
       chain: metisChain,
       address: NFT_FACTORY_ADDRESS,
+      abi: DEPLOYMENT_FEE_ABI,
+      functionName: "deploymentFee",
+      args: [],
     });
-
-    // Call the fee function - using the correct function name from ABI
-    const feeResponse = await (contract as any).call("deploymentFee");
     
-    return feeResponse; // BigInt representing the fee in wei
+    return feeResult; // BigInt representing the fee in wei
   } catch (error) {
     console.error("Failed to get factory fee:", error);
     throw error;
@@ -189,15 +250,15 @@ export async function getDeployedCollections(address: WalletAddress) {
       throw new Error("NFT Factory address not configured");
     }
 
-    // Get factory contract instance
-    const factoryContract = getContract({
+    // Use readContract from thirdweb SDK
+    const collections = await readContract({
       client,
       chain: metisChain,
       address: NFT_FACTORY_ADDRESS,
+      abi: DEPLOYED_COLLECTIONS_ABI,
+      functionName: "getDeployedCollections",
+      args: [address],
     });
-
-    // Get collections deployed by this address
-    const collections = await (factoryContract as any).call("getDeployedCollections", [address]);
     
     return collections as string[];
   } catch (error) {
@@ -217,15 +278,17 @@ export async function isFactoryDeployed(contractAddress: WalletAddress) {
       throw new Error("NFT Factory address not configured");
     }
 
-    // Get factory contract instance
-    const factoryContract = getContract({
+    // Use readContract from thirdweb SDK
+    const isDeployed = await readContract({
       client,
       chain: metisChain,
       address: NFT_FACTORY_ADDRESS,
+      abi: IS_FACTORY_DEPLOYED_ABI,
+      functionName: "isFactoryDeployed",
+      args: [contractAddress],
     });
-
-    // Check if the contract was deployed by our factory
-    return await (factoryContract as any).call("isFactoryDeployed", [contractAddress]);
+    
+    return isDeployed as boolean;
   } catch (error) {
     console.error("Failed to check if contract was factory deployed:", error);
     return false;
@@ -239,26 +302,45 @@ export async function isFactoryDeployed(contractAddress: WalletAddress) {
  */
 export async function getCollectionType(collectionAddress: WalletAddress) {
   try {
-    if (!NFT_FACTORY_ADDRESS) {
-      throw new Error("NFT Factory address not configured");
+    // First check if the contract was deployed by our factory
+    const deployed = await isFactoryDeployed(collectionAddress);
+    
+    if (!deployed) {
+      console.log("Contract was not deployed by our factory");
+      return null;
     }
-
-    // Get factory contract instance
-    const factoryContract = getContract({
-      client,
-      chain: metisChain,
-      address: NFT_FACTORY_ADDRESS,
-    });
-
-    // Check if collection is ERC721 - using dynamic approach
-    const isERC721 = await (factoryContract as any).call("isERC721Collection", [collectionAddress]);
-    if (isERC721) return "ERC721";
     
-    // Check if collection is ERC1155 - using dynamic approach
-    const isERC1155 = await (factoryContract as any).call("isERC1155Collection", [collectionAddress]);
-    if (isERC1155) return "ERC1155";
-    
-    return null;
+    // Use ERC165 interface detection to determine the token standard
+    try {
+      // Check for ERC721 interface (0x80ac58cd)
+      const isERC721 = await readContract({
+        client,
+        chain: metisChain,
+        address: collectionAddress,
+        abi: SUPPORTS_INTERFACE_ABI,
+        functionName: "supportsInterface",
+        args: ["0x80ac58cd"],
+      });
+      
+      if (isERC721) return "ERC721";
+      
+      // Check for ERC1155 interface (0xd9b67a26)
+      const isERC1155 = await readContract({
+        client,
+        chain: metisChain,
+        address: collectionAddress,
+        abi: SUPPORTS_INTERFACE_ABI,
+        functionName: "supportsInterface",
+        args: ["0xd9b67a26"],
+      });
+      
+      if (isERC1155) return "ERC1155";
+      
+      return null;
+    } catch (e) {
+      console.error("Error checking interfaces:", e);
+      return null;
+    }
   } catch (error) {
     console.error("Failed to get collection type:", error);
     return null;

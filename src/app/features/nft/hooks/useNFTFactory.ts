@@ -1,6 +1,7 @@
 "use client";
 
 import { useToast } from "@/app/components/feedback";
+import { getAccountFromWallet } from "@/app/features/wallet/utils";
 import { useTransaction } from "@/app/providers/TransactionProvider";
 import { useState } from "react";
 import { useActiveAccount } from "thirdweb/react";
@@ -23,7 +24,7 @@ export function useNFTFactory() {
   const [isLoadingFee, setIsLoadingFee] = useState(false);
   
   const { toast } = useToast();
-  const account = useActiveAccount();
+  const thirdwebAccount = useActiveAccount();
   const { addTransaction } = useTransaction();
   
   /**
@@ -53,7 +54,7 @@ export function useNFTFactory() {
    * @returns Deployed contract address or null if failed
    */
   const deployERC721Collection = async (params: Omit<ERC721DeployParams, "defaultAdmin">) => {
-    if (!account) {
+    if (!thirdwebAccount) {
       toast.error(
         "Error",
         "Please connect your wallet to deploy a collection"
@@ -75,25 +76,30 @@ export function useNFTFactory() {
       // Set the defaultAdmin to the connected wallet
       const deployParams: ERC721DeployParams = {
         ...params,
-        defaultAdmin: account.address,
+        defaultAdmin: thirdwebAccount.address,
       };
       
-      // Deploy the collection
-      const result = await deployERC721Drop(deployParams, account);
+      // Use the existing getAccountFromWallet utility to convert the account
+      const walletAccount = getAccountFromWallet({ account: thirdwebAccount });
       
-      if (!result?.transactionHash) {
-        throw new Error("Transaction failed");
+      if (!walletAccount) {
+        throw new Error("Failed to get wallet account");
       }
       
-      // Transaction was successful, but we need to extract the deployed address
-      // This would typically come from transaction events/logs
-      // For now, we'll track it manually after the fact
+      // Deploy the collection
+      const result = await deployERC721Drop(deployParams, walletAccount);
+      
+      // Check if the transaction was successful based on the result
+      if (!result.success) {
+        // Transaction failed with a specific error
+        throw new Error(result.error || "Transaction failed");
+      }
       
       // Update transaction status
       addTransaction(
         "success",
         "ERC721 Collection Deployed",
-        result.transactionHash
+        result.transactionHash || "Transaction successful"
       );
       
       toast.success(
@@ -132,7 +138,7 @@ export function useNFTFactory() {
    * @returns Deployed contract address or null if failed
    */
   const deployERC1155Collection = async (params: Omit<ERC1155DeployParams, "defaultAdmin">) => {
-    if (!account) {
+    if (!thirdwebAccount) {
       toast.error(
         "Error",
         "Please connect your wallet to deploy a collection"
@@ -154,21 +160,30 @@ export function useNFTFactory() {
       // Set the defaultAdmin to the connected wallet
       const deployParams: ERC1155DeployParams = {
         ...params,
-        defaultAdmin: account.address,
+        defaultAdmin: thirdwebAccount.address,
       };
       
-      // Deploy the collection
-      const result = await deployERC1155Drop(deployParams, account);
+      // Use the existing getAccountFromWallet utility to convert the account
+      const walletAccount = getAccountFromWallet({ account: thirdwebAccount });
       
-      if (!result?.transactionHash) {
-        throw new Error("Transaction failed");
+      if (!walletAccount) {
+        throw new Error("Failed to get wallet account");
+      }
+      
+      // Deploy the collection
+      const result = await deployERC1155Drop(deployParams, walletAccount);
+      
+      // Check if the transaction was successful based on the result
+      if (!result.success) {
+        // Transaction failed with a specific error
+        throw new Error(result.error || "Transaction failed");
       }
       
       // Update transaction status
       addTransaction(
         "success",
         "ERC1155 Collection Deployed",
-        result.transactionHash
+        result.transactionHash || "Transaction successful"
       );
       
       toast.success(

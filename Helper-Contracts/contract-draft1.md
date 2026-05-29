@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+m// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 /// @title FeeCollector - A simple contract to collect fees with adjustable parameters
